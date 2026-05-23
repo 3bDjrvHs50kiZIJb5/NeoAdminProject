@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using NCrontab;
 using NeoAdmin.Blazor.Data;
+using NeoAdmin.Blazor.Scheduling;
 
 namespace NeoAdmin.Blazor.Scheduling;
 
@@ -17,14 +18,27 @@ public static class NeoAdminSchedulerExtensions
             IFreeSql freeSql = serviceProvider.GetRequiredService<IFreeSql>();
             IHostEnvironment environment = serviceProvider.GetRequiredService<IHostEnvironment>();
             NeoAdminOptions? options = serviceProvider.GetService<IOptions<NeoAdminOptions>>()?.Value;
+            var attributeTriggers = new Dictionary<string, Action<IServiceProvider, TaskInfo>>();
 
             FreeSqlSchedulerSetup.ConfigureEntities(freeSql);
+
+            if (options?.SchedulerAssemblies is { Length: > 0 } assemblies)
+            {
+                SchedulerAttributeRegistration.Register(freeSql, assemblies, attributeTriggers);
+            }
 
             return new FreeSchedulerBuilder()
                 .OnExecuting(task =>
                 {
                     using IServiceScope scope = serviceProvider.CreateScope();
-                    options?.SchedulerExecuting?.Invoke(scope.ServiceProvider, task);
+                    if (attributeTriggers.TryGetValue(task.Topic, out Action<IServiceProvider, TaskInfo>? action))
+                    {
+                        action(scope.ServiceProvider, task);
+                    }
+                    else
+                    {
+                        options?.SchedulerExecuting?.Invoke(scope.ServiceProvider, task);
+                    }
                 })
                 .UseTimeZone(TimeSpan.FromHours(8))
                 .UseStorage(freeSql, !environment.IsDevelopment(), null)

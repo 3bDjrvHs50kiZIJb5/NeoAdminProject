@@ -1,5 +1,5 @@
 using FreeSql;
-using NeoAdmin.Data.Entities.Blog;
+using NeoAdmin.Entities.Blog;
 
 namespace NeoAdmin.Services;
 

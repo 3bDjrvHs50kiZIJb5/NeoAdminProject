@@ -1,6 +1,8 @@
-using NeoAdmin;
+using System.Reflection;
+using NeoAdmin.SeedData;
 using NeoAdmin.Blazor.Extensions;
 using NeoAdmin.Blazor.Components;
+using NeoAdmin.Jobs;
 using NeoUI.Blazor.Extensions;
 using NeoUI.Blazor.Primitives.Extensions;
 
@@ -11,7 +13,11 @@ builder.Services.AddNeoUIComponents();
 builder.Services.AddRazorPages();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-builder.Services.AddNeoAdmin(builder.Configuration);
+builder.Services.AddNeoAdmin(builder.Configuration, options =>
+{
+    options.SchedulerAssemblies = [Assembly.GetExecutingAssembly()];
+});
+builder.Services.AddNeoAdminApi(Assembly.GetExecutingAssembly());
 
 var app = builder.Build();
 

@@ -31,4 +31,6 @@ public sealed class UserSummaryResponse
     public bool IsEnabled { get; init; }
 
     public DateTime LoginTime { get; init; }
+
+    public List<string> Roles { get; init; } = [];
 }

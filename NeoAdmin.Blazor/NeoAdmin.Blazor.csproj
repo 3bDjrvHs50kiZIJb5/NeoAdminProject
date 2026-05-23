@@ -12,6 +12,8 @@
     <Title>NeoAdmin.Blazor</Title>
     <Product>NeoAdmin.Blazor</Product>
     <PackageId>NeoAdmin.Blazor</PackageId>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,6 +24,7 @@
     <PackageReference Include="NCrontab" Version="3.4.0" />
     <PackageReference Include="NeoUI.Blazor" Version="4.0.0" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Yitter.IdGenerator" Version="1.0.14" />
   </ItemGroup>
 </Project>

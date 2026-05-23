@@ -6,6 +6,8 @@
     <OutputType>Exe</OutputType>
     <!-- .NET 10：从 watch 默认项中排除运行时变动的 DB / 上传文件，避免 Hot Reload 崩溃 -->
     <DefaultItemExcludes>$(DefaultItemExcludes);**/neoadmin.db;**/neoadmin.db-*;**/wwwroot/uploads/**</DefaultItemExcludes>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

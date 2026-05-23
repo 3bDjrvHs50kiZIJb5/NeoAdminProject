@@ -2,10 +2,9 @@ using FreeSql;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using NeoAdmin.Blazor.Data;
-using NeoAdmin.Data.Entities.Blog;
-using NeoAdmin.SeedData;
+using NeoAdmin.Entities.Blog;
 
-namespace NeoAdmin;
+namespace NeoAdmin.SeedData;
 
 /// <summary>
 /// 博客表结构同步与种子数据（宿主项目专用）。
@@ -22,6 +21,7 @@ public static class BlogDataSetup
             SyncStructure(freeSql);
         }
 
+        BlogMenuSeedData.Ensure(freeSql);
         BlogSeedData.Ensure(freeSql, options);
     }
 

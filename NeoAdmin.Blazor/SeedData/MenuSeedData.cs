@@ -8,8 +8,12 @@ public static class MenuSeedData
     public static void Ensure(IFreeSql freeSql)
     {
         RemoveObsolete(freeSql);
+        EnsureMenus(freeSql, CreateMenus());
+    }
 
-        foreach (SysMenu menu in CreateMenus())
+    public static void EnsureMenus(IFreeSql freeSql, IEnumerable<SysMenu> menus)
+    {
+        foreach (SysMenu menu in menus)
         {
             EnsureRecursive(freeSql, menu, 0);
         }
@@ -150,16 +154,6 @@ public static class MenuSeedData
                 Page("浮动与菜单", "/neo-demo/ui/overlays-floating", 541, "layers")
             ])
         ]),
-        Menu("博客管理", "newspaper", string.Empty, 45, SysMenuSidebarStyle.展开,
-        [
-            Page("分类", "/Blog/Classify", 451, "folder"),
-            Page("频道", "/Blog/Channel", 452, "rss"),
-            Page("文章", "/Blog/Article", 453, "file-text"),
-            Page("标签", "/Blog/Tag2", 454, "tags"),
-            Page("评论", "/Blog/Comment", 455, "message-circle"),
-            Page("用户点赞", "/Blog/UserLike", 456, "thumbs-up"),
-            Page("收藏", "/Blog/Collection", 457, "bookmark")
-        ]),
         Menu("Api", "code", string.Empty, 0, SysMenuSidebarStyle.收起,
         [
             Menu("Login", "log-in", "login", 100, children:
@@ -185,7 +179,7 @@ public static class MenuSeedData
         ], isHidden: true)
     ];
 
-    private static SysMenu Page(string label, string path, int sort, string icon) =>
+    public static SysMenu Page(string label, string path, int sort, string icon) =>
         Menu(label, icon, path, sort, type: SysMenuType.增删改查);
 
     private static SysMenu Button(string label, string icon, string path, int sort) =>
@@ -194,7 +188,7 @@ public static class MenuSeedData
     private static SysMenu Api(string label, string icon, string path, int sort) =>
         Menu(label, icon, path, sort, type: SysMenuType.接口);
 
-    private static SysMenu Menu(
+    public static SysMenu Menu(
         string label,
         string icon,
         string path,

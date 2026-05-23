@@ -86,6 +86,11 @@ public sealed class NeoAdminAuthService
         return ApiResult<UserSummaryResponse>.Success(ToSummary(user));
     }
 
+    /// <summary>
+    /// 为已登录用户签发 API Token。
+    /// </summary>
+    public string CreateToken(SysUser user) => BuildToken(user);
+
     private string BuildToken(SysUser user) =>
         tokenProtector.Protect($"{user.Id}|{user.LoginTime:O}");
 

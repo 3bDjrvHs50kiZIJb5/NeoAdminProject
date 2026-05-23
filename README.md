@@ -36,7 +36,7 @@ NeoAdmin/
 ├── NeoAdmin.Blazor/          # 管理端核心类库（可引用或打包）
 │   ├── Components/           # 布局、CrudTable、SplitPane、字典/参数组件等
 │   ├── Pages/                # 业务页面与 NeoDemo
-│   ├── Data/Entities/        # 实体定义
+│   ├── Entities/             # 实体定义
 │   ├── SeedData/             # 菜单、用户、字典等种子数据
 │   ├── Services/             # 文件、组织、角色、定时任务等业务服务
 │   ├── Auth/                 # 登录鉴权

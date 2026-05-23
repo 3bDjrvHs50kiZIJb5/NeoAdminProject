@@ -2,7 +2,7 @@ using FreeSql.DataAnnotations;
 
 using NeoAdmin.Blazor.Data.Entities;
 
-namespace NeoAdmin.Data.Entities.Blog;
+namespace NeoAdmin.Entities.Blog;
 
 /// <summary>
 /// 随笔专栏

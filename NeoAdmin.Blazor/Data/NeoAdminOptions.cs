@@ -1,3 +1,4 @@
+using System.Reflection;
 using FreeScheduler;
 using FreeSql;
 
@@ -33,7 +34,23 @@ public sealed class NeoAdminOptions
     public FileUploadOptions FileUpload { get; set; } = new();
 
     /// <summary>
-    /// 定时任务执行时的回调，可在宿主项目中注册具体业务逻辑。
+    /// 扫描带 <see cref="Attributes.SchedulerAttribute"/> 的程序集。
+    /// </summary>
+    public Assembly[] SchedulerAssemblies { get; set; } = [];
+
+    /// <summary>
+    /// 定时任务执行时的回调（未匹配 SchedulerAttribute 时触发）。
     /// </summary>
     public Action<IServiceProvider, TaskInfo>? SchedulerExecuting { get; set; }
+
+    /// <summary>
+    /// 是否启用 Swagger UI。在 appsettings.json 的 NeoAdmin 节点配置，例如 "IsSwagger": true。
+    /// 未配置时：开发环境默认开启，其它环境默认关闭。
+    /// </summary>
+    public bool? IsSwagger { get; set; }
+
+    /// <summary>
+    /// Swagger 文档中隐藏的路径片段（不区分大小写）。
+    /// </summary>
+    public string[] SwaggerHides { get; set; } = [];
 }
