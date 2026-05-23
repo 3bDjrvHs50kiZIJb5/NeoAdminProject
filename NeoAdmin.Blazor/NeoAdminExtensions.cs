@@ -83,6 +83,7 @@ public static class NeoAdminExtensions
         services.AddScoped<RoleService>();
         services.AddScoped<TaskSchedulerService>();
         services.AddScoped<SiteSettingsService>();
+        services.AddScoped<NeoPickerOverlayService>();
         services.AddNeoAdminScheduler();
         return services;
     }

@@ -1,8 +1,11 @@
 @typeparam TItem where TItem : class, new()
 @typeparam TKey
+@using FreeSql
 @using FreeSql.Internal.Model
+@using NeoAdmin.Blazor.Services
 @using NeoAdmin.Blazor.Utils
 @inject IFreeSql FreeSql
+@inject NeoPickerOverlayService PickerOverlay
 
 @if (!IsCustomUI)
 {
@@ -14,6 +17,7 @@
         {
             <InputGroupAddon Align="InputGroupAlign.InlineEnd">
                 <InputGroupButton Title="清除"
+                                  Type="ButtonType.Button"
                                   OnClick="ClearSelection"
                                   Class="px-2">
                     <LucideIcon Name="x" Size="16" />
@@ -21,7 +25,9 @@
             </InputGroupAddon>
         }
         <InputGroupAddon Align="InputGroupAlign.InlineEnd">
-            <InputGroupButton OnClick="OpenModal" Class="whitespace-nowrap">
+            <InputGroupButton Type="ButtonType.Button"
+                              OnClick="OpenModal"
+                              Class="whitespace-nowrap">
                 <LucideIcon Name="folder-open" Size="16" />
                 <span>选择</span>
             </InputGroupButton>
@@ -33,91 +39,23 @@ else
     @ChildContent
 }
 
-<Dialog @bind-Open="modalOpen">
-    <DialogContent Variant="DialogContentVariant.Form" Class="@($"sm:max-w-4xl {DialogClassName}")">
-        <DialogHeader>
-            <DialogTitle>@ModalTitle</DialogTitle>
-        </DialogHeader>
-        <div class="min-h-[40vh] max-h-[65vh] flex flex-col">
-            @if (modalOpen)
-            {
-                <CrudTable @ref="tableRef"
-                           @key="pickerTableKey"
-                           TItem="TItem"
-                           Title=""
-                           Compact="true"
-                           IsPickerMode="true"
-                           PageSize="@PageSize"
-                           IsAdd="false"
-                           IsEdit="false"
-                           IsRemove="false"
-                           IsRefresh="true"
-                           IsRowNumber="false"
-                           IsSearchText="@IsSearchText"
-                           SearchPlaceholder="@SearchPlaceholder"
-                           IsMultiSelect="@IsMultiSelectMode"
-                           IsSingleSelect="@IsSingleSelectMode"
-                           KeepSelectionOnPaging="true"
-                           SelectionKey="GetSelectionKey"
-                           SelectedKeys="selectedKeys"
-                           SelectedKeysChanged="HandleSelectedKeysChanged"
-                           OnQuery="HandleQuery">
-                    <Columns>
-                        <DataTableColumn TData="CrudGridRow<TItem>"
-                                         TValue="TKey"
-                                         Property="@(row => GetItemId(row.Item))"
-                                         Header="ID"
-                                         Sortable="false"
-                                         Width="180px" />
-                        <DataTableColumn TData="CrudGridRow<TItem>"
-                                         TValue="string"
-                                         Property="@(_ => string.Empty)"
-                                         Header=""
-                                         Sortable="false">
-                            <CellTemplate Context="row">
-                                @if (TableRow != null)
-                                {
-                                    @TableRow(row.Item)
-                                }
-                                else if (TableCell != null)
-                                {
-                                    @TableCell(row.Item)
-                                }
-                                else
-                                {
-                                    <span>@GetDefaultLabel(row.Item)</span>
-                                }
-                            </CellTemplate>
-                        </DataTableColumn>
-                    </Columns>
-                    <FooterContent>
-                        <div class="flex w-full flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
-                            <span class="text-sm text-muted-foreground">已选 @selectedKeys.Count 项</span>
-                            <div class="flex flex-wrap gap-2">
-                                <Button Variant="ButtonVariant.Outline" OnClick="ResetModalSelection">重置</Button>
-                                <Button Variant="ButtonVariant.Outline" OnClick="CloseModal">取消</Button>
-                                <Button Variant="ButtonVariant.Default"
-                                        Disabled="@(selectedKeys.Count == 0)"
-                                        OnClick="ConfirmSelection">
-                                    确认选择
-                                </Button>
-                            </div>
-                        </div>
-                    </FooterContent>
-                </CrudTable>
-            }
-        </div>
-    </DialogContent>
-</Dialog>
-
 @code {
-    private CrudTable<TItem>? tableRef;
     private bool modalOpen;
     private int pickerTableKey;
     private HashSet<object> selectedKeys = new();
     private string displayText = string.Empty;
     private ColumnInfo? firstStringColumn;
     private string primaryKeyColumnName = "Id";
+
+    private List<CrudGridRow<TItem>> pickerRows = new();
+    private List<CrudGridRow<TItem>> pickerSelectedRows = new();
+    private long pickerTotal;
+    private int pickerPageNumber = 1;
+    private int pickerMaxPageNumber = 1;
+    private int pickerPageSize;
+    private string? pickerSearchText;
+    private string? pickerAppliedSearchText;
+    private bool pickerIsLoading;
 
     [Parameter]
     public TKey Value { get; set; } = default!;
@@ -182,9 +120,24 @@ else
     [Parameter]
     public EventCallback<CrudQueryEventArgs<TItem>> OnQuery { get; set; }
 
-    private bool IsSingleSelectMode => ItemChanged.HasDelegate || ValueChanged.HasDelegate;
-    private bool IsMultiSelectMode => ItemsChanged.HasDelegate;
     private bool HasSelection => !string.IsNullOrWhiteSpace(displayText);
+    private bool IsMultiSelectMode => ItemsChanged.HasDelegate;
+    private bool IsSingleSelectMode => ItemChanged.HasDelegate || ValueChanged.HasDelegate;
+    private bool IsPickerSelectable => IsMultiSelectMode || IsSingleSelectMode;
+    private bool PickerShowPager => pickerPageSize > 0 && pickerTotal > pickerPageSize;
+    private long PickerPageRangeStart => pickerTotal == 0 ? 0 : (pickerPageNumber - 1L) * pickerPageSize + 1;
+    private long PickerPageRangeEnd => Math.Min(pickerPageNumber * (long)pickerPageSize, pickerTotal);
+    private string PickerPageSummaryText => pickerTotal == 0
+        ? "共 0 条"
+        : PickerShowPager
+            ? $"显示 {PickerPageRangeStart}-{PickerPageRangeEnd} 条，共 {pickerTotal} 条"
+            : $"共 {pickerTotal} 条";
+    /// <summary>
+    /// NeoUI DataTable 仅在 Multiple 时渲染前置勾选列；Single 为行点击且无控件。
+    /// 单选场景也用 Multiple，并在 <see cref="OnPickerSelectedRowsChanged"/> 中限制为 1 项。
+    /// </summary>
+    private DataTableSelectionMode PickerSelectionMode =>
+        IsPickerSelectable ? DataTableSelectionMode.Multiple : DataTableSelectionMode.None;
 
     protected override void OnInitialized()
     {
@@ -255,27 +208,30 @@ else
     {
         SeedSelectedKeys();
         pickerTableKey++;
+        ResetPickerState();
         modalOpen = true;
+        PickerOverlay.Open(ModalTitle, DialogClassName, PickerBody);
+        _ = LoadPickerAsync();
     }
 
     private void CloseModal()
     {
         modalOpen = false;
         SeedSelectedKeys();
+        PickerOverlay.Close();
     }
 
-    private void ResetModalSelection()
+    private void ResetPickerState()
     {
-        selectedKeys = new();
-        tableRef?.ClearSelection();
-    }
-
-    private Task HandleQuery(CrudQueryEventArgs<TItem> args) => OnQuery.InvokeAsync(args);
-
-    private Task HandleSelectedKeysChanged(HashSet<object> keys)
-    {
-        selectedKeys = keys;
-        return Task.CompletedTask;
+        pickerRows = new();
+        pickerSelectedRows = new();
+        pickerTotal = 0;
+        pickerPageNumber = 1;
+        pickerMaxPageNumber = 1;
+        pickerPageSize = PageSize;
+        pickerSearchText = null;
+        pickerAppliedSearchText = null;
+        pickerIsLoading = false;
     }
 
     private async Task ConfirmSelection()
@@ -324,7 +280,7 @@ else
         }
 
         RefreshDisplayText();
-        modalOpen = false;
+        CloseModal();
     }
 
     private async Task ClearSelection()
@@ -392,4 +348,324 @@ else
 
         return GetSelectionKey(item).ToString() ?? string.Empty;
     }
+
+    private async Task LoadPickerAsync()
+    {
+        pickerIsLoading = true;
+        PickerOverlay.Refresh();
+
+        ISelect<TItem> select = FreeSql.Select<TItem>();
+        string? normalizedSearch = pickerSearchText?.Trim();
+        CrudQueryEventArgs<TItem> args = new(
+            select,
+            normalizedSearch,
+            Array.Empty<CrudFilterInfo>(),
+            pickerPageNumber,
+            pickerPageSize);
+
+        await OnQuery.InvokeAsync(args);
+
+        pickerTotal = await select.CountAsync();
+        NormalizePickerPageNumber();
+        select.Page(pickerPageNumber, pickerPageSize);
+        List<TItem> items = await select.ToListAsync();
+        AssignPickerRows(items, (pickerPageNumber - 1) * pickerPageSize);
+
+        pickerIsLoading = false;
+        PickerOverlay.Refresh();
+    }
+
+    private void NormalizePickerPageNumber()
+    {
+        pickerMaxPageNumber = Math.Max(1, (int)Math.Ceiling((double)pickerTotal / pickerPageSize));
+        if (pickerPageNumber > pickerMaxPageNumber)
+        {
+            pickerPageNumber = pickerMaxPageNumber;
+        }
+
+        if (pickerPageNumber < 1)
+        {
+            pickerPageNumber = 1;
+        }
+    }
+
+    private void AssignPickerRows(List<TItem> items, int startIndex)
+    {
+        pickerRows = items.Select((item, index) => new CrudGridRow<TItem>
+        {
+            RowIndex = startIndex + index + 1,
+            Item = item
+        }).ToList();
+
+        if (selectedKeys is { Count: > 0 })
+        {
+            pickerSelectedRows = pickerRows
+                .Where(row => selectedKeys.Contains(GetSelectionKey(row.Item)))
+                .ToList();
+        }
+    }
+
+    private Task OnPickerSelectedRowsChanged(IReadOnlyCollection<CrudGridRow<TItem>> items)
+    {
+        List<CrudGridRow<TItem>> incoming = items.ToList();
+        if (IsSingleSelectMode)
+        {
+            incoming = NormalizeSinglePickerSelection(incoming);
+        }
+
+        if (IsSamePickerRowSelection(incoming, pickerSelectedRows))
+        {
+            return Task.CompletedTask;
+        }
+
+        pickerSelectedRows = incoming;
+        return SyncPickerSelectedKeysAsync();
+    }
+
+    private List<CrudGridRow<TItem>> NormalizeSinglePickerSelection(IReadOnlyList<CrudGridRow<TItem>> incoming)
+    {
+        if (incoming.Count <= 1)
+        {
+            return incoming.ToList();
+        }
+
+        HashSet<object> previousKeys = pickerSelectedRows
+            .Select(row => GetSelectionKey(row.Item))
+            .ToHashSet();
+        List<CrudGridRow<TItem>> added = incoming
+            .Where(row => !previousKeys.Contains(GetSelectionKey(row.Item)))
+            .ToList();
+        if (added.Count == 1)
+        {
+            return added;
+        }
+
+        return incoming.TakeLast(1).ToList();
+    }
+
+    private async Task SyncPickerSelectedKeysAsync()
+    {
+        HashSet<object> nextSelectedKeys = new(selectedKeys);
+        HashSet<object> pageKeys = pickerRows.Select(row => GetSelectionKey(row.Item)).ToHashSet();
+        HashSet<object> selectedOnPage = pickerSelectedRows
+            .Select(row => GetSelectionKey(row.Item))
+            .ToHashSet();
+
+        foreach (object pageKey in pageKeys)
+        {
+            if (selectedOnPage.Contains(pageKey))
+            {
+                nextSelectedKeys.Add(pageKey);
+            }
+            else
+            {
+                nextSelectedKeys.Remove(pageKey);
+            }
+        }
+
+        if (selectedKeys.SetEquals(nextSelectedKeys))
+        {
+            return;
+        }
+
+        selectedKeys = nextSelectedKeys;
+        PickerOverlay.Refresh();
+    }
+
+    private bool IsSamePickerRowSelection(
+        IReadOnlyList<CrudGridRow<TItem>> incoming,
+        IReadOnlyList<CrudGridRow<TItem>> current)
+    {
+        if (incoming.Count != current.Count)
+        {
+            return false;
+        }
+
+        if (incoming.Count == 0)
+        {
+            return true;
+        }
+
+        HashSet<object> incomingKeys = incoming
+            .Select(row => GetSelectionKey(row.Item))
+            .ToHashSet();
+        HashSet<object> currentKeys = current
+            .Select(row => GetSelectionKey(row.Item))
+            .ToHashSet();
+        return incomingKeys.SetEquals(currentKeys);
+    }
+
+    private async Task HandlePickerSearchSubmit() => await SearchPickerAsync();
+
+    private async Task HandlePickerSearchBlur() => await SearchPickerAsync();
+
+    private async Task SearchPickerAsync()
+    {
+        string? normalizedSearchText = string.IsNullOrWhiteSpace(pickerSearchText)
+            ? null
+            : pickerSearchText.Trim();
+
+        if (string.Equals(pickerAppliedSearchText, normalizedSearchText, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        pickerSearchText = normalizedSearchText;
+        pickerAppliedSearchText = normalizedSearchText;
+        pickerPageNumber = 1;
+        await LoadPickerAsync();
+    }
+
+    private async Task HandlePickerPrevPage()
+    {
+        if (pickerPageNumber > 1)
+        {
+            pickerPageNumber--;
+            await LoadPickerAsync();
+        }
+    }
+
+    private async Task HandlePickerNextPage()
+    {
+        if (pickerPageNumber < pickerMaxPageNumber)
+        {
+            pickerPageNumber++;
+            await LoadPickerAsync();
+        }
+    }
+
+    private async Task HandlePickerFirstPage()
+    {
+        if (pickerPageNumber != 1)
+        {
+            pickerPageNumber = 1;
+            await LoadPickerAsync();
+        }
+    }
+
+    private async Task HandlePickerLastPage()
+    {
+        if (pickerPageNumber != pickerMaxPageNumber)
+        {
+            pickerPageNumber = pickerMaxPageNumber;
+            await LoadPickerAsync();
+        }
+    }
+
+    private void HandlePickerReset()
+    {
+        pickerSelectedRows.Clear();
+        selectedKeys = new();
+        PickerOverlay.Refresh();
+    }
+
+    private RenderFragment PickerBody => @<div class="flex min-h-[40vh] max-h-[65vh] flex-col gap-2" @key="@pickerTableKey">
+        @if (IsSearchText)
+        {
+            <div class="mb-4 flex flex-wrap items-center gap-2">
+                <form class="w-60" @onsubmit="@HandlePickerSearchSubmit" @onsubmit:preventDefault>
+                    <Input Type="InputType.Search"
+                           @bind-Value="@pickerSearchText"
+                           Placeholder="@SearchPlaceholder"
+                           @onblur="@HandlePickerSearchBlur" />
+                </form>
+            </div>
+        }
+
+        <div class="min-h-0 min-w-0 flex-1">
+            <DataTable TData="CrudGridRow<TItem>"
+                       Data="@pickerRows"
+                       ShowToolbar="false"
+                       ShowPagination="false"
+                       InitialPageSize="@pickerPageSize"
+                       SelectionMode="@PickerSelectionMode"
+                       SelectedItems="@pickerSelectedRows"
+                       SelectedItemsChanged="@OnPickerSelectedRowsChanged"
+                       ColumnsVisibility="false"
+                       IsLoading="@pickerIsLoading"
+                       Dense="true"
+                       ColumnSizing="TableColumnSizing.Fixed"
+                       Class="h-full w-full min-w-0"
+                       TableContainerClass="h-full min-w-0 overflow-x-hidden">
+                <Columns>
+                    <DataTableColumn TData="CrudGridRow<TItem>"
+                                     TValue="TKey"
+                                     Property="@(row => GetItemId(row.Item))"
+                                     Header="ID"
+                                     Sortable="false"
+                                     Width="180px" />
+                    <DataTableColumn TData="CrudGridRow<TItem>"
+                                     TValue="string"
+                                     Property="@(_ => string.Empty)"
+                                     Header=""
+                                     Sortable="false">
+                        <CellTemplate Context="row">
+                            @if (TableRow != null)
+                            {
+                                @TableRow(row.Item)
+                            }
+                            else if (TableCell != null)
+                            {
+                                @TableCell(row.Item)
+                            }
+                            else
+                            {
+                                <span>@GetDefaultLabel(row.Item)</span>
+                            }
+                        </CellTemplate>
+                    </DataTableColumn>
+                </Columns>
+                <EmptyTemplate>
+                    <div class="py-10 text-center text-sm text-muted-foreground">暂无数据</div>
+                </EmptyTemplate>
+            </DataTable>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <span class="text-sm text-muted-foreground">@PickerPageSummaryText</span>
+            @if (PickerShowPager)
+            {
+                <div class="flex flex-wrap items-center gap-2">
+                    <Button Variant="ButtonVariant.Outline"
+                            Size="ButtonSize.Small"
+                            Disabled="@(pickerPageNumber <= 1)"
+                            OnClick="@HandlePickerFirstPage">
+                        首页
+                    </Button>
+                    <Button Variant="ButtonVariant.Outline"
+                            Size="ButtonSize.Small"
+                            Disabled="@(pickerPageNumber <= 1)"
+                            OnClick="@HandlePickerPrevPage">
+                        上一页
+                    </Button>
+                    <span class="text-sm">@pickerPageNumber / @pickerMaxPageNumber</span>
+                    <Button Variant="ButtonVariant.Outline"
+                            Size="ButtonSize.Small"
+                            Disabled="@(pickerPageNumber >= pickerMaxPageNumber)"
+                            OnClick="@HandlePickerNextPage">
+                        下一页
+                    </Button>
+                    <Button Variant="ButtonVariant.Outline"
+                            Size="ButtonSize.Small"
+                            Disabled="@(pickerPageNumber >= pickerMaxPageNumber)"
+                            OnClick="@HandlePickerLastPage">
+                        末页
+                    </Button>
+                </div>
+            }
+        </div>
+
+        <div class="flex w-full flex-wrap items-center justify-between gap-2 border-t border-border pt-2">
+            <span class="text-sm text-muted-foreground">已选 @selectedKeys.Count 项</span>
+            <div class="flex flex-wrap gap-2">
+                <Button Variant="ButtonVariant.Outline" OnClick="@HandlePickerReset">重置</Button>
+                <Button Variant="ButtonVariant.Outline" OnClick="@CloseModal">取消</Button>
+                <Button Variant="ButtonVariant.Default"
+                        Disabled="@(selectedKeys.Count == 0)"
+                        OnClick="@ConfirmSelection">
+                    确认选择
+                </Button>
+            </div>
+        </div>
+    </div>;
 }

@@ -73,8 +73,10 @@
                                @bind-Value="item.ArticleId"
                                @bind-Item="item.Article"
                                DisplayText="@FormatArticleLabel"
-                               PageSize="5"
-                               OnQuery="FilterArticlePickQuery">
+                               PageSize="20"
+                               OnQuery="FilterArticlePickQuery"
+                               IsSearchText="false"
+                               >
                     <TableCell Context="article">@article.Title</TableCell>
                 </NeoInputTable>
             </div>
@@ -91,7 +93,7 @@
                            Value="@item.LikesQuantity.ToString()"
                            ValueChanged="@(v => item.LikesQuantity = int.TryParse(v, out var n) ? n : 0)" />
                 </div>
-                <div class="flex items-center gap-2 pt-6">
+                <div class="flex items-end gap-2 pb-2">
                     <Checkbox @bind-Checked="item.IsAudit" Id="comment-audit" />
                     <Label for="comment-audit">是否已审核</Label>
                 </div>

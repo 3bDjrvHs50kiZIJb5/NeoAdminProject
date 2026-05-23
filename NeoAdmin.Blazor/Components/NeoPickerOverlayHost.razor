@@ -1,0 +1,36 @@
+@implements IDisposable
+@inject NeoPickerOverlayService Overlay
+
+<Dialog Open="@Overlay.IsOpen" OpenChanged="HandleOpenChanged">
+    <DialogContent Variant="DialogContentVariant.Form" Class="@($"sm:max-w-4xl {Overlay.DialogClassName}")">
+        <DialogHeader>
+            <DialogTitle>@Overlay.Title</DialogTitle>
+        </DialogHeader>
+        @if (Overlay.IsOpen && Overlay.Body != null)
+        {
+            @Overlay.Body
+        }
+    </DialogContent>
+</Dialog>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Overlay.Changed += HandleOverlayChanged;
+    }
+
+    private void HandleOverlayChanged() => InvokeAsync(StateHasChanged);
+
+    private void HandleOpenChanged(bool open)
+    {
+        if (!open)
+        {
+            Overlay.Close();
+        }
+    }
+
+    public void Dispose()
+    {
+        Overlay.Changed -= HandleOverlayChanged;
+    }
+}
