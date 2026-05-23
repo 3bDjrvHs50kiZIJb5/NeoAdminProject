@@ -21,7 +21,7 @@ builder.Services.AddNeoAdminApi(Assembly.GetExecutingAssembly());
 
 var app = builder.Build();
 
-BlogDataSetup.Initialize(app.Services);
+DataSetup.Initialize(app.Services);
 
 if (!app.Environment.IsDevelopment())
 {

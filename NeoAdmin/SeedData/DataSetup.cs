@@ -9,7 +9,7 @@ namespace NeoAdmin.SeedData;
 /// <summary>
 /// 博客表结构同步与种子数据（宿主项目专用）。
 /// </summary>
-public static class BlogDataSetup
+public static class DataSetup
 {
     public static void Initialize(IServiceProvider serviceProvider)
     {
@@ -21,8 +21,8 @@ public static class BlogDataSetup
             SyncStructure(freeSql);
         }
 
-        BlogMenuSeedData.Ensure(freeSql);
-        BlogSeedData.Ensure(freeSql, options);
+        MenuSeedData.Ensure(freeSql);
+        SeedData.Ensure(freeSql, options);
     }
 
     public static void SyncStructure(IFreeSql freeSql)
