@@ -1,0 +1,140 @@
+@if (QueryInfo.Filters.Length > 0)
+{
+    <div class="mb-4 grid grid-cols-4 gap-3 rounded-lg border border-border bg-muted/20 p-3">
+        @for (int i = 0; i < QueryInfo.Filters.Length; i++)
+        {
+            CrudFilterInfo filter = QueryInfo.Filters[i];
+            if (filter.Options.Length == 0)
+            {
+                continue;
+            }
+
+            int index = i;
+
+            <div class="flex flex-wrap items-center gap-2 @GetColClass(filter.Col)">
+                <span class="w-16 shrink-0 text-sm text-muted-foreground">@filter.Label</span>
+                @if (filter.Type == CrudFilterType.DateRange)
+                {
+                    <DateRangePicker StartDate="@GetStartDate(filter)"
+                        StartDateChanged="@(value => HandleDateRangeChanged(index, value, null))" EndDate="@GetEndDate(filter)"
+                        EndDateChanged="@(value => HandleDateRangeChanged(index, null, value))" ButtonSize="ButtonSize.Small"
+                        ButtonVariant="ButtonVariant.Outline" Class="max-w-xs" />
+                }
+                else if (filter.Type == CrudFilterType.Text)
+                {
+                    <Input Type="InputType.Search" Value="@filter.Options[0].Value"
+                        ValueChanged="@(value => HandleTextChanged(index, value))" Class="max-w-xs" Placeholder="请输入" />
+                }
+                else
+                {
+                    <div class="flex flex-wrap gap-1">
+                        <Button Variant="@(filter.HasValue? ButtonVariant.Outline: ButtonVariant.Default)" Size="ButtonSize.Small"
+                            OnClick="@(() => HandleTagClick(index, -1))">
+                            默认
+                        </Button>
+                        @for (int optionIndex = 0; optionIndex < filter.Options.Length; optionIndex++)
+                        {
+                            int localOptionIndex = optionIndex;
+                            CrudFilterOption option = filter.Options[optionIndex];
+                            <Button Variant="@(option.Selected? ButtonVariant.Default: ButtonVariant.Outline)" Size="ButtonSize.Small"
+                                OnClick="@(() => HandleTagClick(index, localOptionIndex))">
+                                @option.Label
+                            </Button>
+                        }
+                    </div>
+                }
+
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public CrudQueryInfo QueryInfo { get; set; } = default!;
+
+    private static string GetColClass(int col) =>
+    col switch
+    {
+        3 => "col-span-3",
+        2 => "col-span-2",
+        1 => "col-span-1",
+        _ => "col-span-4"
+    };
+
+    private static DateOnly? GetStartDate(CrudFilterInfo filter)
+    {
+        if (DateTime.TryParse(filter.Options[0].Value, out DateTime date))
+        {
+            return DateOnly.FromDateTime(date);
+        }
+
+        return null;
+    }
+
+    private static DateOnly? GetEndDate(CrudFilterInfo filter)
+    {
+        if (filter.Options.Length < 2 || !DateTime.TryParse(filter.Options[1].Value, out DateTime date))
+        {
+            return null;
+        }
+
+        return DateOnly.FromDateTime(date);
+    }
+
+    private async Task HandleDateRangeChanged(int index, DateOnly? start, DateOnly? end)
+    {
+        CrudFilterInfo filter = QueryInfo.Filters[index];
+        if (start != null)
+        {
+            filter.Options[0].Value = start.HasValue ? start.Value.ToString("yyyy-MM-dd") : string.Empty;
+            filter.Options[0].Selected = start.HasValue;
+        }
+
+        if (end != null && filter.Options.Length > 1)
+        {
+            filter.Options[1].Value = end.HasValue ? end.Value.ToString("yyyy-MM-dd") : string.Empty;
+            filter.Options[1].Selected = end.HasValue;
+        }
+
+        await TriggerQueryAsync();
+    }
+
+    private async Task HandleTextChanged(int index, string? value)
+    {
+        CrudFilterInfo filter = QueryInfo.Filters[index];
+        filter.Options[0].Value = value ?? string.Empty;
+        filter.Options[0].Selected = !string.IsNullOrWhiteSpace(filter.Options[0].Value);
+        await TriggerQueryAsync();
+    }
+
+    private async Task HandleTagClick(int filterIndex, int optionIndex)
+    {
+        CrudFilterInfo filter = QueryInfo.Filters[filterIndex];
+        if (optionIndex < 0 || filter.Type == CrudFilterType.Tags)
+        {
+            foreach (CrudFilterOption option in filter.Options)
+            {
+                if (optionIndex < 0 || filter.Options[optionIndex] != option)
+                {
+                    option.Selected = false;
+                }
+            }
+        }
+
+        if (optionIndex >= 0)
+        {
+            filter.Options[optionIndex].Selected = !filter.Options[optionIndex].Selected;
+        }
+
+        await TriggerQueryAsync();
+    }
+
+    private async Task TriggerQueryAsync()
+    {
+        if (QueryInfo.InvokeQueryAsync != null)
+        {
+            await QueryInfo.InvokeQueryAsync();
+        }
+    }
+}

@@ -1,0 +1,115 @@
+@page "/BBDemo/TabDemo"
+
+<PageTitle>Tab 演示</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <strong>Tab 组件演示</strong>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        这个页面只演示 <code>Tab</code> 组件本身，不额外做页面设计。
+                    </p>
+                    <ul class="mb-0">
+                        <li><code>TabStyle</code>：默认、Chrome、Capsule</li>
+                        <li><code>Placement</code>：顶部、左侧、右侧、底部</li>
+                        <li><code>ShowClose</code> / <code>ShowFullScreen</code> / <code>ShowToolbar</code>：常用按钮</li>
+                        <li><code>IsLazyLoadTabItem</code> / <code>IsOnlyRenderActiveTab</code>：渲染与加载策略</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <strong>基础 Tab</strong>
+                </div>
+                <div class="card-body">
+                    <Tab IsCard="true"
+                         ShowClose="true"
+                         ShowFullScreen="true"
+                         ShowToolbar="true"
+                         AllowDrag="true"
+                         TabStyle="TabStyle.Chrome"
+                         Placement="Placement.Top">
+                        <TabItem Text="概览"
+                                 Icon="fa-solid fa-house"
+                                 >
+                            <div class="p-3">
+                                这是一个最基础的标签页内容。
+                            </div>
+                        </TabItem>
+                        <TabItem Text="配置"
+                                 Icon="fa-solid fa-gear">
+                            <div class="p-3">
+                                这里可以放配置说明或表单。
+                            </div>
+                        </TabItem>
+                        <TabItem Text="日志"
+                                 Icon="fa-solid fa-file-lines">
+                            <div class="p-3">
+                                这里可以展示最近日志。
+                            </div>
+                        </TabItem>
+                    </Tab>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <strong>不同位置</strong>
+                </div>
+                <div class="card-body">
+                    <Tab IsBorderCard="true"
+                         IsLazyLoadTabItem="true"
+                         IsOnlyRenderActiveTab="true"
+                         Placement="Placement.Left"
+                         TabStyle="TabStyle.Capsule"
+                         ShowClose="false"
+                         ShowFullScreen="false">
+                        <TabItem Text="首页"
+                                 Icon="fa-solid fa-house"
+                                 AlwaysLoad="true">
+                            <div class="p-3">
+                                左侧标签页示例。这里可以放首页内容。
+                            </div>
+                        </TabItem>
+                        <TabItem Text="用户"
+                                 Icon="fa-solid fa-user">
+                            <div class="p-3">
+                                这是第二个标签页，切换时按需加载。
+                            </div>
+                        </TabItem>
+                        <TabItem Text="报表"
+                                 Icon="fa-solid fa-chart-column">
+                            <div class="p-3">
+                                这是第三个标签页，用来演示左侧位置。
+                            </div>
+                        </TabItem>
+                    </Tab>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 mb-3">
+            <div class="card">
+                <div class="card-header">
+                    <strong>示例代码</strong>
+                </div>
+                <div class="card-body">
+                    <pre class="mb-0"><code>&lt;Tab IsCard="true" ShowClose="true" ShowToolbar="true" AllowDrag="true"&gt;
+    &lt;TabItem Text="概览" IsActive="true"&gt;...&lt;/TabItem&gt;
+    &lt;TabItem Text="配置"&gt;...&lt;/TabItem&gt;
+    &lt;TabItem Text="日志"&gt;...&lt;/TabItem&gt;
+&lt;/Tab&gt;</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

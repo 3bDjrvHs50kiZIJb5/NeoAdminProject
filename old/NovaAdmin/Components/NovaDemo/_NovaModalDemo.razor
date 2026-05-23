@@ -1,0 +1,165 @@
+@page "/NovaDemo/NovaModalDemo"
+@using BootstrapBlazor.Components
+
+<PageTitle>NovaModal 演示</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <strong>NovaModal 演示</strong>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        这个页面专门演示 <code>NovaModal</code> 的基础弹窗和抽屉弹窗能力。
+                    </p>
+                    <ul class="mb-0">
+                        <li><code>Visible</code>：控制打开和关闭</li>
+                        <li><code>OnYes</code> / <code>OnClose</code>：确认与关闭回调</li>
+                        <li><code>Size</code>：不同弹窗尺寸</li>
+                        <li><code>IsDrawer</code>：抽屉模式</li>
+                        <li><code>DrawerPlacement</code> / <code>DrawerWidth</code>：抽屉位置和宽度</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <strong>标准弹窗</strong>
+                    <span class="text-muted small">展示普通模态框的标题、正文和回调</span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-primary me-2" @onclick="OpenStandardModal">打开标准弹窗</button>
+                        <button type="button" class="btn btn-outline-secondary" @onclick="CloseStandardModal">关闭标准弹窗</button>
+                    </div>
+                    <div class="border rounded p-3 bg-light">
+                        <div class="fw-bold mb-1">当前状态</div>
+                        <div class="small text-muted">@standardStatus</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <strong>抽屉弹窗</strong>
+                    <span class="text-muted small">展示右侧抽屉和自定义宽度</span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-success me-2" @onclick="OpenDrawerModal">打开抽屉弹窗</button>
+                        <button type="button" class="btn btn-outline-secondary" @onclick="CloseDrawerModal">关闭抽屉弹窗</button>
+                    </div>
+                    <div class="border rounded p-3 bg-light">
+                        <div class="fw-bold mb-1">当前状态</div>
+                        <div class="small text-muted">@drawerStatus</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<NovaModal Title="标准弹窗"
+            Visible="@standardVisible"
+            Size="NovaModalSize.Large"
+            Animation="NovaModalAnimation.Zoom"
+            YesButton="确认"
+            CloseButton="取消"
+            OnYes="OnStandardYes"
+            OnClose="OnStandardClose">
+    <Body>
+        <div class="p-1">
+            <p class="mb-2">这是一个标准弹窗示例，用来演示 <code>Visible</code> 和回调事件。</p>
+            <div class="alert alert-info mb-0">
+                最近一次操作：@standardStatus
+            </div>
+        </div>
+    </Body>
+</NovaModal>
+
+<NovaModal Title="抽屉弹窗"
+            Visible="@drawerVisible"
+            IsDrawer="true"
+            DrawerPlacement="NovaAdminDrawerPlacement.Right"
+            DrawerWidth="420px"
+            YesButton="保存"
+            CloseButton="关闭"
+            OnYes="OnDrawerYes"
+            OnClose="OnDrawerClose">
+    <Body>
+        <div class="p-1">
+            <p class="mb-2">这是一个抽屉弹窗示例，适合承载侧边编辑和补充说明。</p>
+            <ul class="mb-0">
+                <li>位置：右侧</li>
+                <li>宽度：420px</li>
+                <li>用途：更适合表单补充信息或快速编辑</li>
+            </ul>
+        </div>
+    </Body>
+</NovaModal>
+
+@code {
+    private bool standardVisible;
+    private bool drawerVisible;
+
+    private string standardStatus = "尚未打开";
+    private string drawerStatus = "尚未打开";
+
+    private void OpenStandardModal()
+    {
+        standardStatus = "标准弹窗已打开";
+        standardVisible = true;
+    }
+
+    private async Task CloseStandardModal()
+    {
+        standardStatus = "标准弹窗主动关闭";
+        standardVisible = false;
+        await Task.Yield();
+    }
+
+    private async Task OnStandardYes()
+    {
+        standardStatus = "点击了标准弹窗的确认按钮";
+        standardVisible = false;
+        await Task.Yield();
+    }
+
+    private void OnStandardClose()
+    {
+        standardStatus = "标准弹窗已关闭";
+        standardVisible = false;
+    }
+
+    private void OpenDrawerModal()
+    {
+        drawerStatus = "抽屉弹窗已打开";
+        drawerVisible = true;
+    }
+
+    private async Task CloseDrawerModal()
+    {
+        drawerStatus = "抽屉弹窗主动关闭";
+        drawerVisible = false;
+        await Task.Yield();
+    }
+
+    private async Task OnDrawerYes()
+    {
+        drawerStatus = "点击了抽屉弹窗的保存按钮";
+        drawerVisible = false;
+        await Task.Yield();
+    }
+
+    private void OnDrawerClose()
+    {
+        drawerStatus = "抽屉弹窗已关闭";
+        drawerVisible = false;
+    }
+}

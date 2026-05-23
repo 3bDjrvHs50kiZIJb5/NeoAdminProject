@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <OutputType>Exe</OutputType>
+    <!-- .NET 10：从 watch 默认项中排除运行时变动的 DB / 上传文件，避免 Hot Reload 崩溃 -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);**/neoadmin.db;**/neoadmin.db-*;**/wwwroot/uploads/**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NeoAdmin.Blazor\NeoAdmin.Blazor.csproj" />
+    <PackageReference Include="NeoUI.Blazor" Version="4.0.0" />
+  </ItemGroup>
+
+  <!-- 上传图片、SQLite 写入勿参与 dotnet watch，避免 Hot Reload 崩溃 -->
+  <ItemGroup>
+    <Watch Remove="**/neoadmin.db" />
+    <Watch Remove="**/neoadmin.db-*" />
+    <Watch Remove="**/wwwroot/uploads/**" />
+    <Content Update="wwwroot/uploads/**" Watch="false" />
+    <None Update="neoadmin.db" Watch="false" />
+    <None Update="neoadmin.db-*" Watch="false" />
+  </ItemGroup>
+</Project>

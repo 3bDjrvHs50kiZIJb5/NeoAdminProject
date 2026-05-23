@@ -1,0 +1,158 @@
+@page "/admin/user"
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Components
+@using NeoAdmin.Blazor.Data.Entities
+
+<PageTitle>用户管理</PageTitle>
+
+<CrudTable @ref="table" TItem="SysUser" Title="用户管理" PageSize="20" SearchPlaceholder="账号/姓名.." InitQuery="InitQuery"
+    OnQuery="HandleQuery" OnSaving="HandleSaving" IsRowView="true" IsMultiSelect="true"
+    DialogContentSize="CrudDialogContentSize.X4l">
+    <Columns>
+        <DataTableColumn TData="CrudGridRow<SysUser>"
+                         TValue="long"
+                         Property="@(row => row.Item.Id)"
+                         Header="ID"
+                         Sortable="false"
+                         Width="180px" />
+        <DataTableColumn TData="CrudGridRow<SysUser>" TValue="string" Property="@(row => row.Item.Username)"
+            Header="用户名" Sortable="false">
+            <CellTemplate Context="row">
+                <span class="block truncate" title="@row.Item.Username">@row.Item.Username</span>
+            </CellTemplate>
+        </DataTableColumn>
+        <DataTableColumn TData="CrudGridRow<SysUser>" TValue="string" Property="@(row => row.Item.Nickname)" Header="昵称"
+            Sortable="false">
+            <CellTemplate Context="row">
+                <span class="block truncate" title="@row.Item.Nickname">@row.Item.Nickname</span>
+            </CellTemplate>
+        </DataTableColumn>
+        <DataTableColumn TData="CrudGridRow<SysUser>" TValue="bool" Property="@(row => row.Item.IsEnabled)" Header="启用"
+            Sortable="true" Width="100px">
+            <CellTemplate Context="row">
+                @if (row.Item.IsEnabled)
+                {
+                    <span class="text-emerald-600">是</span>
+                }
+                else
+                {
+                    <span class="text-red-500">否</span>
+                }
+            </CellTemplate>
+        </DataTableColumn>
+        <DataTableColumn TData="CrudGridRow<SysUser>" TValue="bool" Property="@(row => row.Item.IsSystem)" Header="系统">
+            <CellTemplate Context="row">
+                @if (row.Item.IsSystem)
+                {
+                    <span class="text-muted-foreground">是</span>
+                }
+            </CellTemplate>
+        </DataTableColumn>
+        <DataTableColumn TData="CrudGridRow<SysUser>" TValue="DateTime" Property="@(row => row.Item.LoginTime)"
+            Header="登录时间" Width="160px">
+            <CellTemplate Context="row">
+                @(row.Item.LoginTime == default ? "-" : row.Item.LoginTime.ToString("yyyy-MM-dd HH:mm"))
+            </CellTemplate>
+        </DataTableColumn>
+        <DataTableColumn TData="CrudGridRow<SysUser>" TValue="string" Property="@(row => row.Item.Description)"
+            Header="备注">
+            <CellTemplate Context="row">
+                <span class="block truncate" title="@row.Item.Description">@row.Item.Description</span>
+            </CellTemplate>
+        </DataTableColumn>
+        <DataTableColumn TData="CrudGridRow<SysUser>" TValue="string" Property="@(_ => string.Empty)"
+            Header="创建时间" Sortable="false" Width="160px">
+            <CellTemplate Context="row">@row.Item.CreatedTime.ToString("yyyy-MM-dd HH:mm:ss")</CellTemplate>
+        </DataTableColumn>
+    </Columns>
+    <EditTemplate Context="item">
+        <div class="grid gap-3 sm:grid-cols-2">
+            <div class="space-y-2">
+                <Label>用户名</Label>
+                <Input @bind-Value="item.Username" />
+            </div>
+            <div class="space-y-2">
+                <Label>昵称</Label>
+                <Input @bind-Value="item.Nickname" />
+            </div>
+        </div>
+        <div class="space-y-2">
+            <Label>密码</Label>
+            <Input Type="InputType.Password" Placeholder="@(item.Id > 0 ? "留空则不修改" : "请输入密码")"
+                @bind-Value="item.Password" />
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2">
+            <div class="flex items-center gap-2">
+                <Checkbox @bind-Checked="item.IsEnabled" Id="user-is-enabled" />
+                <Label for="user-is-enabled">启用</Label>
+            </div>
+        </div>
+        <div class="space-y-2">
+            <Label>备注</Label>
+            <Textarea @bind-Value="item.Description" />
+        </div>
+    </EditTemplate>
+</CrudTable>
+
+@code {
+    private CrudTable<SysUser> table = default!;
+
+    private Task InitQuery(CrudQueryInfo e)
+    {
+        e.Filters =
+        [
+        new CrudFilterInfo("启用", "IsEnabled", false, 4, "是,否", "true,false"),
+new CrudFilterInfo("系统用户", "IsSystem", false, 4, "是,否", "true,false"),
+new CrudFilterInfo("创建时间", "CreatedTime", CrudFilterType.DateRange, 4),
+new CrudFilterInfo("登录时间", "LoginTime", CrudFilterType.DateRange, 4),
+new CrudFilterInfo("用户名", "Username", CrudFilterType.Text, 2),
+];
+        return Task.CompletedTask;
+    }
+
+    private void HandleQuery(CrudQueryEventArgs<SysUser> e)
+    {
+        CrudFilterInfo[] filters = e.Filters;
+        DateTime? createdStart = null;
+        DateTime? createdEnd = null;
+        DateTime? loginStart = null;
+        DateTime? loginEnd = null;
+
+        if (filters[2].HasValue)
+        {
+            filters[2].TryGetDateRange(out createdStart, out createdEnd);
+        }
+
+        if (filters[3].HasValue)
+        {
+            filters[3].TryGetDateRange(out loginStart, out loginEnd);
+        }
+
+        e.Select!
+        .WhereIf(filters[0].HasValue, a => a.IsEnabled == filters[0].Value<bool>())
+        .WhereIf(filters[1].HasValue, a => a.IsSystem == filters[1].Value<bool>())
+        .WhereIf(createdStart.HasValue, a => a.CreatedTime >= createdStart!.Value)
+        .WhereIf(createdEnd.HasValue, a => a.CreatedTime < createdEnd!.Value.AddDays(1))
+        .WhereIf(loginStart.HasValue, a => a.LoginTime >= loginStart!.Value)
+        .WhereIf(loginEnd.HasValue, a => a.LoginTime < loginEnd!.Value.AddDays(1))
+        .WhereIf(filters[4].HasValue, a => a.Username.Contains(filters[4].Options[0].Value))
+        .WhereIf(!string.IsNullOrWhiteSpace(e.SearchText),
+        a => a.Username.Contains(e.SearchText!) ||
+        a.Nickname.Contains(e.SearchText!) ||
+        a.Description.Contains(e.SearchText!))
+        .OrderByDescending(a => a.CreatedTime);
+    }
+
+    private void HandleSaving(CrudConfirmEventArgs<SysUser> e)
+    {
+        if (string.IsNullOrWhiteSpace(e.Item.Username))
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        e.Item.Username = e.Item.Username.Trim();
+        e.Item.Nickname = e.Item.Nickname?.Trim() ?? string.Empty;
+        e.Item.Description = e.Item.Description?.Trim() ?? string.Empty;
+    }
+}

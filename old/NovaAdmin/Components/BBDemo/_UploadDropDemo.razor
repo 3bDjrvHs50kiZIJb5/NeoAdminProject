@@ -1,0 +1,30 @@
+@page "/BBDemo/UploadDropDemo"
+
+<PageTitle>拖拽上传演示</PageTitle>
+
+<div class="container-fluid py-3 demo-page">
+    <div class="card mb-3">
+        <div class="card-header">
+            <strong>DropUpload 演示</strong>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">
+                这个页面演示拖拽上传组件，适合用于附件上传、资料收集和文件导入场景。
+            </p>
+
+            <div class="mb-3">
+                <DropUpload class="upload-drop-demo"
+                            TValue="string"
+                            Accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                            ShowUploadFileList="true"
+                            ShowDeleteButton="true"
+                            ShowDownloadButton="true"
+                            IsMultiple="true" />
+            </div>
+
+            <div class="border rounded p-3 bg-light">
+                <div>支持拖拽、预览、删除和下载。</div>
+            </div>
+        </div>
+    </div>
+</div>

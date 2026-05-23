@@ -1,0 +1,52 @@
+@page "/BBDemo/RateDemo"
+
+<PageTitle>评分组件演示</PageTitle>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <strong>Rate 评分组件演示</strong>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">
+                下面演示三个常用场景：基础评分、只读展示和爱心风格。
+            </p>
+
+            <div class="row g-3">
+                <div class="col-12 col-lg-4">
+                    <div class="border rounded p-3 h-100 bg-white">
+                        <div class="fw-semibold mb-2">基础用法</div>
+                        <div class="mb-2">
+                            <Rate Value="@bindValue3" ShowValue="true" IsWrap="true"></Rate>
+                        </div>
+                        <div class="small text-muted">当前评分：@bindValue3</div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-4">
+                    <div class="border rounded p-3 h-100 bg-white">
+                        <div class="fw-semibold mb-2">只读展示</div>
+                        <div class="mb-2">
+                            <Rate Value="@readonlyValue" ShowValue="true" IsReadonly="true"></Rate>
+                        </div>
+                        <div class="small text-muted">适合详情页或列表结果展示。</div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-4">
+                    <div class="border rounded p-3 h-100 bg-white">
+                        <div class="fw-semibold mb-2">爱心风格</div>
+                        <div class="mb-2">
+                            <Rate Value="@heartValue" ShowValue="true" Icon="fa-solid fa-heart" ActiveColor="Color.Danger"></Rate>
+                        </div>
+                        <div class="small text-muted">可以通过图标和颜色做不同视觉表达。</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+@code {
+    private int bindValue3 = 3;
+    private int readonlyValue = 4;
+    private int heartValue = 5;
+}

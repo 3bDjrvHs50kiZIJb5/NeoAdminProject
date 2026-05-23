@@ -1,0 +1,187 @@
+@page "/neo-demo/ui/layout-tools"
+@layout LayoutAdmin
+@using NeoUI.Blazor.Primitives.Services
+@inject ILocalizer Localizer
+
+<PageTitle>布局与主题演示</PageTitle>
+
+<div class="flex flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">布局与主题</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                Separator、Resizable、Sortable、Theme Switcher、Localization — 分隔线、可调布局、拖拽排序与全局文案。
+                参考 <a class="text-primary underline-offset-4 hover:underline"
+                       href="https://demos.neoui.io/components"
+                       target="_blank"
+                       rel="noopener noreferrer">NeoUI Components</a>。
+            </p>
+        </div>
+
+        <div class="p-4">
+            <Tabs DefaultValue="separator" Class="w-full">
+                <div class="overflow-x-auto pb-1">
+                    <TabsList Class="inline-flex h-auto w-max min-w-full flex-wrap gap-1">
+                        <TabsTrigger Value="separator">Separator</TabsTrigger>
+                        <TabsTrigger Value="resizable">Resizable</TabsTrigger>
+                        <TabsTrigger Value="sortable">Sortable</TabsTrigger>
+                        <TabsTrigger Value="theme-switcher">Theme Switcher</TabsTrigger>
+                        <TabsTrigger Value="localization">Localization</TabsTrigger>
+                    </TabsList>
+                </div>
+
+                <TabsContent Value="separator" Class="mt-4">
+                    <DemoSection Title="Separator"
+                                 Description="Visual dividers for content sections"
+                                 Code="@LayoutToolsDemoSnippets.Separator">
+                        <div class="max-w-lg space-y-6">
+                            <div>
+                                <p class="text-sm font-medium">账户</p>
+                                <p class="text-sm text-muted-foreground">管理个人资料与登录方式</p>
+                                <Separator Class="my-4" />
+                                <p class="text-sm font-medium">通知</p>
+                                <p class="text-sm text-muted-foreground">邮件与站内消息偏好</p>
+                            </div>
+                            <div class="flex h-10 items-center gap-3 text-sm">
+                                <span>列表</span>
+                                <Separator Orientation="SeparatorOrientation.Vertical" Class="h-4" />
+                                <span>网格</span>
+                                <Separator Orientation="SeparatorOrientation.Vertical" LineStyle="SeparatorStyle.Dashed" Class="h-4" />
+                                <span>看板</span>
+                            </div>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="resizable" Class="mt-4">
+                    <DemoSection Title="Resizable"
+                                 Description="Split layouts with draggable handles"
+                                 Code="@LayoutToolsDemoSnippets.Resizable">
+                        <ResizablePanelGroup Direction="ResizableDirection.Horizontal"
+                                             Class="h-52 max-w-2xl rounded-lg border"
+                                             OnLayoutChange="OnResizableLayoutChange">
+                            <ResizablePanel DefaultSize="35" MinSize="20" Class="bg-muted/30">
+                                <div class="flex h-full flex-col justify-center p-4">
+                                    <p class="text-sm font-medium">侧栏</p>
+                                    <p class="text-xs text-muted-foreground">拖动中间手柄调整宽度</p>
+                                </div>
+                            </ResizablePanel>
+                            <ResizableHandle WithHandle="true" />
+                            <ResizablePanel DefaultSize="65" MinSize="30">
+                                <div class="flex h-full flex-col justify-center p-4">
+                                    <p class="text-sm font-medium">主内容区</p>
+                                    <p class="text-xs text-muted-foreground">面板尺寸以百分比存储</p>
+                                </div>
+                            </ResizablePanel>
+                        </ResizablePanelGroup>
+                        @if (resizableLayoutSummary is not null)
+                        {
+                            <p class="mt-3 text-sm text-muted-foreground">当前布局：@resizableLayoutSummary</p>
+                        }
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="sortable" Class="mt-4">
+                    <DemoSection Title="Sortable"
+                                 Description="Drag-and-drop sortable lists with keyboard support"
+                                 Code="@LayoutToolsDemoSnippets.Sortable">
+                        <Sortable TItem="DemoSortItem"
+                                  Items="@sortItems"
+                                  GetItemId="@(item => item.Id)"
+                                  OnItemsReordered="OnSortItemsReordered">
+                            <SortableContent Class="max-w-md space-y-2">
+                                @foreach (DemoSortItem item in sortItems)
+                                {
+                                    <SortableItem Value="@item.Id" Class="rounded-lg border bg-card p-3 shadow-sm">
+                                        <div class="flex items-center gap-3">
+                                            <SortableItemHandle />
+                                            <span class="text-sm font-medium">@item.Label</span>
+                                        </div>
+                                    </SortableItem>
+                                }
+                            </SortableContent>
+                        </Sortable>
+                        <p class="mt-3 text-sm text-muted-foreground">
+                            当前顺序：@string.Join(" → ", sortItems.Select(i => i.Label))
+                        </p>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="theme-switcher" Class="mt-4">
+                    <DemoSection Title="Theme Switcher"
+                                 Description="Multi-theme colour palette switcher with live preview"
+                                 Code="@LayoutToolsDemoSnippets.ThemeSwitcher">
+                        <div class="flex max-w-lg flex-col gap-4 rounded-lg border p-6">
+                            <p class="text-sm text-muted-foreground">
+                                与后台顶栏相同：点击按钮可切换明/暗色、主色与圆角等主题变量。
+                            </p>
+                            <div class="flex items-center gap-3">
+                                <ThemeSwitcher Strategy="PositioningStrategy.Fixed"
+                                               ShowStyles="true"
+                                               TriggerClass="size-9"
+                                               PopoverContentClass="!w-10 !h-16" />
+                                <span class="text-sm">打开主题面板预览效果</span>
+                            </div>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="localization" Class="mt-4">
+                    <DemoSection Title="Localization"
+                                 Description="DI service for global component chrome strings"
+                                 Code="@LayoutToolsDemoSnippets.Localization">
+                        <div class="max-w-lg space-y-4">
+                            <p class="text-sm text-muted-foreground">
+                                通过 <code>ILocalizer</code> 解析 NeoUI 内置文案键（可在
+                                <code>AddNeoUIComponents(localizer =&gt; …)</code> 中覆盖）。
+                            </p>
+                            <div class="rounded-lg border divide-y text-sm">
+                                <div class="grid grid-cols-[1fr_auto] gap-4 px-4 py-3">
+                                    <span class="font-mono text-xs text-muted-foreground">Combobox.Placeholder</span>
+                                    <span>@Localizer["Combobox.Placeholder"]</span>
+                                </div>
+                                <div class="grid grid-cols-[1fr_auto] gap-4 px-4 py-3">
+                                    <span class="font-mono text-xs text-muted-foreground">DataTable.Loading</span>
+                                    <span>@Localizer["DataTable.Loading"]</span>
+                                </div>
+                                <div class="grid grid-cols-[1fr_auto] gap-4 px-4 py-3">
+                                    <span class="font-mono text-xs text-muted-foreground">Sortable.DragHandle</span>
+                                    <span>@Localizer["Sortable.DragHandle"]</span>
+                                </div>
+                                <div class="grid grid-cols-[1fr_auto] gap-4 px-4 py-3">
+                                    <span class="font-mono text-xs text-muted-foreground">Pagination.ShowingFormat</span>
+                                    <span>@Localizer["Pagination.ShowingFormat", 1, 10, 42]</span>
+                                </div>
+                            </div>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+            </Tabs>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string? resizableLayoutSummary;
+
+    private List<DemoSortItem> sortItems =
+    [
+        new("task-1", "整理需求文档"),
+        new("task-2", "实现布局演示页"),
+        new("task-3", "联调主题与本地化"),
+        new("task-4", "提交代码评审")
+    ];
+
+    private Task OnSortItemsReordered(IList<DemoSortItem> items)
+    {
+        sortItems = items.ToList();
+        return Task.CompletedTask;
+    }
+
+    private void OnResizableLayoutChange(double[] sizes)
+    {
+        resizableLayoutSummary = string.Join(" / ", sizes.Select(s => $"{s:F0}%"));
+    }
+
+    private sealed record DemoSortItem(string Id, string Label);
+}

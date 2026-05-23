@@ -1,0 +1,656 @@
+@page "/admin/task-scheduler"
+@layout LayoutAdmin
+@using FreeScheduler
+@using NeoAdmin.Blazor.Components
+@using ResultGetClusterLogs = FreeScheduler.Datafeed.ResultGetClusterLogs
+@using ResultGetLogs = FreeScheduler.Datafeed.ResultGetLogs
+@using ResultGetPage = FreeScheduler.Datafeed.ResultGetPage
+@using ClusterLog = FreeScheduler.Datafeed.ClusterLog
+@using NeoAdmin.Blazor.Services
+@using FreeTaskStatus = FreeScheduler.TaskStatus
+@using Microsoft.Extensions.Hosting
+@inject TaskSchedulerService TaskSchedulerService
+@inject IHostEnvironment HostEnvironment
+@inject IToastService ToastService
+
+<PageTitle>定时任务</PageTitle>
+
+<div class="flex flex-col flex-1 min-h-0 gap-4">
+    @if (!string.IsNullOrWhiteSpace(pageResult?.Description))
+    {
+        <Alert AccentBorder="true">
+            <AlertDescription>
+                @pageResult.Description
+                @if (HostEnvironment.IsDevelopment())
+                {
+                    <span class="text-muted-foreground">，未启动任务（开发环境）</span>
+                }
+            </AlertDescription>
+        </Alert>
+    }
+
+    <div class="rounded-lg border bg-card p-4 shadow-sm">
+        @if (queryInfo.Filters.Length > 0)
+        {
+            <CrudSearchFilter QueryInfo="queryInfo" />
+        }
+
+        <div class="mb-4 flex flex-wrap items-center gap-2">
+            <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small" OnClick="BeginAdd">
+                <LucideIcon Name="plus" Size="16" />
+                添加
+            </Button>
+            <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small" OnClick="LoadAsync" Disabled="@isLoading">
+                <LucideIcon Name="refresh-cw" Size="16" />
+                刷新
+            </Button>
+            @if (pageResult?.Clusters?.Any() == true)
+            {
+                <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small" OnClick="OpenClusterLog">
+                    <LucideIcon Name="scroll-text" Size="16" />
+                    集群日志
+                </Button>
+            }
+            <form class="ml-auto w-60"
+                  @onsubmit="HandleSearchSubmit"
+                  @onsubmit:preventDefault>
+                <Input Type="InputType.Search"
+                       @bind-Value="searchText"
+                       Placeholder="标题.."
+                       @onblur="HandleSearchBlur" />
+            </form>
+        </div>
+
+        <div class="relative min-h-[200px] overflow-x-auto rounded-md border">
+            @if (isLoading)
+            {
+                <div class="absolute inset-0 z-10 flex items-center justify-center bg-background/60">
+                    <LucideIcon Name="loader-circle" Size="24" Class="animate-spin text-primary" />
+                </div>
+            }
+
+            <table class="w-full min-w-[960px] text-sm">
+                <thead class="border-b bg-muted/40">
+                    <tr>
+                        <th class="w-10 px-2 py-2 text-left">#</th>
+                        <th class="min-w-[200px] px-2 py-2 text-left">操作</th>
+                        <th class="px-2 py-2 text-left">标题</th>
+                        <th class="px-2 py-2 text-left">定时</th>
+                        <th class="px-2 py-2 text-left">轮次</th>
+                        <th class="px-2 py-2 text-left">内容</th>
+                        <th class="px-2 py-2 text-left">状态</th>
+                        <th class="px-2 py-2 text-left">错误</th>
+                        <th class="px-2 py-2 text-left">最后运行</th>
+                        <th class="px-2 py-2 text-left">下次运行</th>
+                        <th class="px-2 py-2 text-left">创建时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (pageResult is null || pageResult.Tasks.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="11" class="px-4 py-10 text-center text-muted-foreground">
+                                @(isLoaded ? "暂无数据" : "加载中...")
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @for (int index = 0; index < pageResult.Tasks.Count; index++)
+                        {
+                            TaskInfo item = pageResult.Tasks[index];
+                            DateTime? nextTime = index < pageResult.NextTimes.Count
+                                ? pageResult.NextTimes[index]
+                                : null;
+                            <tr class="border-b hover:bg-muted/30">
+                                <td class="px-2 py-2">@((pageNumber - 1) * pageSize + index + 1)</td>
+                                <td class="px-2 py-2">
+                                    <div class="flex flex-wrap gap-1">
+                                        <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small"
+                                                OnClick="@(() => ConfirmRemove(item))">删除</Button>
+                                        @if ((int)item.Status == 1)
+                                        {
+                                            <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small"
+                                                    OnClick="@(() => ResumeTask(item))">恢复</Button>
+                                        }
+                                        @if ((int)item.Status == 0)
+                                        {
+                                            <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small"
+                                                    OnClick="@(() => PauseTask(item))">暂停</Button>
+                                        }
+                                        @if ((int)item.Status != 2)
+                                        {
+                                            <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small"
+                                                    OnClick="@(() => RunNowTask(item))">立即触发</Button>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="max-w-[180px] truncate px-2 py-2" title="@item.Topic">@item.Topic</td>
+                                <td class="px-2 py-2">@TaskSchedulerUi.FormatInterval(item)</td>
+                                <td class="px-2 py-2">
+                                    <Button Variant="ButtonVariant.Ghost" Size="ButtonSize.Small"
+                                            OnClick="@(() => OpenTaskLog(item))">
+                                        @if (item.Round == -1)
+                                        {
+                                            <span>@item.CurrentRound/∞</span>
+                                        }
+                                        else
+                                        {
+                                            <span>@item.CurrentRound/@item.Round</span>
+                                        }
+                                    </Button>
+                                </td>
+                                <td class="max-w-[200px] truncate px-2 py-2" title="@item.Body">@item.Body</td>
+                                <td class="px-2 py-2">@TaskSchedulerUi.FormatStatus(item)</td>
+                                <td class="px-2 py-2">@item.ErrorTimes</td>
+                                <td class="px-2 py-2">@item.LastRunTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                <td class="px-2 py-2">@(nextTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")</td>
+                                <td class="px-2 py-2">@item.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
+            <span>共 @total 条</span>
+            <div class="flex items-center gap-2">
+                <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small" Disabled="@(pageNumber <= 1)"
+                        OnClick="PrevPage">上一页</Button>
+                <span>@pageNumber / @maxPageNumber</span>
+                <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small" Disabled="@(pageNumber >= maxPageNumber)"
+                        OnClick="NextPage">下一页</Button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<Dialog @bind-Open="editorOpen">
+    <DialogContent Variant="DialogContentVariant.Form" Class="sm:max-w-2xl">
+        <DialogHeader>
+            <DialogTitle>添加定时任务</DialogTitle>
+            <DialogDescription>选择模板并配置调度参数。</DialogDescription>
+        </DialogHeader>
+        @if (editorTask is not null)
+        {
+            <div class="max-h-[70vh] space-y-4 overflow-y-auto p-1">
+                <div class="space-y-2">
+                    <Label>模板</Label>
+                    <div class="flex flex-wrap gap-2">
+                        <Button Variant="@(taskTemplate == "0" ? ButtonVariant.Default : ButtonVariant.Outline)"
+                                Size="ButtonSize.Small" OnClick="@(() => ChangeTemplate("0"))">自定义</Button>
+                        <Button Variant="@(taskTemplate == "1" ? ButtonVariant.Default : ButtonVariant.Outline)"
+                                Size="ButtonSize.Small" OnClick="@(() => ChangeTemplate("1"))">HTTP 请求</Button>
+                        <Button Variant="@(taskTemplate == "2" ? ButtonVariant.Default : ButtonVariant.Outline)"
+                                Size="ButtonSize.Small" OnClick="@(() => ChangeTemplate("2"))">清理任务数据</Button>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <Label>标题</Label>
+                    <Input @bind-Value="editorTask.Topic" MaxLength="255" />
+                </div>
+                <div class="space-y-2">
+                    <Label>@(editorTask.Topic == "[系统预留]清理任务数据" ? "清理多久之前的记录(单位:秒)" : "内容")</Label>
+                    <Textarea Class="min-h-28" @bind-Value="editorTask.Body" MaxLength="1024" />
+                </div>
+                <div class="grid gap-3 sm:grid-cols-3">
+                    <div class="space-y-2">
+                        <Label>定时</Label>
+                        <Select TValue="TaskInterval" Value="editorTask.Interval"
+                                ValueChanged="HandleIntervalChanged">
+                            <SelectTrigger><SelectValue Placeholder="选择" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem Value="@((TaskInterval)1)" TValue="TaskInterval">秒</SelectItem>
+                                <SelectItem Value="@((TaskInterval)11)" TValue="TaskInterval">每天</SelectItem>
+                                <SelectItem Value="@((TaskInterval)12)" TValue="TaskInterval">每周</SelectItem>
+                                <SelectItem Value="@((TaskInterval)13)" TValue="TaskInterval">每月</SelectItem>
+                                <SelectItem Value="@((TaskInterval)21)" TValue="TaskInterval">Cron</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div class="space-y-2 sm:col-span-1">
+                        <Label>@TaskSchedulerUi.FormatIntervalArgumentLabel(editorTask)</Label>
+                        <Input @bind-Value="editorTask.IntervalArgument" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label>轮次</Label>
+                        <div class="flex items-center gap-2 pb-2">
+                            <Checkbox Checked="roundNever" CheckedChanged="HandleRoundNeverChanged" Id="round-never" />
+                            <Label for="round-never" class="font-normal">永久</Label>
+                        </div>
+                        @if (roundNever)
+                        {
+                            <Input Value="∞" Disabled="true" />
+                        }
+                        else
+                        {
+                            <Input Type="InputType.Number"
+                                   Value="@editorTask.Round.ToString()"
+                                   ValueChanged="@(v => editorTask.Round = int.TryParse(v, out int n) ? n : 1)" />
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+        <DialogFooter Class="mt-4">
+            <Button Variant="ButtonVariant.Outline" OnClick="CloseEditor">取消</Button>
+            <Button Variant="ButtonVariant.Outline" OnClick="SaveTask">保存</Button>
+        </DialogFooter>
+    </DialogContent>
+</Dialog>
+
+<Dialog @bind-Open="taskLogOpen">
+    <DialogContent Variant="DialogContentVariant.Form" Class="sm:max-w-4xl">
+        <DialogHeader>
+            <DialogTitle>任务日志 — @(logTask?.Topic)</DialogTitle>
+        </DialogHeader>
+        <div class="max-h-[60vh] overflow-auto rounded-md border">
+            <table class="w-full text-sm">
+                <thead class="border-b bg-muted/40">
+                    <tr>
+                        <th class="px-2 py-2 text-left">轮次</th>
+                        <th class="px-2 py-2 text-left">耗时</th>
+                        <th class="px-2 py-2 text-left">成功</th>
+                        <th class="px-2 py-2 text-left">异常</th>
+                        <th class="px-2 py-2 text-left">备注</th>
+                        <th class="px-2 py-2 text-left">时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (taskLogResult?.Logs is { Count: > 0 } logs)
+                    {
+                        @foreach (TaskLog log in logs)
+                        {
+                            <tr class="border-b">
+                                <td class="px-2 py-2">@log.Round</td>
+                                <td class="px-2 py-2">@log.ElapsedMilliseconds ms</td>
+                                <td class="px-2 py-2">
+                                    <span class="@(log.Success ? "text-emerald-600" : "text-red-500")">
+                                        @(log.Success ? "是" : "否")
+                                    </span>
+                                </td>
+                                <td class="max-w-[200px] break-all px-2 py-2">@log.Exception</td>
+                                <td class="max-w-[200px] break-all px-2 py-2">@Truncate(log.Remark, 512)</td>
+                                <td class="px-2 py-2">@log.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="px-4 py-8 text-center text-muted-foreground">暂无日志</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-2 flex justify-between text-sm text-muted-foreground">
+            <span>共 @logTotal 条</span>
+            <div class="flex gap-2">
+                <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small" Disabled="@(logPageNumber <= 1)"
+                        OnClick="LogPrevPage">上一页</Button>
+                <span>@logPageNumber / @logMaxPageNumber</span>
+                <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small"
+                        Disabled="@(logPageNumber >= logMaxPageNumber)" OnClick="LogNextPage">下一页</Button>
+            </div>
+        </div>
+        <DialogFooter Class="mt-4">
+            <Button Variant="ButtonVariant.Outline" OnClick="CloseTaskLog">关闭</Button>
+        </DialogFooter>
+    </DialogContent>
+</Dialog>
+
+<Dialog @bind-Open="clusterLogOpen">
+    <DialogContent Variant="DialogContentVariant.Form" Class="sm:max-w-4xl">
+        <DialogHeader>
+            <DialogTitle>集群日志</DialogTitle>
+        </DialogHeader>
+        <div class="max-h-[60vh] overflow-auto rounded-md border">
+            <table class="w-full text-sm">
+                <thead class="border-b bg-muted/40">
+                    <tr>
+                        <th class="px-2 py-2 text-left">时间</th>
+                        <th class="px-2 py-2 text-left">集群 Id</th>
+                        <th class="px-2 py-2 text-left">集群名称</th>
+                        <th class="px-2 py-2 text-left">内容</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (clusterLogResult?.Logs is { Count: > 0 } clusterLogs)
+                    {
+                        @foreach (ClusterLog log in clusterLogs)
+                        {
+                            <tr class="border-b">
+                                <td class="px-2 py-2">@log.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                <td class="px-2 py-2">@log.ClusterId</td>
+                                <td class="px-2 py-2">@log.ClusterName</td>
+                                <td class="break-all px-2 py-2">@log.Message</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="px-4 py-8 text-center text-muted-foreground">暂无日志</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <DialogFooter Class="mt-4">
+            <Button Variant="ButtonVariant.Outline" OnClick="CloseClusterLog">关闭</Button>
+        </DialogFooter>
+    </DialogContent>
+</Dialog>
+
+<Dialog @bind-Open="confirmDeleteOpen">
+    <DialogContent Class="sm:max-w-md">
+        <DialogHeader>
+            <DialogTitle>确认删除</DialogTitle>
+            <DialogDescription>确定删除该定时任务吗？此操作不可恢复。</DialogDescription>
+        </DialogHeader>
+        <DialogFooter Class="mt-4">
+            <Button Variant="ButtonVariant.Outline" OnClick="CancelDelete">取消</Button>
+            <Button Variant="ButtonVariant.Outline" OnClick="ExecuteDelete">删除</Button>
+        </DialogFooter>
+    </DialogContent>
+</Dialog>
+
+@code {
+    private readonly CrudQueryInfo queryInfo = new();
+    private ResultGetPage? pageResult;
+    private bool isLoading;
+    private bool isLoaded;
+    private string? searchText;
+    private string? appliedSearchText;
+    private int pageNumber = 1;
+    private int pageSize = 30;
+    private long total;
+    private int maxPageNumber = 1;
+
+    private bool editorOpen;
+    private TaskInfo? editorTask;
+    private string taskTemplate = "0";
+    private bool roundNever = true;
+
+    private bool taskLogOpen;
+    private TaskInfo? logTask;
+    private ResultGetLogs? taskLogResult;
+    private int logPageNumber = 1;
+    private int logPageSize = 10;
+    private long logTotal;
+    private int logMaxPageNumber = 1;
+
+    private bool clusterLogOpen;
+    private ResultGetClusterLogs? clusterLogResult;
+
+    private bool confirmDeleteOpen;
+    private TaskInfo? deleteTarget;
+
+    protected override async Task OnInitializedAsync()
+    {
+        queryInfo.Filters =
+        [
+            new CrudFilterInfo("集群", "ClusterId", false, 12, string.Empty, string.Empty),
+            new CrudFilterInfo("状态", "Status", false, 12, "运行中,暂停中,已结束", "0,1,2")
+        ];
+        queryInfo.InvokeQueryAsync = LoadAsync;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        string? clusterId = queryInfo.Filters[0].HasValue
+            ? queryInfo.Filters[0].Value<string>()
+            : null;
+        FreeTaskStatus? status = queryInfo.Filters[1].HasValue
+            ? queryInfo.Filters[1].Value<FreeTaskStatus>()
+            : null;
+
+        pageResult = TaskSchedulerService.GetPage(
+            clusterId,
+            appliedSearchText,
+            status,
+            pageSize,
+            pageNumber);
+
+        total = pageResult.Total;
+        maxPageNumber = Math.Max(1, (int)Math.Ceiling((double)total / pageSize));
+
+        if (pageResult.Clusters?.Any() == true)
+        {
+            queryInfo.Filters[0] = new CrudFilterInfo(
+                "集群",
+                "ClusterId",
+                false,
+                12,
+                string.Join(',', pageResult.Clusters.Select(a => $"{a.Name}({a.TaskCount})")),
+                string.Join(',', pageResult.Clusters.Select(a => a.Id)));
+        }
+
+        isLoading = false;
+        isLoaded = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleSearchSubmit() => await SearchAsync();
+
+    private async Task HandleSearchBlur() => await SearchAsync();
+
+    private async Task SearchAsync()
+    {
+        string? normalized = string.IsNullOrWhiteSpace(searchText) ? null : searchText.Trim();
+        if (string.Equals(appliedSearchText, normalized, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        appliedSearchText = normalized;
+        searchText = normalized;
+        pageNumber = 1;
+        await LoadAsync();
+    }
+
+    private async Task PrevPage()
+    {
+        if (pageNumber > 1)
+        {
+            pageNumber--;
+            await LoadAsync();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        if (pageNumber < maxPageNumber)
+        {
+            pageNumber++;
+            await LoadAsync();
+        }
+    }
+
+    private void BeginAdd()
+    {
+        editorTask = new TaskInfo();
+        if ((int)editorTask.Interval == 0)
+        {
+            TaskSchedulerUi.ApplyIntervalDefaults(editorTask, (TaskInterval)1);
+        }
+
+        if (editorTask.Round == 0)
+        {
+            editorTask.Round = -1;
+        }
+
+        roundNever = editorTask.Round < 0;
+        taskTemplate = "0";
+        editorOpen = true;
+    }
+
+    private void CloseEditor()
+    {
+        editorOpen = false;
+        editorTask = null;
+    }
+
+    private async Task SaveTask()
+    {
+        if (editorTask is null)
+        {
+            return;
+        }
+
+        TaskSchedulerService.AddTask(
+            editorTask.Topic,
+            editorTask.Body,
+            editorTask.Round,
+            editorTask.Interval,
+            editorTask.IntervalArgument);
+
+        ToastService.Success("定时任务", "任务已添加");
+        CloseEditor();
+        await LoadAsync();
+    }
+
+    private void ChangeTemplate(string template)
+    {
+        taskTemplate = template;
+        if (editorTask is not null)
+        {
+            TaskSchedulerUi.ApplyTemplate(editorTask, template);
+        }
+    }
+
+    private void HandleIntervalChanged(TaskInterval interval)
+    {
+        if (editorTask is not null)
+        {
+            TaskSchedulerUi.ApplyIntervalDefaults(editorTask, interval);
+        }
+    }
+
+    private void HandleRoundNeverChanged(bool value)
+    {
+        roundNever = value;
+        if (editorTask is null)
+        {
+            return;
+        }
+
+        editorTask.Round = value ? -1 : Math.Max(editorTask.Round, 1);
+    }
+
+    private void ConfirmRemove(TaskInfo item)
+    {
+        deleteTarget = item;
+        confirmDeleteOpen = true;
+    }
+
+    private void CancelDelete()
+    {
+        confirmDeleteOpen = false;
+        deleteTarget = null;
+    }
+
+    private async Task ExecuteDelete()
+    {
+        if (deleteTarget is not null)
+        {
+            TaskSchedulerService.RemoveTask(deleteTarget.Id);
+            ToastService.Success("定时任务", "已删除");
+        }
+
+        CancelDelete();
+        await LoadAsync();
+    }
+
+    private async Task ResumeTask(TaskInfo item)
+    {
+        TaskSchedulerService.ResumeTask(item.Id);
+        await LoadAsync();
+    }
+
+    private async Task PauseTask(TaskInfo item)
+    {
+        TaskSchedulerService.PauseTask(item.Id);
+        await LoadAsync();
+    }
+
+    private async Task RunNowTask(TaskInfo item)
+    {
+        TaskSchedulerService.RunNowTask(item.Id);
+        ToastService.Info("定时任务", "已触发执行");
+        await LoadAsync();
+    }
+
+    private async Task OpenTaskLog(TaskInfo item)
+    {
+        logTask = item;
+        logPageNumber = 1;
+        await LoadTaskLogAsync();
+        taskLogOpen = true;
+    }
+
+    private async Task LoadTaskLogAsync()
+    {
+        if (logTask is null)
+        {
+            return;
+        }
+
+        taskLogResult = TaskSchedulerService.GetLogs(logTask.Id, logPageSize, logPageNumber);
+        logTotal = taskLogResult.Total;
+        logMaxPageNumber = Math.Max(1, (int)Math.Ceiling((double)logTotal / logPageSize));
+    }
+
+    private void CloseTaskLog()
+    {
+        taskLogOpen = false;
+        logTask = null;
+        taskLogResult = null;
+    }
+
+    private async Task LogPrevPage()
+    {
+        if (logPageNumber > 1)
+        {
+            logPageNumber--;
+            await LoadTaskLogAsync();
+        }
+    }
+
+    private async Task LogNextPage()
+    {
+        if (logPageNumber < logMaxPageNumber)
+        {
+            logPageNumber++;
+            await LoadTaskLogAsync();
+        }
+    }
+
+    private async Task OpenClusterLog()
+    {
+        clusterLogResult = TaskSchedulerService.GetClusterLogs(10, 1);
+        clusterLogOpen = true;
+    }
+
+    private void CloseClusterLog()
+    {
+        clusterLogOpen = false;
+        clusterLogResult = null;
+    }
+
+    private static string Truncate(string? text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+        {
+            return text ?? string.Empty;
+        }
+
+        return text[..maxLength] + "...";
+    }
+}

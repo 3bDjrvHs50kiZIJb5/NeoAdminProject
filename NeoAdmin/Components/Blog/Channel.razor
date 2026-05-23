@@ -1,0 +1,175 @@
+@page "/Blog/Channel"
+@namespace NeoAdmin.Components.Blog
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Components
+@inject IFreeSql FreeSql
+
+<PageTitle>技术频道</PageTitle>
+
+<div class="flex flex-col flex-1 min-h-0">
+    <CrudTable @ref="table"
+               TItem="BlogChannel"
+               Title="技术频道"
+               PageSize="50"
+               SearchPlaceholder="频道名称 / 编码.."
+               InitQuery="InitQuery"
+               OnQuery="HandleQuery"
+               DialogContentSize="CrudDialogContentSize.Lg">
+        <Columns>
+            <DataTableColumn TData="CrudGridRow<BlogChannel>"
+                             TValue="long"
+                             Property="@(row => row.Item.Id)"
+                             Header="ID"
+                             Sortable="false"
+                             Width="180px" />
+            <DataTableColumn TData="CrudGridRow<BlogChannel>"
+                             TValue="string"
+                             Property="@(row => row.Item.ChannelName)"
+                             Header="频道名称"
+                             Sortable="false" />
+            <DataTableColumn TData="CrudGridRow<BlogChannel>"
+                             TValue="string"
+                             Property="@(row => row.Item.ChannelCode)"
+                             Header="编码"
+                             Sortable="false"
+                             Width="120px" />
+            <DataTableColumn TData="CrudGridRow<BlogChannel>"
+                             TValue="string"
+                             Property="@(row => row.Item.Thumbnail)"
+                             Header="封面图"
+                             Sortable="false">
+                <CellTemplate Context="row">
+                    <span class="block truncate" title="@row.Item.Thumbnail">@row.Item.Thumbnail</span>
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<BlogChannel>"
+                             TValue="string"
+                             Property="@(row => row.Item.Remark)"
+                             Header="备注描述"
+                             Sortable="false">
+                <CellTemplate Context="row">
+                    <span class="block truncate" title="@row.Item.Remark">@row.Item.Remark</span>
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<BlogChannel>"
+                             TValue="int"
+                             Property="@(row => row.Item.SortCode)"
+                             Header="排序"
+                             Sortable="false"
+                             Width="72px" />
+            <DataTableColumn TData="CrudGridRow<BlogChannel>"
+                             TValue="bool"
+                             Property="@(row => row.Item.Status)"
+                             Header="有效"
+                             Sortable="false"
+                             Width="72px">
+                <CellTemplate Context="row">
+                    @(row.Item.Status ? "是" : "否")
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<BlogChannel>"
+                             TValue="string"
+                             Property="@(_ => string.Empty)"
+                             Header="创建时间"
+                             Sortable="false"
+                             Width="160px">
+                <CellTemplate Context="row">
+                    @(row.Item.CreatedTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")
+                </CellTemplate>
+            </DataTableColumn>
+        </Columns>
+        <RowActionsContent Context="row">
+            <Button Variant="ButtonVariant.Ghost"
+                    Size="ButtonSize.Small"
+                    Title="分配标签"
+                    OnClick="@(() => allocChannel = row.Item)">
+                <LucideIcon Name="tags" Size="16" />
+                <span class="sr-only">分配标签</span>
+            </Button>
+        </RowActionsContent>
+        <EditTemplate Context="item">
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div class="space-y-2">
+                    <Label For="channel-name">频道名称</Label>
+                    <Input id="channel-name" Class="w-full" MaxLength="50" @bind-Value="item.ChannelName" />
+                </div>
+                <div class="space-y-2">
+                    <Label For="channel-code">编码</Label>
+                    <Input id="channel-code" Class="w-full" MaxLength="50" @bind-Value="item.ChannelCode" />
+                </div>
+            </div>
+            <div class="space-y-2">
+                <Label For="channel-thumb">封面图</Label>
+                <Input id="channel-thumb" Class="w-full" MaxLength="100" @bind-Value="item.Thumbnail" />
+            </div>
+            <div class="space-y-2">
+                <Label For="channel-remark">备注描述</Label>
+                <Textarea id="channel-remark" Class="min-h-24 w-full" MaxLength="500" @bind-Value="item.Remark" />
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div class="space-y-2">
+                    <Label For="channel-sort">排序</Label>
+                    <Input id="channel-sort"
+                           Type="InputType.Number"
+                           Class="w-full"
+                           Value="@item.SortCode.ToString()"
+                           ValueChanged="@(v => item.SortCode = int.TryParse(v, out var n) ? n : 0)" />
+                </div>
+                <div class="flex items-center gap-2 pt-6">
+                    <Checkbox @bind-Checked="item.Status" Id="channel-status" />
+                    <Label for="channel-status">是否有效</Label>
+                </div>
+            </div>
+        </EditTemplate>
+    </CrudTable>
+</div>
+
+<NeoAllocTable TItem="BlogChannel"
+               TChild="BlogTag2"
+               TKey="long"
+               @bind-Item="allocChannel"
+               Title="@($"分配标签 — {allocChannel?.ChannelName}")"
+               KeySelector="t => t.Id"
+               DisplayText="t => t.TagName"
+               LoadSelectedKeysAsync="LoadChannelTagKeysAsync"
+               OnSaveAsync="SaveChannelTagsAsync"
+               OnQuery="FilterTagAllocQuery"
+               DialogContentSize="CrudDialogContentSize.Sm" />
+
+@code {
+    private CrudTable<BlogChannel> table = default!;
+    private BlogChannel? allocChannel;
+
+    private Task InitQuery(CrudQueryInfo e)
+    {
+        e.Filters = [];
+        return Task.CompletedTask;
+    }
+
+    private void HandleQuery(CrudQueryEventArgs<BlogChannel> e)
+    {
+        e.Select!
+            .WhereIf(!string.IsNullOrWhiteSpace(e.SearchText),
+                a => a.ChannelName.Contains(e.SearchText!)
+                     || a.ChannelCode.Contains(e.SearchText!))
+            .OrderByDescending(a => a.Id);
+    }
+
+    private Task<IReadOnlyCollection<long>> LoadChannelTagKeysAsync(BlogChannel channel) =>
+        BlogRelationService.GetChannelTagIdsAsync(FreeSql, channel.Id);
+
+    private async Task<bool> SaveChannelTagsAsync(BlogChannel channel, IReadOnlyCollection<long> tagIds)
+    {
+        await BlogRelationService.SaveChannelTagsAsync(FreeSql, channel.Id, tagIds);
+        return true;
+    }
+
+    private Task FilterTagAllocQuery(CrudQueryEventArgs<BlogTag2> args)
+    {
+        args.Select!
+            .WhereIf(!string.IsNullOrWhiteSpace(args.SearchText),
+                t => t.TagName.Contains(args.SearchText!) || t.Alias.Contains(args.SearchText!))
+            .OrderBy(t => t.TagName);
+        return Task.CompletedTask;
+    }
+}

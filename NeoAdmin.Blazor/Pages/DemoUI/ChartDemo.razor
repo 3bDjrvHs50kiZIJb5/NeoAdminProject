@@ -1,0 +1,312 @@
+@page "/neo-demo/ui/chart"
+@layout LayoutAdmin
+
+<PageTitle>图表演示</PageTitle>
+
+<div class="flex flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">图表</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                基于 Apache ECharts 的声明式图表组件，自动适配主题与暗色模式。
+                参考 <a class="text-primary underline-offset-4 hover:underline"
+                       href="https://demos.neoui.io/components/chart"
+                       target="_blank"
+                       rel="noopener noreferrer">NeoUI Chart</a>。
+            </p>
+        </div>
+
+        <div class="p-4">
+            <Tabs DefaultValue="overview" Class="w-full">
+                <div class="overflow-x-auto pb-1">
+                    <TabsList Class="inline-flex h-auto w-max min-w-full flex-nowrap gap-1">
+                        <TabsTrigger Value="overview">入门示例</TabsTrigger>
+                        <TabsTrigger Value="area">Area</TabsTrigger>
+                        <TabsTrigger Value="bar">Bar</TabsTrigger>
+                        <TabsTrigger Value="line">Line</TabsTrigger>
+                        <TabsTrigger Value="pie">Pie</TabsTrigger>
+                        <TabsTrigger Value="scatter">Scatter</TabsTrigger>
+                        <TabsTrigger Value="radar">Radar</TabsTrigger>
+                        <TabsTrigger Value="radial-bar">Radial Bar</TabsTrigger>
+                        <TabsTrigger Value="composed">Composed</TabsTrigger>
+                        <TabsTrigger Value="candlestick">Candlestick</TabsTrigger>
+                        <TabsTrigger Value="funnel">Funnel</TabsTrigger>
+                        <TabsTrigger Value="gauge">Gauge</TabsTrigger>
+                        <TabsTrigger Value="heatmap">Heatmap</TabsTrigger>
+                    </TabsList>
+                </div>
+
+                <TabsContent Value="overview" Class="mt-4">
+                    <DemoSection Title="Your First Chart"
+                                 Description="Bar chart with grid, axis, tooltip, and legend — the recommended starting point"
+                                 Code="@ChartDemoSnippets.Overview">
+                        <ChartContainer Height="300">
+                            <BarChart Data="@chartData">
+                                <Grid Vertical="false" />
+                                <XAxis DataKey="month" />
+                                <YAxis />
+                                <ChartTooltip />
+                                <Legend />
+                                <Bar DataKey="desktop" Name="Desktop" Color="var(--chart-1)" />
+                                <Bar DataKey="mobile" Name="Mobile" Color="var(--chart-2)" />
+                            </BarChart>
+                        </ChartContainer>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="area" Class="mt-4">
+                    <DemoSection Title="Area Chart"
+                                 Description="Smooth area charts with optional stacking and gradients"
+                                 Code="@ChartDemoSnippets.Area">
+                        <ChartContainer Height="300">
+                            <AreaChart Data="@chartData">
+                                <Grid Vertical="false" />
+                                <XAxis DataKey="month" />
+                                <YAxis />
+                                <ChartTooltip />
+                                <Legend />
+                                <Area DataKey="desktop" Name="Desktop" Color="var(--chart-1)" />
+                                <Area DataKey="mobile" Name="Mobile" Color="var(--chart-2)" />
+                            </AreaChart>
+                        </ChartContainer>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="bar" Class="mt-4">
+                    <DemoSection Title="Bar Chart"
+                                 Description="Vertical bar chart with stacked series"
+                                 Code="@ChartDemoSnippets.Bar">
+                        <ChartContainer Height="300">
+                            <BarChart Data="@chartData">
+                                <Grid Vertical="false" />
+                                <XAxis DataKey="month" />
+                                <YAxis />
+                                <ChartTooltip />
+                                <Legend />
+                                <Bar DataKey="desktop" Name="Desktop" Color="var(--chart-1)" StackId="a" />
+                                <Bar DataKey="mobile" Name="Mobile" Color="var(--chart-2)" StackId="a" />
+                            </BarChart>
+                        </ChartContainer>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="line" Class="mt-4">
+                    <DemoSection Title="Line Chart"
+                                 Description="Line charts with multiple series and configurable curves"
+                                 Code="@ChartDemoSnippets.Line">
+                        <ChartContainer Height="300">
+                            <LineChart Data="@chartData">
+                                <Grid Vertical="false" />
+                                <XAxis DataKey="month" />
+                                <YAxis />
+                                <ChartTooltip />
+                                <Legend />
+                                <Line DataKey="desktop" Name="Desktop" Color="var(--chart-1)" ShowDots="true" />
+                                <Line DataKey="mobile" Name="Mobile" Color="var(--chart-2)" ShowDots="true" />
+                            </LineChart>
+                        </ChartContainer>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="pie" Class="mt-4">
+                    <DemoSection Title="Pie Chart"
+                                 Description="Pie and donut charts with labels and legends"
+                                 Code="@ChartDemoSnippets.Pie">
+                        <ChartContainer Height="300">
+                            <PieChart Data="@pieData">
+                                <ChartTooltip />
+                                <Legend />
+                                <Pie DataKey="value" NameKey="name" />
+                            </PieChart>
+                        </ChartContainer>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="scatter" Class="mt-4">
+                    <DemoSection Title="Scatter Chart"
+                                 Description="Scatter plots for correlation and distribution data"
+                                 Code="@ChartDemoSnippets.Scatter">
+                        <ChartContainer Height="300">
+                            <ScatterChart Data="@scatterData">
+                                <Grid Vertical="false" />
+                                <XAxis DataKey="x" />
+                                <YAxis DataKey="y" />
+                                <ChartTooltip />
+                                <Scatter DataKey="y" Name="样本" Color="var(--chart-1)" SymbolSize="10" />
+                            </ScatterChart>
+                        </ChartContainer>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="radar" Class="mt-4">
+                    <DemoSection Title="Radar Chart"
+                                 Description="Spider/radar charts for multi-dimensional data comparison"
+                                 Code="@ChartDemoSnippets.Radar">
+                        <ChartContainer Height="300">
+                            <RadarChart Data="@chartData">
+                                <RadarGrid />
+                                <XAxis DataKey="month" />
+                                <ChartTooltip />
+                                <Legend />
+                                <Radar DataKey="desktop" Name="Desktop" Color="var(--chart-1)" FillArea="true" />
+                                <Radar DataKey="mobile" Name="Mobile" Color="var(--chart-2)" FillArea="true" />
+                            </RadarChart>
+                        </ChartContainer>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="radial-bar" Class="mt-4">
+                    <DemoSection Title="Radial Bar Chart"
+                                 Description="Circular bar charts in polar coordinates"
+                                 Code="@ChartDemoSnippets.RadialBar">
+                        <ChartContainer Height="300">
+                            <RadialBarChart Data="@chartData">
+                                <PolarGrid />
+                                <XAxis DataKey="month" />
+                                <ChartTooltip />
+                                <Legend />
+                                <RadialBar DataKey="desktop" Name="Desktop" Color="var(--chart-1)" />
+                            </RadialBarChart>
+                        </ChartContainer>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="composed" Class="mt-4">
+                    <DemoSection Title="Composed Chart"
+                                 Description="Combine bar and line series in a single visualization"
+                                 Code="@ChartDemoSnippets.Composed">
+                        <ChartContainer Height="300">
+                            <ComposedChart Data="@chartData">
+                                <Grid Vertical="false" />
+                                <XAxis DataKey="month" />
+                                <YAxis />
+                                <ChartTooltip />
+                                <Legend />
+                                <Bar DataKey="desktop" Name="Desktop" Color="var(--chart-1)" />
+                                <Line DataKey="mobile" Name="Mobile" Color="var(--chart-2)" ShowDots="true" />
+                            </ComposedChart>
+                        </ChartContainer>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="candlestick" Class="mt-4">
+                    <DemoSection Title="Candlestick Chart"
+                                 Description="OHLC candlestick charts for financial time-series data"
+                                 Code="@ChartDemoSnippets.Candlestick">
+                        <ChartContainer Height="300">
+                            <CandlestickChart Data="@ohlcData">
+                                <Grid Vertical="false" />
+                                <XAxis DataKey="date" />
+                                <YAxis />
+                                <ChartTooltip />
+                                <Candlestick DataKey="close" OpenKey="open" CloseKey="close" HighKey="high" LowKey="low" />
+                            </CandlestickChart>
+                        </ChartContainer>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="funnel" Class="mt-4">
+                    <DemoSection Title="Funnel Chart"
+                                 Description="Funnel charts for pipeline and conversion visualization"
+                                 Code="@ChartDemoSnippets.Funnel">
+                        <ChartContainer Height="300">
+                            <FunnelChart Data="@funnelData">
+                                <ChartTooltip />
+                                <Legend />
+                                <Funnel DataKey="value" NameKey="stage" ShowLabels="true" />
+                            </FunnelChart>
+                        </ChartContainer>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="gauge" Class="mt-4">
+                    <DemoSection Title="Gauge Chart"
+                                 Description="Gauge charts for KPI and progress display"
+                                 Code="@ChartDemoSnippets.Gauge">
+                        <ChartContainer Height="300">
+                            <GaugeChart Data="@gaugeData">
+                                <Gauge DataKey="value" Name="完成率" Color="var(--chart-1)" Min="0" Max="100" />
+                            </GaugeChart>
+                        </ChartContainer>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="heatmap" Class="mt-4">
+                    <DemoSection Title="Heatmap Chart"
+                                 Description="Heatmaps for intensity grids and activity calendars"
+                                 Code="@ChartDemoSnippets.Heatmap">
+                        <ChartContainer Height="300">
+                            <HeatmapChart Data="@heatData">
+                                <ChartTooltip />
+                                <VisualMap Min="0" Max="100" />
+                                <Heatmap DataKey="value" XKey="x" YKey="y" ValueKey="value" />
+                            </HeatmapChart>
+                        </ChartContainer>
+                    </DemoSection>
+                </TabsContent>
+            </Tabs>
+        </div>
+    </div>
+</div>
+
+@code {
+    private record ChartPoint(string month, int desktop, int mobile);
+    private record PieSlice(string name, int value);
+    private record ScatterPoint(double x, double y);
+    private record OhlcPoint(string date, double open, double close, double high, double low);
+    private record FunnelStage(string stage, int value);
+    private record GaugePoint(double value);
+    private record HeatCell(string x, string y, int value);
+
+    private static readonly List<ChartPoint> chartData =
+    [
+        new("Jan", 186, 80),
+        new("Feb", 305, 200),
+        new("Mar", 237, 120),
+        new("Apr", 273, 190),
+        new("May", 209, 130),
+        new("Jun", 214, 140),
+    ];
+
+    private static readonly List<PieSlice> pieData =
+    [
+        new("Desktop", 1860),
+        new("Mobile", 980),
+        new("Tablet", 420),
+        new("Other", 150),
+    ];
+
+    private static readonly List<ScatterPoint> scatterData =
+    [
+        new(10, 20), new(15, 35), new(22, 28), new(30, 45),
+        new(38, 32), new(45, 55), new(52, 48), new(60, 62),
+    ];
+
+    private static readonly List<OhlcPoint> ohlcData =
+    [
+        new("Mon", 20, 28, 30, 18),
+        new("Tue", 28, 25, 32, 22),
+        new("Wed", 25, 32, 35, 24),
+        new("Thu", 32, 30, 36, 28),
+        new("Fri", 30, 38, 40, 29),
+    ];
+
+    private static readonly List<FunnelStage> funnelData =
+    [
+        new("访问", 1000),
+        new("注册", 600),
+        new("试用", 320),
+        new("付费", 120),
+    ];
+
+    private static readonly List<GaugePoint> gaugeData = [new(72)];
+
+    private static readonly List<HeatCell> heatData =
+    [
+        new("Mon", "AM", 12), new("Mon", "PM", 45),
+        new("Tue", "AM", 28), new("Tue", "PM", 62),
+        new("Wed", "AM", 35), new("Wed", "PM", 78),
+        new("Thu", "AM", 22), new("Thu", "PM", 55),
+        new("Fri", "AM", 40), new("Fri", "PM", 88),
+    ];
+}

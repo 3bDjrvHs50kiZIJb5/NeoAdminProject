@@ -1,0 +1,11 @@
+global using Console = System.Console;
+global using FreeTaskStatus = FreeScheduler.TaskStatus;
+global using ImageSharpSize = SixLabors.ImageSharp.Size;
+global using OtpHashMode = OtpNet.OtpHashMode;
+global using OtpType = OtpNet.OtpType;
+global using NoAdmin.Blazor.Entities;
+global using NoAdmin.Blazor.Attributes;
+global using NoAdmin.Blazor.Extensions;
+global using BootstrapBlazor;
+global using BootstrapBlazor.Components;
+global using NoAdmin.Blazor.Models;

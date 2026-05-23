@@ -1,0 +1,98 @@
+@page "/Admin/IpWhitelist"
+@namespace NoAdmin.Blazor.Pages
+@using System
+@using System.Linq
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Http
+@using BootstrapBlazor.Components
+@using FreeSql
+@using NoAdmin.Blazor.Components
+@using NoAdmin.Blazor.Entities
+@using NoAdmin.Blazor.Utils
+
+<PageTitle>IP白名单管理</PageTitle>
+
+<NovaAdminTable TItem="SysIpWhitelist" Context="item" PageSize="50" Title="IP白名单管理" OnQuery="OnQuery" InitQuery="InitQuery" OnEdit="OnEdit">
+	<TableHeader>
+		<th>ID</th>
+		<th>IP</th>
+		<th>备注</th>
+		<th>是否启用</th>
+		<th>最后访问时间</th>
+		<th>访问次数</th>
+	</TableHeader>
+	<TableRow>
+		<td>@item.Id</td>
+		<td>@item.IpAddress</td>
+		<td>@item.Description</td>
+		<td>
+			@item.IsEnabled.ToString()
+		</td>
+		<td>@item.LastAccessTime?.ToString("yyyy-MM-dd HH:mm:ss")</td>
+		<td>@item.AccessCount</td>
+	</TableRow>
+	<EditTemplate>
+		<div class="row">
+			<div class="form-group col-12">
+				<label class="form-label">IP地址</label>
+				<input @bind="item.IpAddress" type="text" class="form-control" maxlength="300">
+			</div>
+			<div class="form-group col-12">
+				<label class="form-label">备注</label>
+				<textarea @bind="item.Description" class="form-control" maxlength="500" style="height:80px"></textarea>
+			</div>
+			<div class="form-group col-12">
+				<label class="form-label">是否启用</label>
+				<Switch @bind-Value="item.IsEnabled" OnColor="Color.Success" />
+			</div>
+			<div class="form-group col-12">
+				<label class="form-label">最后访问时间</label>
+				<input @bind="item.LastAccessTime" type="datetime-local" class="form-control" />
+			</div>
+			<div class="form-group col-12">
+				<label class="form-label">访问次数</label>
+				<input @bind="item.AccessCount" type="number" class="form-control">
+			</div>
+		</div>
+	</EditTemplate>
+</NovaAdminTable>
+
+@code {
+	[Inject] private IAggregateRootRepository<SysIpWhitelist> repo { get; set; }
+	[Inject] private IHttpContextAccessor HttpContextAccessor { get; set; }
+
+	private async Task InitQuery(NovaAdminQueryInfo e)
+	{
+		e.Filters = Array.Empty<NovaAdminFilterInfo>();
+		await Task.Yield();
+	}
+
+	private void OnQuery(NovaAdminQueryEventArgs<SysIpWhitelist> e)
+	{
+		e.Select
+			.WhereIf(!e.SearchText.IsNull(), a =>
+				a.IpAddress.Contains(e.SearchText) ||
+				a.Description.Contains(e.SearchText) ||
+				a.CreatedUserName.Contains(e.SearchText) ||
+				a.ModifiedUserName.Contains(e.SearchText))
+			.OrderByDescending(a => a.Id);
+	}
+
+	private async Task OnEdit(SysIpWhitelist item)
+	{
+		if (item.Id == 0 && string.IsNullOrWhiteSpace(item.IpAddress))
+		{
+			var httpContext = HttpContextAccessor.HttpContext;
+			if (httpContext != null)
+			{
+				var clientIp = IpHelper.GetClientIpAddress(httpContext);
+				if (!string.IsNullOrWhiteSpace(clientIp) && !string.Equals(clientIp, "unknown", StringComparison.OrdinalIgnoreCase))
+				{
+					item.IpAddress = clientIp;
+				}
+			}
+		}
+
+		await Task.Yield();
+	}
+}

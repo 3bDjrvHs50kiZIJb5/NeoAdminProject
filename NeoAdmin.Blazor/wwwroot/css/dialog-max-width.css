@@ -1,0 +1,118 @@
+/**
+ * dialog-max-width.css
+ *
+ * 为 NeoUI DialogContent 等组件补充 max-width 工具类。
+ *
+ * 背景：
+ * - NeoUI.Blazor 预编译的 components.css 仅包含少量 max-w-*（如 sm/md/lg）。
+ * - 业务里通过 Class="sm:max-w-3xl" 等方式加宽弹窗时，需要本文件提供对应样式。
+ *
+ * 用法：
+ * - 在 DialogContent 上设置 Class，例如：
+ *     <DialogContent Class="sm:max-w-3xl" />
+ * - 与 CrudDialogContentSize.ToClass() 配合，见 Components/CrudDialogContentSize.cs
+ *
+ * 约定：
+ * - 数值对齐 Tailwind CSS 默认 max-width 刻度（1rem = 16px）。
+ * - sm: 前缀表示视口宽度 >= 40rem（640px）时生效；小屏仍由 Dialog 内置 w-full 占满。
+ * - 勿与 NeoUI 默认 max-w-lg 混用冲突类；cn() 合并时后加载的同类名会按库规则取舍。
+ *
+ * 加载顺序（App.razor）：
+ *   components.css → 主题 → app.css → 本文件
+ */
+
+/* -------------------------------------------------------------------------- */
+/* 基础 max-width（全断点生效）                                                  */
+/* NeoUI 包内已有 max-w-sm / md / lg，此处补 xs、xl～7xl                        */
+/* -------------------------------------------------------------------------- */
+
+/** 20rem / 320px */
+.max-w-xs {
+  max-width: 20rem;
+}
+
+/** 36rem / 576px */
+.max-w-xl {
+  max-width: 36rem;
+}
+
+/** 42rem / 672px — CrudTable 默认弹窗宽度（X2l） */
+.max-w-2xl {
+  max-width: 42rem;
+}
+
+/** 48rem / 768px */
+.max-w-3xl {
+  max-width: 48rem;
+}
+
+/** 56rem / 896px */
+.max-w-4xl {
+  max-width: 56rem;
+}
+
+/** 64rem / 1024px */
+.max-w-5xl {
+  max-width: 64rem;
+}
+
+/** 72rem / 1152px */
+.max-w-6xl {
+  max-width: 72rem;
+}
+
+/** 80rem / 1280px */
+.max-w-7xl {
+  max-width: 80rem;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 响应式 max-width：min-width 40rem（Tailwind sm）                              */
+/* 推荐用于 DialogContent，避免窄屏下过早限制宽度                                */
+/* -------------------------------------------------------------------------- */
+
+@media (min-width: 40rem) {
+  .sm\:max-w-xs {
+    max-width: 20rem;
+  }
+
+  .sm\:max-w-sm {
+    max-width: 24rem;
+  }
+
+  .sm\:max-w-md {
+    max-width: 28rem;
+  }
+
+  .sm\:max-w-lg {
+    max-width: 32rem;
+  }
+
+  .sm\:max-w-xl {
+    max-width: 36rem;
+  }
+
+  .sm\:max-w-2xl {
+    max-width: 42rem;
+  }
+
+  .sm\:max-w-3xl {
+    max-width: 48rem;
+  }
+
+  .sm\:max-w-4xl {
+    max-width: 56rem;
+  }
+
+  .sm\:max-w-5xl {
+    max-width: 64rem;
+  }
+
+  .sm\:max-w-6xl {
+    max-width: 72rem;
+  }
+
+  .sm\:max-w-7xl {
+    max-width: 80rem;
+  }
+}

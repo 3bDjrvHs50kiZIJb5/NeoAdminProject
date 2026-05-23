@@ -1,0 +1,430 @@
+@page "/admin/site-settings"
+@layout LayoutAdmin
+@using Microsoft.AspNetCore.Components.Forms
+@using NeoAdmin.Blazor.Auth
+@using NeoAdmin.Blazor.Data.Entities
+@using NeoAdmin.Blazor.Services
+@inject SiteSettingsService SiteSettingsService
+@inject FileService FileService
+@inject IToastService ToastService
+@inject NavigationManager NavigationManager
+
+<PageTitle>站点设置</PageTitle>
+
+<div class="mx-auto flex w-full max-w-4xl flex-col gap-4 pb-8">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <h1 class="text-2xl font-semibold tracking-tight">站点设置</h1>
+            <p class="text-sm text-muted-foreground">配置站点名称、域名、品牌图片等，保存后立即生效。</p>
+        </div>
+        <Button Variant="ButtonVariant.Outline" OnClick="OpenPasswordDialog">
+            <LucideIcon Name="key-round" Size="16" Class="mr-2" />
+            修改管理员密码
+        </Button>
+    </div>
+
+    @if (isLoading)
+    {
+        <Card>
+            <CardContent Class="py-12 text-center text-sm text-muted-foreground">加载中…</CardContent>
+        </Card>
+    }
+    else if (model is not null)
+    {
+        <EditForm Model="model" OnValidSubmit="HandleSaveAsync" class="space-y-4">
+            <DataAnnotationsValidator />
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>基本信息</CardTitle>
+                    <CardDescription>站点对外展示的名称与访问域名。</CardDescription>
+                </CardHeader>
+                <CardContent class="space-y-4">
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="space-y-2 sm:col-span-2">
+                            <Label For="site-title">站点标题</Label>
+                            <Input id="site-title" Class="w-full" MaxLength="255" @bind-Value="model.Title" />
+                        </div>
+                        <div class="space-y-2 sm:col-span-2">
+                            <Label For="site-host">
+                                域名
+                                <span class="text-xs font-normal text-muted-foreground">（多个用英文逗号分隔，最多 3 个）</span>
+                            </Label>
+                            <Input id="site-host" Class="w-full" MaxLength="200" @bind-Value="hostText" />
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <Checkbox @bind-Checked="model.IsEnabled" Id="site-enabled" />
+                            <Label For="site-enabled" Class="font-normal">站点启用</Label>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="site-description">说明</Label>
+                        <Textarea id="site-description"
+                                  Class="min-h-24 w-full"
+                                  MaxLength="500"
+                                  @bind-Value="model.Description" />
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>品牌图片</CardTitle>
+                    <CardDescription>用于侧栏 LOGO 与登录页配图，支持上传图片文件。</CardDescription>
+                </CardHeader>
+                <CardContent class="grid gap-6 sm:grid-cols-2">
+                    <div class="space-y-3">
+                        <Label>LOGO</Label>
+                        @if (!string.IsNullOrWhiteSpace(EffectiveLogoUrl))
+                        {
+                            <div class="rounded-lg border bg-muted/30 p-3">
+                                <p class="mb-2 text-xs text-muted-foreground">当前已设置</p>
+                                <img src="@NavigationManager.ToMediaUrl(EffectiveLogoUrl)"
+                                     alt="LOGO 预览"
+                                     class="h-32 max-w-full rounded-md border bg-background object-cover" />
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-xs text-muted-foreground">尚未设置 LOGO，选择图片后将自动上传。</p>
+                            <FileUpload @ref="logoUpload"
+                                    Files="logoFiles"
+                                    FilesChanged="OnLogoFilesChangedAsync"
+                                    Multiple="false"
+                                    Accept="image/*"
+                                    MaxFileSize="5242880"
+                                    ShowPreview="true"
+                                    Disabled="isUploadingLogo" />
+                        }
+                        
+                        @if (!string.IsNullOrWhiteSpace(model.Logo) && !clearLogo)
+                        {
+                            <Button Type="ButtonType.Button"
+                                    Variant="ButtonVariant.Ghost"
+                                    Size="ButtonSize.Small"
+                                    OnClick="ClearLogo">
+                                清除 LOGO
+                            </Button>
+                        }
+                    </div>
+                    <div class="space-y-3">
+                        <Label>登录页图片</Label>
+                        @if (!string.IsNullOrWhiteSpace(EffectiveLoginImageUrl))
+                        {
+                            <div class="rounded-lg border bg-muted/30 p-3">
+                                <p class="mb-2 text-xs text-muted-foreground">当前已设置</p>
+                                <img src="@NavigationManager.ToMediaUrl(EffectiveLoginImageUrl)"
+                                     alt="登录页预览"
+                                     class="h-32 max-w-full rounded-md border bg-background object-cover" />
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-xs text-muted-foreground">尚未设置登录页配图，选择图片后将自动上传。</p>
+                            <FileUpload @ref="loginImageUpload"
+                                    Files="loginImageFiles"
+                                    FilesChanged="OnLoginImageFilesChangedAsync"
+                                    Multiple="false"
+                                    Accept="image/*"
+                                    MaxFileSize="5242880"
+                                    ShowPreview="true"
+                                    Disabled="isUploadingLoginImage" />
+                        }
+                        
+                        @if (!string.IsNullOrWhiteSpace(model.LoginImage) && !clearLoginImage)
+                        {
+                            <Button Type="ButtonType.Button"
+                                    Variant="ButtonVariant.Ghost"
+                                    Size="ButtonSize.Small"
+                                    OnClick="ClearLoginImage">
+                                清除登录图
+                            </Button>
+                        }
+                    </div>
+                </CardContent>
+            </Card>
+
+            <div class="flex items-center justify-end gap-2">
+                <Button Type="ButtonType.Submit" Variant="ButtonVariant.Outline" Disabled="isSaving">
+                    @(isSaving ? "保存中…" : "保存设置")
+                </Button>
+            </div>
+        </EditForm>
+    }
+</div>
+
+<Dialog @bind-Open="passwordDialogOpen">
+    <DialogContent Variant="DialogContentVariant.Form" Class="sm:max-w-md">
+        <DialogHeader>
+            <DialogTitle>修改管理员密码</DialogTitle>
+            <DialogDescription>修改拥有「管理员」角色的账号密码。</DialogDescription>
+        </DialogHeader>
+        <div class="space-y-3">
+            <div class="space-y-2">
+                <Label For="pwd-username">账号</Label>
+                <Input id="pwd-username" Class="w-full" MaxLength="50" @bind-Value="passwordUsername" />
+            </div>
+            <div class="space-y-2">
+                <Label For="pwd-password">新密码</Label>
+                <Input id="pwd-password"
+                       Type="InputType.Password"
+                       Class="w-full"
+                       MaxLength="50"
+                       @bind-Value="passwordText" />
+            </div>
+        </div>
+        <DialogFooter Class="mt-4">
+            <Button Variant="ButtonVariant.Outline" OnClick="ClosePasswordDialog">取消</Button>
+            <Button Variant="ButtonVariant.Outline" OnClick="HandleChangePasswordAsync" Disabled="isChangingPassword">
+                @(isChangingPassword ? "提交中…" : "确定")
+            </Button>
+        </DialogFooter>
+    </DialogContent>
+</Dialog>
+
+@code {
+    private SysSiteSettings? model;
+    private string hostText = string.Empty;
+    private bool isLoading = true;
+    private bool isSaving;
+    private bool isUploadingLogo;
+    private bool isUploadingLoginImage;
+    private bool passwordDialogOpen;
+    private bool isChangingPassword;
+    private string passwordUsername = string.Empty;
+    private string passwordText = string.Empty;
+
+    private FileUpload? logoUpload;
+    private FileUpload? loginImageUpload;
+    private List<IBrowserFile> logoFiles = new();
+    private List<IBrowserFile> loginImageFiles = new();
+    private bool clearLogo;
+    private bool clearLoginImage;
+
+    private string? EffectiveLogoUrl => clearLogo ? null : model?.Logo;
+    private string? EffectiveLoginImageUrl => clearLoginImage ? null : model?.LoginImage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        model = await SiteSettingsService.GetAsync();
+        hostText = SiteSettingsService.JoinHosts(model);
+        logoFiles.Clear();
+        loginImageFiles.Clear();
+        clearLogo = false;
+        clearLoginImage = false;
+        isLoading = false;
+    }
+
+    private async Task HandleSaveAsync()
+    {
+        if (model is null || isSaving)
+        {
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            SiteSettingsService.ApplyHosts(model, hostText);
+
+            if (clearLogo)
+            {
+                model.Logo = null;
+            }
+
+            if (clearLoginImage)
+            {
+                model.LoginImage = null;
+            }
+
+            ApiResult<SysSiteSettings> result = await SiteSettingsService.SaveAsync(model);
+            if (!result.Succeeded)
+            {
+                ToastService.Error("保存失败", result.Message);
+                return;
+            }
+
+            ToastService.Success("站点设置", result.Message);
+            SiteSettingsService.InvalidateCache();
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            ToastService.Error("保存失败", ex.Message);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private Task OnLogoFilesChangedAsync(List<IBrowserFile> files) =>
+        UploadBrandImageAsync(
+            files,
+            setFiles: value => logoFiles = value,
+            setUrl: url => model!.Logo = url,
+            clearFlag: () => clearLogo = false,
+            upload: logoUpload,
+            setUploading: value => isUploadingLogo = value,
+            isUploading: () => isUploadingLogo,
+            label: "LOGO");
+
+    private Task OnLoginImageFilesChangedAsync(List<IBrowserFile> files) =>
+        UploadBrandImageAsync(
+            files,
+            setFiles: value => loginImageFiles = value,
+            setUrl: url => model!.LoginImage = url,
+            clearFlag: () => clearLoginImage = false,
+            upload: loginImageUpload,
+            setUploading: value => isUploadingLoginImage = value,
+            isUploading: () => isUploadingLoginImage,
+            label: "登录页图片");
+
+    private Task ClearLogo() =>
+        ClearBrandImageAsync(
+            clearUrl: () => model!.Logo = null,
+            clearFlag: () => clearLogo = false,
+            clearFiles: () => logoFiles.Clear(),
+            upload: logoUpload,
+            label: "LOGO");
+
+    private Task ClearLoginImage() =>
+        ClearBrandImageAsync(
+            clearUrl: () => model!.LoginImage = null,
+            clearFlag: () => clearLoginImage = false,
+            clearFiles: () => loginImageFiles.Clear(),
+            upload: loginImageUpload,
+            label: "登录页图片");
+
+    /// <summary>
+    /// LOGO / 登录页配图共用：选图 → 上传至 wwwroot/uploads/site → 写入 Logo 或 LoginImage → 保存数据库。
+    /// </summary>
+    private async Task UploadBrandImageAsync(
+        List<IBrowserFile> files,
+        Action<List<IBrowserFile>> setFiles,
+        Action<string> setUrl,
+        Action clearFlag,
+        FileUpload? upload,
+        Action<bool> setUploading,
+        Func<bool> isUploading,
+        string label)
+    {
+        setFiles(files);
+        if (files.Count == 0 || model is null || isUploading())
+        {
+            return;
+        }
+
+        setUploading(true);
+        try
+        {
+            SysFile file = await FileService.UploadFileAsync(files[0], "site", isRename: true);
+            setUrl(file.LinkUrl);
+            clearFlag();
+            await PersistSiteSettingsAsync(label);
+        }
+        catch (Exception ex)
+        {
+            ToastService.Error($"{label} 上传失败", ex.Message);
+        }
+        finally
+        {
+            setFiles(new List<IBrowserFile>());
+            if (upload is not null)
+            {
+                await upload.ClearFiles();
+            }
+
+            setUploading(false);
+        }
+    }
+
+    private async Task ClearBrandImageAsync(
+        Action clearUrl,
+        Action clearFlag,
+        Action clearFiles,
+        FileUpload? upload,
+        string label)
+    {
+        clearUrl();
+        clearFlag();
+        clearFiles();
+        if (upload is not null)
+        {
+            await upload.ClearFiles();
+        }
+
+        ApiResult<SysSiteSettings> result = await PersistSiteSettingsAsync(label, successMessage: "已清除");
+        if (!result.Succeeded)
+        {
+            ToastService.Error("清除失败", result.Message);
+        }
+    }
+
+    private async Task<ApiResult<SysSiteSettings>> PersistSiteSettingsAsync(
+        string label,
+        string? successMessage = null)
+    {
+        SiteSettingsService.ApplyHosts(model!, hostText);
+        ApiResult<SysSiteSettings> result = await SiteSettingsService.SaveAsync(model!);
+        if (!result.Succeeded)
+        {
+            ToastService.Error($"{label} 保存失败", result.Message);
+            return result;
+        }
+
+        ToastService.Success(label, successMessage ?? "已上传并保存");
+        SiteSettingsService.InvalidateCache();
+        model = await SiteSettingsService.GetAsync();
+        hostText = SiteSettingsService.JoinHosts(model);
+        return result;
+    }
+
+    private async Task OpenPasswordDialog()
+    {
+        passwordUsername = await SiteSettingsService.GetAdministratorUsernameAsync();
+        passwordText = string.Empty;
+        passwordDialogOpen = true;
+    }
+
+    private void ClosePasswordDialog()
+    {
+        passwordDialogOpen = false;
+        passwordText = string.Empty;
+    }
+
+    private async Task HandleChangePasswordAsync()
+    {
+        if (isChangingPassword)
+        {
+            return;
+        }
+
+        isChangingPassword = true;
+        try
+        {
+            ApiResult result = await SiteSettingsService.ChangeAdministratorPasswordAsync(
+                passwordUsername,
+                passwordText);
+
+            if (!result.Succeeded)
+            {
+                ToastService.Error("修改密码", result.Message);
+                return;
+            }
+
+            ToastService.Success("修改密码", result.Message);
+            ClosePasswordDialog();
+        }
+        finally
+        {
+            isChangingPassword = false;
+        }
+    }
+}

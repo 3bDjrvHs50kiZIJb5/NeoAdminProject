@@ -1,0 +1,35 @@
+<html lang="zh-cn">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <link rel="stylesheet" href="NovaAdmin.styles.css?v=20260521-1" />
+    <link rel="stylesheet" href="_content/AntDesign.Blazor/ant-design-blazor.css?v2_5_6" />
+    <link rel="stylesheet" href="_content/AntDesign.Blazor/app.css" />
+    <link rel="stylesheet" href="_content/AntDesign.Blazor/admin.css" />
+    <link rel="stylesheet" href="_content/BootstrapBlazor.FontAwesome/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="_content/BootstrapBlazor/css/bootstrap.blazor.bundle.min.css" />
+    <link rel="stylesheet" href="_content/BootstrapBlazor/css/motronic.min.css" />
+    <script src="_content/AntDesign.Blazor/tailwindcss.js"></script>
+
+    <link rel="icon" href="@(admin.Tenant?.Logo ?? "logo.png")" type="image/png" />
+    <HeadOutlet @rendermode="@InteractiveServer" />
+
+</head>
+
+<body>
+    <Routes @rendermode="new InteractiveServerRenderMode(prerender: false)" />
+
+    <script src="_content/AntDesign.Blazor/ant-design-blazor.js?v2_5_4"></script>
+    <script>
+        window.j9CopyToClipboard = (text) => navigator.clipboard.writeText(text);
+    </script>
+    <script src="_framework/blazor.web.js"></script>
+</body>
+
+</html>
+
+@code {
+    [Inject] NovaAdminContext admin { get; set; } = null!;
+}

@@ -1,0 +1,58 @@
+@page "/NovaDemo/NovaInputFileDemo"
+
+<PageTitle>NovaInputFile 演示</PageTitle>
+
+<div class="card">
+    <div class="card-header">
+        <strong>NovaInputFile 演示</strong>
+    </div>
+    <div class="card-body">
+        <p class="mb-3">
+            这个页面演示 <code>NovaInputFile</code> 的文件选择方式。
+        </p>
+
+        <ul class="mb-3">
+            <li><code>@@bind-Value</code>：绑定选中的文件地址</li>
+            <li><code>ModalTitle</code>：选择弹窗标题</li>
+            <li>按钮点击后会打开文件选择弹窗</li>
+        </ul>
+
+        <div class="mb-3">
+            <div class="fw-bold mb-2">文件选择器</div>
+            <div class="mb-3">
+                <label class="form-label">已选择地址</label>
+                <input class="form-control" value="@selectedFileUrl" readonly />
+            </div>
+
+            <div class="mb-3">
+                <NovaInputFile @bind-Value="selectedFileUrl" ModalTitle="选择一个文件" />
+            </div>
+
+            <div class="border rounded p-3 bg-light">
+                <div class="fw-bold mb-1">最近一次选择</div>
+                <div class="small text-muted">@statusText</div>
+            </div>
+        </div>
+
+        <div class="border rounded p-3 bg-light">
+            <div class="fw-bold mb-2">说明</div>
+            <p class="mb-3">
+                这个示例主要用于确认组件名已经统一成 <code>NovaInputFile</code>，
+                并且在 Razor 里可以直接像普通组件一样使用。
+            </p>
+            <pre class="mb-0"><code>&lt;NovaInputFile @@bind-Value="selectedFileUrl" ModalTitle="选择一个文件" /&gt;</code></pre>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string selectedFileUrl = string.Empty;
+    private string statusText = "尚未选择文件";
+
+    protected override void OnParametersSet()
+    {
+        statusText = string.IsNullOrWhiteSpace(selectedFileUrl)
+            ? "尚未选择文件"
+            : $"当前已选择：{selectedFileUrl}";
+    }
+}

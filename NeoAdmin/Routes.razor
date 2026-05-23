@@ -1,0 +1,13 @@
+@using NeoAdmin.Blazor.Components
+
+<Router AppAssembly="@typeof(Program).Assembly" AdditionalAssemblies="new[] { typeof(LayoutAdmin).Assembly }">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(LayoutAdmin)" />
+    </Found>
+    <NotFound>
+        <PageTitle>Not found</PageTitle>
+        <LayoutView Layout="@typeof(LayoutEmpty)">
+            <p style="margin-top: 100px; margin-left: 100px;">页面不存在。</p>
+        </LayoutView>
+    </NotFound>
+</Router>

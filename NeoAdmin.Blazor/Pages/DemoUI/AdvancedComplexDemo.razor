@@ -1,0 +1,278 @@
+@page "/neo-demo/ui/advanced-complex"
+@layout LayoutAdmin
+@using Microsoft.AspNetCore.Components.Forms
+
+<PageTitle>编辑器与复杂组件演示</PageTitle>
+
+<div class="flex flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">编辑器与复杂组件</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                Dynamic Form、File Upload、Filter Builder、Markdown / Rich Text Editor、Range Slider —  schema 驱动表单与复杂交互。
+                参考 <a class="text-primary underline-offset-4 hover:underline"
+                       href="https://demos.neoui.io/components"
+                       target="_blank"
+                       rel="noopener noreferrer">NeoUI Components</a>。
+            </p>
+        </div>
+
+        <div class="p-4">
+            <Tabs DefaultValue="dynamic-form" Class="w-full">
+                <div class="overflow-x-auto pb-1">
+                    <TabsList Class="inline-flex h-auto w-max min-w-full flex-wrap gap-1">
+                        <TabsTrigger Value="dynamic-form">Dynamic Form</TabsTrigger>
+                        <TabsTrigger Value="file-upload">File Upload</TabsTrigger>
+                        <TabsTrigger Value="filter-builder">Filter Builder</TabsTrigger>
+                        <TabsTrigger Value="markdown-editor">Markdown Editor</TabsTrigger>
+                        <TabsTrigger Value="rich-text-editor">Rich Text Editor</TabsTrigger>
+                        <TabsTrigger Value="range-slider">Range Slider</TabsTrigger>
+                    </TabsList>
+                </div>
+
+                <TabsContent Value="dynamic-form" Class="mt-4">
+                    <DemoSection Title="Dynamic Form"
+                                 Description="Schema-driven form renderer with validation and 24 field types"
+                                 Code="@AdvancedComplexDemoSnippets.DynamicForm">
+                        <div class="max-w-md">
+                            <DynamicForm Schema="@contactSchema"
+                                         @bind-Values="contactValues"
+                                         SubmitText="提交"
+                                         OnValidSubmit="OnContactSubmit"
+                                         ShowValidationSummary="true"
+                                         Columns="1" />
+                            @if (!string.IsNullOrWhiteSpace(contactSubmitMessage))
+                            {
+                                <Alert Variant="AlertVariant.Success" Class="mt-4">
+                                    <AlertDescription>@contactSubmitMessage</AlertDescription>
+                                </Alert>
+                            }
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="file-upload" Class="mt-4">
+                    <DemoSection Title="File Upload"
+                                 Description="File upload with drag-and-drop, validation, and previews"
+                                 Code="@AdvancedComplexDemoSnippets.FileUpload">
+                        <div class="max-w-lg space-y-2">
+                            <FileUpload @bind-Files="uploadedFiles"
+                                        Multiple="true"
+                                        Accept="image/*,.pdf"
+                                        MaxFileSize="5242880"
+                                        MaxFiles="5"
+                                        ShowPreview="true" />
+                            <p class="text-sm text-muted-foreground">
+                                已选 @uploadedFiles.Count 个文件（仅本地预览，不上传服务器）
+                            </p>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="filter-builder" Class="mt-4">
+                    <DemoSection Title="Filter Builder"
+                                 Description="A declarative, composable filter builder with LINQ expression support"
+                                 Code="@AdvancedComplexDemoSnippets.FilterBuilder">
+                        <div class="space-y-4">
+                            <FilterBuilder TData="DemoProduct"
+                                           @bind-Filters="productFilters"
+                                           OnFilterChange="ApplyProductFilter">
+                                <FilterField Field="@nameof(DemoProduct.Name)" Label="名称" Type="FilterFieldType.Text" />
+                                <FilterField Field="@nameof(DemoProduct.Category)" Label="分类" Type="FilterFieldType.Select"
+                                             Options="@categoryFilterOptions" />
+                                <FilterField Field="@nameof(DemoProduct.Price)" Label="价格" Type="FilterFieldType.Number" />
+                                <FilterField Field="@nameof(DemoProduct.InStock)" Label="有货" Type="FilterFieldType.Boolean" />
+                            </FilterBuilder>
+
+                            <div class="rounded-md border">
+                                <table class="w-full text-sm">
+                                    <thead class="border-b bg-muted/40">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left font-medium">名称</th>
+                                            <th class="px-3 py-2 text-left font-medium">分类</th>
+                                            <th class="px-3 py-2 text-right font-medium">价格</th>
+                                            <th class="px-3 py-2 text-center font-medium">有货</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (DemoProduct product in filteredProducts)
+                                        {
+                                            <tr class="border-b last:border-0">
+                                                <td class="px-3 py-2">@product.Name</td>
+                                                <td class="px-3 py-2">@product.CategoryLabel</td>
+                                                <td class="px-3 py-2 text-right">@product.Price.ToString("C0")</td>
+                                                <td class="px-3 py-2 text-center">@(product.InStock ? "是" : "否")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                                @if (filteredProducts.Count == 0)
+                                {
+                                    <p class="px-3 py-4 text-center text-sm text-muted-foreground">无匹配商品</p>
+                                }
+                            </div>
+                            <p class="text-sm text-muted-foreground">
+                                共 @filteredProducts.Count / @allProducts.Count 条（内存 LINQ 过滤，未接数据库）
+                            </p>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="markdown-editor" Class="mt-4">
+                    <DemoSection Title="Markdown Editor"
+                                 Description="Write/preview tabs editor with markdown syntax support"
+                                 Code="@AdvancedComplexDemoSnippets.MarkdownEditor">
+                        <MarkdownEditor @bind-Value="markdownNotes"
+                                        Placeholder="使用 Markdown 编写内容…"
+                                        Class="max-w-2xl" />
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="rich-text-editor" Class="mt-4">
+                    <DemoSection Title="Rich Text Editor"
+                                 Description="WYSIWYG editor with toolbar formatting and live preview"
+                                 Code="@AdvancedComplexDemoSnippets.RichTextEditor">
+                        <RichTextEditor @bind-Value="richTextHtml"
+                                        Toolbar="ToolbarPreset.Standard"
+                                        Placeholder="输入富文本…"
+                                        MinHeight="200px"
+                                        Class="max-w-2xl" />
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="range-slider" Class="mt-4">
+                    <DemoSection Title="Range Slider"
+                                 Description="Dual-handle slider for selecting value ranges"
+                                 Code="@AdvancedComplexDemoSnippets.RangeSlider">
+                        <div class="max-w-md space-y-3">
+                            <div class="flex items-center justify-between text-sm">
+                                <Label>价格区间</Label>
+                                <span class="text-muted-foreground">@priceMin — @priceMax</span>
+                            </div>
+                            <RangeSlider @bind-MinValue="priceMin"
+                                         @bind-MaxValue="priceMax"
+                                         Min="0"
+                                         Max="1000"
+                                         Step="10"
+                                         ShowTooltips="true" />
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+            </Tabs>
+        </div>
+    </div>
+</div>
+
+@code {
+    private sealed class DemoProduct
+    {
+        public string Name { get; init; } = string.Empty;
+        public string Category { get; init; } = string.Empty;
+        public decimal Price { get; init; }
+        public bool InStock { get; init; }
+
+        public string CategoryLabel => Category switch
+        {
+            "electronics" => "电子",
+            "clothing" => "服饰",
+            "home" => "家居",
+            _ => Category
+        };
+    }
+
+    private readonly FormSchema contactSchema = new()
+    {
+        Title = "联系我们",
+        Description = "填写以下信息，演示 DynamicForm 校验与提交。",
+        Fields =
+        [
+            new FormFieldDefinition
+            {
+                Name = "name",
+                Label = "姓名",
+                Type = FieldType.Text,
+                Required = true,
+                Placeholder = "请输入姓名"
+            },
+            new FormFieldDefinition
+            {
+                Name = "email",
+                Label = "邮箱",
+                Type = FieldType.Email,
+                Required = true,
+                Placeholder = "name@example.com",
+                Validations =
+                [
+                    new FieldValidation { Type = ValidationType.Email, Message = "请输入有效邮箱" }
+                ]
+            },
+            new FormFieldDefinition
+            {
+                Name = "message",
+                Label = "留言",
+                Type = FieldType.Textarea,
+                Required = true,
+                Placeholder = "请输入留言内容"
+            }
+        ]
+    };
+
+    private Dictionary<string, object?> contactValues = new();
+    private string? contactSubmitMessage;
+
+    private List<IBrowserFile> uploadedFiles = [];
+
+    private FilterGroup productFilters = new();
+    private readonly List<SelectOption> categoryFilterOptions =
+    [
+        new("电子", "electronics"),
+        new("服饰", "clothing"),
+        new("家居", "home")
+    ];
+
+    private readonly List<DemoProduct> allProducts =
+    [
+        new() { Name = "无线耳机", Category = "electronics", Price = 299, InStock = true },
+        new() { Name = "机械键盘", Category = "electronics", Price = 599, InStock = true },
+        new() { Name = "纯棉 T 恤", Category = "clothing", Price = 89, InStock = false },
+        new() { Name = "运动外套", Category = "clothing", Price = 259, InStock = true },
+        new() { Name = "台灯", Category = "home", Price = 149, InStock = true },
+        new() { Name = "收纳箱", Category = "home", Price = 79, InStock = false }
+    ];
+
+    private List<DemoProduct> filteredProducts = [];
+
+    private string markdownNotes = """
+        ## NeoUI 演示
+
+        - **Markdown** 编辑
+        - 支持预览标签页
+        """;
+
+    private string richTextHtml = "<p>欢迎使用 <strong>Rich Text Editor</strong>。</p>";
+
+    private double priceMin = 100;
+    private double priceMax = 600;
+
+    protected override void OnInitialized()
+    {
+        filteredProducts = allProducts.ToList();
+    }
+
+    private Task OnContactSubmit(Dictionary<string, object?> values)
+    {
+        var name = values.GetValueOrDefault("name")?.ToString() ?? "";
+        contactSubmitMessage = $"已提交：{name}（演示，未保存）";
+        return Task.CompletedTask;
+    }
+
+    private void ApplyProductFilter(FilterGroup filters)
+    {
+        productFilters = filters;
+        IEnumerable<DemoProduct> query = allProducts;
+
+        filteredProducts = filters.Conditions.Count == 0
+            ? allProducts.ToList()
+            : query.ApplyFilter(filters).ToList();
+    }
+}

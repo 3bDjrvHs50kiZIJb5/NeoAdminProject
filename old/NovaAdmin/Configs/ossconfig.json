@@ -1,0 +1,80 @@
+{
+  "OssConfig": {
+    "LocalUploadConfig": {
+      "Directory": "uploads",
+      "DateTimeDirectory": "yyyy/MM/dd",
+      "Md5": false,
+      "MaxSize": 104857600,
+      "IncludeExtension": [],
+      "ExcludeExtension": [ ".exe", ".dll", ".jar" ]
+    },
+    "Provider": "Minio",
+    "OSSConfigs": [
+      {
+        "Provider": "Minio",
+        "Endpoint": "127.0.0.1:9000",
+        "Region": "",
+        "AccessKey": "minio",
+        "SecretKey": "minio",
+        "IsEnableHttps": false,
+        "IsEnableCache": true,
+        "BucketName": "admin",
+        "Url": "",
+        "Md5": false,
+        "Enable": false
+      },
+      {
+        "Provider": "Aliyun",
+        "Endpoint": "oss-cn-shenzhen.aliyuncs.com",
+        "Region": "",
+        "AccessKey": "",
+        "SecretKey": "",
+        "IsEnableHttps": true,
+        "IsEnableCache": true,
+        "BucketName": "admin",
+        "Url": "",
+        "Md5": false,
+        "Enable": false
+      },
+      {
+        "Provider": "QCloud",
+        "Endpoint": "",
+        "Region": "",
+        "AccessKey": "",
+        "SecretKey": "",
+        "IsEnableHttps": true,
+        "IsEnableCache": true,
+        "BucketName": "admin",
+        "Url": "",
+        "Md5": false,
+        "Enable": false
+      },
+      {
+        "Provider": "Qiniu",
+        "Endpoint": "",
+        "Region": "",
+        "AccessKey": "",
+        "SecretKey": "",
+        "IsEnableHttps": true,
+        "IsEnableCache": true,
+        "BucketName": "admin",
+        "Url": "",
+        "Md5": false,
+        "Enable": false
+      },
+      {
+        "Provider": "HuaweiCloud",
+        "Endpoint": "",
+        "Region": "",
+        "AccessKey": "",
+        "SecretKey": "",
+        "IsEnableHttps": true,
+        "IsEnableCache": true,
+        "BucketName": "admin",
+        "Url": "",
+        "Md5": false,
+        "Enable": false
+      }
+    ]
+  }
+}

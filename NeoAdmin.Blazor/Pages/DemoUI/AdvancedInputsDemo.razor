@@ -1,0 +1,242 @@
+@page "/neo-demo/ui/advanced-inputs"
+@layout LayoutAdmin
+
+<PageTitle>增强输入演示</PageTitle>
+
+<div class="flex flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">增强输入</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                Combobox、Multi Select、Tag Input、Color Picker 等 — 高级表单输入与组合控件。
+                参考 <a class="text-primary underline-offset-4 hover:underline"
+                       href="https://demos.neoui.io/components"
+                       target="_blank"
+                       rel="noopener noreferrer">NeoUI Components</a>。
+            </p>
+        </div>
+
+        <div class="p-4">
+            <Tabs DefaultValue="combobox" Class="w-full">
+                <div class="overflow-x-auto pb-1">
+                    <TabsList Class="inline-flex h-auto w-max min-w-full flex-wrap gap-1">
+                        <TabsTrigger Value="combobox">Combobox</TabsTrigger>
+                        <TabsTrigger Value="multi-select">Multi Select</TabsTrigger>
+                        <TabsTrigger Value="tag-input">Tag Input</TabsTrigger>
+                        <TabsTrigger Value="color-picker">Color Picker</TabsTrigger>
+                        <TabsTrigger Value="currency-input">Currency Input</TabsTrigger>
+                        <TabsTrigger Value="masked-input">Masked Input</TabsTrigger>
+                        <TabsTrigger Value="input-otp">Input OTP</TabsTrigger>
+                        <TabsTrigger Value="input-group">Input Group</TabsTrigger>
+                    </TabsList>
+                </div>
+
+                <TabsContent Value="combobox" Class="mt-4">
+                    <DemoSection Title="Combobox"
+                                 Description="Autocomplete input with searchable dropdown"
+                                 Code="@AdvancedInputsDemoSnippets.Combobox">
+                        <div class="max-w-sm space-y-2">
+                            <Combobox TItem="FrameworkOption"
+                                      Items="frameworks"
+                                      @bind-Value="selectedFramework"
+                                      ValueSelector="@(f => f.Value)"
+                                      DisplaySelector="@(f => f.Label)"
+                                      Placeholder="选择框架…"
+                                      SearchPlaceholder="搜索框架…"
+                                      Class="w-full" />
+                            <p class="text-sm text-muted-foreground">
+                                已选：@(selectedFramework ?? "无")
+                            </p>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="multi-select" Class="mt-4">
+                    <DemoSection Title="Multi Select"
+                                 Description="Searchable multi-selection with tags and checkboxes"
+                                 Code="@AdvancedInputsDemoSnippets.MultiSelect">
+                        <div class="max-w-sm space-y-2">
+                            <MultiSelect TItem="FrameworkOption"
+                                         Items="frameworks"
+                                         @bind-Values="selectedFrameworks"
+                                         ValueSelector="@(f => f.Value)"
+                                         DisplaySelector="@(f => f.Label)"
+                                         Placeholder="选择多个框架…"
+                                         ShowSelectAll="true"
+                                         Class="w-full" />
+                            <p class="text-sm text-muted-foreground">
+                                已选：@(!selectedFrameworks.Any() ? "无" : string.Join(", ", selectedFrameworks))
+                            </p>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="tag-input" Class="mt-4">
+                    <DemoSection Title="Tag Input"
+                                 Description="Chip/tag input with configurable triggers, suggestions, and paste splitting"
+                                 Code="@AdvancedInputsDemoSnippets.TagInput">
+                        <div class="max-w-lg space-y-2">
+                            <TagInput Tags="@skillTags"
+                                      TagsChanged="@(tags => skillTags = tags.ToList())"
+                                      Placeholder="输入技能后按 Enter"
+                                      AddTrigger="TagInputTrigger.Enter | TagInputTrigger.Comma"
+                                      Suggestions="@skillSuggestions"
+                                      Clearable="true" />
+                            <p class="text-sm text-muted-foreground">
+                                标签：@(skillTags.Count == 0 ? "无" : string.Join(", ", skillTags))
+                            </p>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="color-picker" Class="mt-4">
+                    <DemoSection Title="Color Picker"
+                                 Description="Color selection with hex, RGB, and HSL support"
+                                 Code="@AdvancedInputsDemoSnippets.ColorPicker">
+                        <div class="flex flex-wrap items-center gap-4">
+                            <ColorPicker @bind-Color="themeColor"
+                                         Format="ColorFormat.Hex"
+                                         ShowPresets="true"
+                                         ShowInputs="true" />
+                            <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                                <span>当前：</span>
+                                <span class="inline-block size-6 rounded border"
+                                      style="@($"background-color: {themeColor}")"></span>
+                                <code>@themeColor</code>
+                            </div>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="currency-input" Class="mt-4">
+                    <DemoSection Title="Currency Input"
+                                 Description="Formatted currency input with locale support"
+                                 Code="@AdvancedInputsDemoSnippets.CurrencyInput">
+                        <div class="max-w-xs space-y-2">
+                            <Label>金额（CNY）</Label>
+                            <CurrencyInput TValue="decimal"
+                                           @bind-Value="currencyAmount"
+                                           Currency="CNY"
+                                           Class="w-full" />
+                            <p class="text-sm text-muted-foreground">数值：@currencyAmount.ToString("N2")</p>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="masked-input" Class="mt-4">
+                    <DemoSection Title="Masked Input"
+                                 Description="Text input with customizable format masks (phone, date, etc.)"
+                                 Code="@AdvancedInputsDemoSnippets.MaskedInput">
+                        <div class="max-w-xs space-y-2">
+                            <Label>电话号码</Label>
+                            <MaskedInput @bind-Value="phoneNumber"
+                                         Mask="(000) 000-0000"
+                                         Placeholder="(000) 000-0000"
+                                         Class="w-full" />
+                            <p class="text-sm text-muted-foreground">
+                                值：@(string.IsNullOrWhiteSpace(phoneNumber) ? "无" : phoneNumber)
+                            </p>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="input-otp" Class="mt-4">
+                    <DemoSection Title="Input OTP"
+                                 Description="One-time password input with individual character slots"
+                                 Code="@AdvancedInputsDemoSnippets.InputOtp">
+                        <div class="space-y-3">
+                            <InputOtp @bind-Value="otpValue" Length="6" OnComplete="HandleOtpComplete">
+                                <InputOtpGroup>
+                                    @for (var i = 0; i < 6; i++)
+                                    {
+                                        <InputOtpSlot Index="@i" />
+                                    }
+                                </InputOtpGroup>
+                            </InputOtp>
+                            <p class="text-sm text-muted-foreground">
+                                输入：@(string.IsNullOrEmpty(otpValue) ? "无" : otpValue)
+                                @if (otpComplete)
+                                {
+                                    <span class="text-green-600"> · 已完成</span>
+                                }
+                            </p>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="input-group" Class="mt-4">
+                    <DemoSection Title="Input Group"
+                                 Description="Enhanced inputs with icons, buttons, and addons"
+                                 Code="@AdvancedInputsDemoSnippets.InputGroup">
+                        <div class="grid max-w-md gap-4">
+                            <InputGroup>
+                                <InputGroupAddon Align="InputGroupAlign.InlineStart">
+                                    <LucideIcon Name="search" Size="16" Class="text-muted-foreground" />
+                                </InputGroupAddon>
+                                <InputGroupInput Placeholder="搜索…" @bind-Value="searchText" />
+                            </InputGroup>
+
+                            <InputGroup>
+                                <InputGroupAddon Align="InputGroupAlign.InlineStart">
+                                    <span class="px-1 text-sm text-muted-foreground">https://</span>
+                                </InputGroupAddon>
+                                <InputGroupInput Placeholder="example.com" @bind-Value="domainText" />
+                                <InputGroupAddon Align="InputGroupAlign.InlineEnd">
+                                    <InputGroupButton OnClick="OnVisitDomain">访问</InputGroupButton>
+                                </InputGroupAddon>
+                            </InputGroup>
+
+                            <p class="text-sm text-muted-foreground">
+                                搜索：@(string.IsNullOrWhiteSpace(searchText) ? "无" : searchText)
+                                · 域名：@(string.IsNullOrWhiteSpace(domainText) ? "无" : domainText)
+                            </p>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+            </Tabs>
+        </div>
+    </div>
+</div>
+
+@code {
+    private sealed record FrameworkOption(string Value, string Label);
+
+    private readonly List<FrameworkOption> frameworks =
+    [
+        new("blazor", "Blazor"),
+        new("react", "React"),
+        new("vue", "Vue"),
+        new("angular", "Angular"),
+        new("svelte", "Svelte")
+    ];
+
+    private string? selectedFramework = "blazor";
+    private IEnumerable<string> selectedFrameworks = new List<string> { "blazor", "react" };
+
+    private IReadOnlyList<string> skillTags = new List<string> { "C#", "Blazor" };
+    private readonly List<string> skillSuggestions =
+    [
+        "C#", "Blazor", "TypeScript", "SQL", "Docker", "Kubernetes"
+    ];
+
+    private string themeColor = "#6366f1";
+    private decimal currencyAmount = 1288.50m;
+    private string phoneNumber = string.Empty;
+
+    private string otpValue = string.Empty;
+    private bool otpComplete;
+
+    private string searchText = string.Empty;
+    private string domainText = "neoui.io";
+
+    private void HandleOtpComplete(string _)
+    {
+        otpComplete = true;
+    }
+
+    private void OnVisitDomain()
+    {
+        // 演示用：仅更新状态提示
+        searchText = domainText;
+    }
+}

@@ -1,0 +1,138 @@
+@using NeoAdmin.Blazor.Data.Entities
+@using NeoAdmin.Blazor.Menus
+@using Microsoft.AspNetCore.Components.Routing
+@inject MenuService MenuService
+
+@if (Level == 0)
+{
+    <SidebarMenu>
+        @if (isLoading)
+        {
+            <SidebarMenuItem>
+                <SidebarMenuButton Tooltip="Loading" Size="SidebarMenuButtonSize.Large">
+                    <LucideIcon Name="loader-circle" Size="20" />
+                    <span>加载菜单...</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+        }
+        else
+        {
+            @foreach (SysMenu menu in roots)
+            {
+                var children = GetVisibleChildren(menu);
+                var hasChildren = children.Count > 0;
+                var href = hasChildren ? null : GetHref(menu);
+                var defaultOpen = menu.SidebarStyle == SysMenuSidebarStyle.展开;
+
+                <SidebarMenuItem>
+                    @if (!hasChildren)
+                    {
+                        <SidebarMenuButton Href="@href"
+                                           Tooltip="@menu.Label"
+                                           Match="NavLinkMatch.All"
+                                           Size="SidebarMenuButtonSize.Large">
+                            <LucideIcon Name="@GetIconName(menu)" Size="20" Class="shrink-0" />
+                            <span>@menu.Label</span>
+                        </SidebarMenuButton>
+                    }
+                    else
+                    {
+                        <SidebarCollapsibleGroup StateKey="@($"neoadmin-menu-{menu.Id}")" DefaultOpen="@defaultOpen">
+                            <CollapsibleTrigger AsChild="true">
+                                <SidebarMenuButton Tooltip="@menu.Label" Size="SidebarMenuButtonSize.Large">
+                                    <LucideIcon Name="@GetIconName(menu)" Size="20" Class="shrink-0" />
+                                    <span>@menu.Label</span>
+                                    <SidebarMenuChevron>
+                                        <LucideIcon Name="chevron-right" Size="16" Class="shrink-0" />
+                                    </SidebarMenuChevron>
+                                </SidebarMenuButton>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent ForceMount="false">
+                                <LayoutAdminSidebarMenu Items="@children" Level="@(Level + 1)" />
+                            </CollapsibleContent>
+                        </SidebarCollapsibleGroup>
+                    }
+                </SidebarMenuItem>
+            }
+        }
+    </SidebarMenu>
+}
+else
+{
+    <SidebarMenuSub>
+        @foreach (SysMenu menu in Items)
+        {
+            var children = GetVisibleChildren(menu);
+            var hasChildren = children.Count > 0;
+            var href = hasChildren ? null : GetHref(menu);
+            var defaultOpen = menu.SidebarStyle == SysMenuSidebarStyle.展开;
+
+            <SidebarMenuSubItem>
+                @if (!hasChildren)
+                {
+                    <SidebarMenuSubButton Href="@href" Match="NavLinkMatch.All">
+                        <LucideIcon Name="@GetIconName(menu)" Size="14" Class="shrink-0" />
+                        <span>@menu.Label</span>
+                    </SidebarMenuSubButton>
+                }
+                else
+                {
+                    <SidebarCollapsibleGroup StateKey="@($"neoadmin-menu-{menu.Id}")" DefaultOpen="@defaultOpen">
+                        <CollapsibleTrigger AsChild="true">
+                            <SidebarMenuButton Tooltip="@menu.Label"
+                                               Class="h-7 min-h-7 px-2 py-0">
+                                <LucideIcon Name="@GetIconName(menu)" Size="14" Class="shrink-0" />
+                                <span>@menu.Label</span>
+                                <SidebarMenuChevron>
+                                    <LucideIcon Name="chevron-right" Size="14" Class="shrink-0" />
+                                </SidebarMenuChevron>
+                            </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent ForceMount="false">
+                            <LayoutAdminSidebarMenu Items="@children" Level="@(Level + 1)" />
+                        </CollapsibleContent>
+                    </SidebarCollapsibleGroup>
+                }
+            </SidebarMenuSubItem>
+        }
+    </SidebarMenuSub>
+}
+
+@code {
+    private bool isLoading = true;
+    private List<SysMenu> roots = new();
+
+    [Parameter]
+    public IReadOnlyList<SysMenu> Items { get; set; } = Array.Empty<SysMenu>();
+
+    [Parameter]
+    public int Level { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Level > 0)
+        {
+            return;
+        }
+
+        List<SysMenu> menus = await MenuService.GetNavigationAsync();
+        roots = MenuService.BuildTree(menus);
+        isLoading = false;
+    }
+
+    private static List<SysMenu> GetVisibleChildren(SysMenu menu) =>
+        menu.Children.Where(a => !a.IsHidden && !a.Type.IsPermissionNode()).ToList();
+
+    private static string GetIconName(SysMenu menu) =>
+        string.IsNullOrWhiteSpace(menu.Icon) ? "circle" : menu.Icon;
+
+    private string GetHref(SysMenu menu)
+    {
+        if (menu.Type == SysMenuType.外部连接)
+        {
+            return menu.Path;
+        }
+
+        return MenuService.NormalizePath(menu.Path);
+    }
+}

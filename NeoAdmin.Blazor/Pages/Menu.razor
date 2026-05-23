@@ -1,0 +1,435 @@
+@page "/admin/menu"
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Auth
+@using NeoAdmin.Blazor.Components
+@using NeoAdmin.Blazor.Data.Entities
+@using NeoAdmin.Blazor.Menus
+@inject MenuService MenuService
+
+<PageTitle>菜单管理</PageTitle>
+
+<div class="flex flex-col flex-1 min-h-0">
+    @if (!string.IsNullOrWhiteSpace(message))
+    {
+        <Alert Variant="@messageVariant" AccentBorder="true" Class="mb-3 shrink-0">
+            <Icon>
+                <LucideIcon Name="@GetMessageIcon()" Class="h-4 w-4" />
+            </Icon>
+            <ChildContent>
+                <AlertTitle>@GetMessageTitle()</AlertTitle>
+                <AlertDescription>@message</AlertDescription>
+            </ChildContent>
+        </Alert>
+    }
+
+    <CrudTable @ref="table"
+               TItem="SysMenu"
+               Title="菜单管理"
+               PageSize="0"
+               IsSearchText="false"
+               IsAdd="true"
+               IsEdit="true"
+               IsRemove="true"
+               IsRefresh="true"
+               LoadFunc="LoadMenusAsync"
+               OnSaveAsync="HandleSaveAsync"
+               OnDeleteAsync="HandleDeleteAsync"
+               OnEdit="HandleOnEdit"
+               ToolbarContent="ToolbarFragment">
+        <Columns>
+            <DataTableColumn TData="CrudGridRow<SysMenu>"
+                             TValue="long"
+                             Property="@(row => row.Item.Id)"
+                             Header="ID"
+                             Sortable="false"
+                             Width="180px" />
+
+            <DataTableColumn TData="CrudGridRow<SysMenu>"
+                             TValue="string"
+                             Property="@(row => row.Item.Label)"
+                             Header="名称"
+                             Sortable="false"
+                             Width="28%">
+
+                <CellTemplate Context="row">
+                    <div class="flex items-center gap-1.5" style="padding-left:@(menuLevels.GetValueOrDefault(row.Item.Id) * 18)px">
+                        <LucideIcon Name="@(string.IsNullOrWhiteSpace(row.Item.Icon) ? "circle" : row.Item.Icon)" Size="15" Class="shrink-0 text-muted-foreground" />
+                        <span class="truncate font-medium">@row.Item.Label</span>
+                        @if (row.Item.IsSystem)
+                        {
+                            <span class="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">系统</span>
+                        }
+                        @if (row.Item.IsHidden)
+                        {
+                            <span class="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">隐藏</span>
+                        }
+                    </div>
+                </CellTemplate>
+            </DataTableColumn>
+            
+            <DataTableColumn TData="CrudGridRow<SysMenu>"
+                             TValue="SysMenuType"
+                             Property="@(row => row.Item.Type)"
+                             Header="类型"
+                             Sortable="false"
+                             Width="120px">
+                <CellTemplate Context="row">
+                    @row.Item.Type.ToString()
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<SysMenu>"
+                             TValue="string"
+                             Property="@(row => row.Item.Path)"
+                             Header="路径"
+                             Sortable="false">
+                <CellTemplate Context="row">
+                    @(string.IsNullOrWhiteSpace(row.Item.Path) ? "-" : row.Item.Path)
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<SysMenu>"
+                             TValue="int"
+                             Property="@(row => row.Item.Sort)"
+                             Header="排序"
+                             Sortable="false"
+                             Width="96px" />
+            <DataTableColumn TData="CrudGridRow<SysMenu>"
+                             TValue="string"
+                             Property="@(_ => string.Empty)"
+                             Header="创建时间"
+                             Sortable="false"
+                             Width="160px">
+                <CellTemplate Context="row">
+                    @row.Item.CreatedTime.ToString("yyyy-MM-dd HH:mm:ss")
+                </CellTemplate>
+            </DataTableColumn>
+        </Columns>
+        <EditTemplate Context="item">
+            <div class="space-y-2">
+                <Label For="parent">父级菜单</Label>
+                <Select TValue="long" Class="w-full" @bind-Value="item.ParentId">
+                    <SelectTrigger>
+                        <SelectValue Placeholder="选择父级菜单" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem Value="0" TValue="long">根菜单</SelectItem>
+                        @foreach (SysMenu option in flatMenus.Where(a => a.Id != item.Id && !a.Type.IsPermissionNode()))
+                        {
+                            <SelectItem Value="@option.Id" TValue="long">@GetIndentedLabel(option)</SelectItem>
+                        }
+                    </SelectContent>
+                </Select>
+            </div>
+
+            <div class="grid gap-3 sm:grid-cols-2">
+                <div class="space-y-2">
+                    <Label For="label">名称</Label>
+                    <Input id="label" Class="w-full" @bind-Value="item.Label" />
+                </div>
+                <div class="space-y-2">
+                    <Label For="icon">Lucide 图标</Label>
+                    <Input id="icon" Class="w-full" @bind-Value="item.Icon" />
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <Label For="path">路径</Label>
+                <Input id="path" Class="w-full" @bind-Value="item.Path" />
+            </div>
+
+            <div class="grid gap-3 sm:grid-cols-3">
+                <div class="space-y-2">
+                    <Label For="type">类型</Label>
+                    <Select TValue="SysMenuType" Class="w-full" @bind-Value="item.Type">
+                        <SelectTrigger>
+                            <SelectValue Placeholder="选择类型" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            @foreach (SysMenuType type in Enum.GetValues<SysMenuType>())
+                            {
+                                <SelectItem Value="@type" TValue="SysMenuType">@type</SelectItem>
+                            }
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div class="space-y-2">
+                    <Label For="style">侧边栏</Label>
+                    <Select TValue="SysMenuSidebarStyle" Class="w-full" @bind-Value="item.SidebarStyle">
+                        <SelectTrigger>
+                            <SelectValue Placeholder="选择侧边栏样式" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            @foreach (SysMenuSidebarStyle style in Enum.GetValues<SysMenuSidebarStyle>())
+                            {
+                                <SelectItem Value="@style" TValue="SysMenuSidebarStyle">@style</SelectItem>
+                            }
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div class="space-y-2">
+                    <Label For="sort">排序</Label>
+                    <Input id="sort"
+                           Type="InputType.Number"
+                           Class="w-full"
+                           Placeholder="0"
+                           Value="@item.Sort.ToString()"
+                           ValueChanged="@(value => item.Sort = int.TryParse(value, out int sort) ? sort : 0)" />
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <Label For="description">备注</Label>
+                <Textarea Id="description"
+                          Class="min-h-20 w-full"
+                          Placeholder="输入备注"
+                          @bind-Value="item.Description" />
+            </div>
+
+            <div class="space-y-3 rounded-md border p-3">
+                <div class="flex items-center gap-2">
+                    <Checkbox @bind-Checked="item.IsHidden" Id="menu-is-hidden" />
+                    <Label for="menu-is-hidden">在侧边栏隐藏</Label>
+                </div>
+                <div class="flex items-center gap-2">
+                    <Checkbox @bind-Checked="generateCrudButtons" Id="menu-generate-crud-buttons" />
+                    <Label for="menu-generate-crud-buttons">生成添加、编辑、删除按钮权限点</Label>
+                </div>
+            </div>
+        </EditTemplate>
+    </CrudTable>
+</div>
+
+@code {
+    private CrudTable<SysMenu> table = default!;
+    private List<SysMenu> flatMenus = new();
+    private Dictionary<long, int> menuLevels = new();
+    private bool generateCrudButtons;
+    private string? message;
+    private AlertVariant messageVariant = AlertVariant.Default;
+
+    private const string TypeFilterDefault = "default";
+    private const string TypeFilterAll = "all";
+    private const string TypeFilterMenu = "menu";
+    private const string TypeFilterCrud = "crud";
+    private const string TypeFilterButton = "button";
+    private const string TypeFilterApi = "api";
+    private string typeFilter = TypeFilterDefault;
+
+    private async Task<List<SysMenu>> LoadMenusAsync()
+    {
+        flatMenus = await MenuService.GetAllAsync();
+        List<SysMenu> tree = MenuService.BuildTree(flatMenus);
+        menuLevels = BuildLevels(tree);
+        return FilterRows(FlattenRows(tree));
+    }
+
+    private async Task<bool> HandleSaveAsync(SysMenu item, bool isNewItem)
+    {
+        MenuEditModel model = new()
+        {
+            Id = item.Id,
+            ParentId = item.ParentId,
+            Label = item.Label,
+            Icon = item.Icon,
+            Path = item.Path,
+            Sort = item.Sort,
+            Type = item.Type,
+            Description = item.Description,
+            SidebarStyle = item.SidebarStyle,
+            IsHidden = item.IsHidden,
+            GenerateCrudButtons = generateCrudButtons
+        };
+
+        ApiResult<SysMenu> result = await MenuService.SaveAsync(model);
+        if (!result.Succeeded)
+        {
+            ShowError(result.Message);
+            return false;
+        }
+
+        ShowSuccess(result.Message);
+        if (result.Data is not null)
+        {
+            item.Id = result.Data.Id;
+        }
+        return true;
+    }
+
+    private async Task<bool> HandleDeleteAsync(SysMenu item)
+    {
+        ApiResult result = await MenuService.DeleteAsync(item.Id);
+        if (!result.Succeeded)
+        {
+            ShowError(result.Message);
+            return false;
+        }
+
+        ShowSuccess(result.Message);
+        return true;
+    }
+
+    private async Task AddChild(SysMenu parent)
+    {
+        SysMenu child = new()
+        {
+            ParentId = parent.Id,
+            Icon = "circle"
+        };
+        await table.EditItemAsync(child);
+    }
+
+    private Task HandleOnEdit(SysMenu item)
+    {
+        if (item.Id == 0)
+        {
+            generateCrudButtons = false;
+            if (item.ParentId > 0)
+            {
+                item.Sort = GetNextSortLocal(item.ParentId);
+                SysMenu? parent = FindMenu(item.ParentId);
+                if (parent is not null && !string.IsNullOrWhiteSpace(parent.Path))
+                {
+                    item.Path = $"{MenuService.NormalizePath(parent.Path).TrimEnd('/')}/new";
+                }
+            }
+            else
+            {
+                item.Sort = GetNextSortLocal(0);
+                item.Icon = "circle";
+            }
+        }
+        else
+        {
+            generateCrudButtons = item.Type == SysMenuType.增删改查;
+        }
+
+        ClearMessage();
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleTypeFilterChanged(string value)
+    {
+        typeFilter = string.IsNullOrWhiteSpace(value) ? TypeFilterDefault : value;
+        await table.LoadAsync();
+    }
+
+    private List<SysMenu> FilterRows(List<SysMenu> source)
+    {
+        return typeFilter switch
+        {
+            TypeFilterAll => source,
+            TypeFilterMenu => source.Where(a => a.Type == SysMenuType.菜单).ToList(),
+            TypeFilterCrud => source.Where(a => a.Type == SysMenuType.增删改查).ToList(),
+            TypeFilterButton => source.Where(a => a.Type == SysMenuType.按钮).ToList(),
+            TypeFilterApi => source.Where(a => a.Type == SysMenuType.接口).ToList(),
+            _ => source.Where(a => !a.Type.IsPermissionNode()).ToList()
+        };
+    }
+
+    private SysMenu? FindMenu(long id)
+    {
+        return flatMenus.FirstOrDefault(a => a.Id == id);
+    }
+
+    private int GetNextSortLocal(long parentId)
+    {
+        int? max = flatMenus
+            .Where(a => a.ParentId == parentId)
+            .Select(a => (int?)a.Sort)
+            .Max();
+        return (max ?? 0) + 10;
+    }
+
+    private string GetIndentedLabel(SysMenu menu)
+    {
+        int level = menuLevels.GetValueOrDefault(menu.Id);
+        return $"{new string('　', level)}{menu.Label}";
+    }
+
+    private static Dictionary<long, int> BuildLevels(IEnumerable<SysMenu> menus)
+    {
+        Dictionary<long, int> result = new();
+        void Walk(IEnumerable<SysMenu> items, int level)
+        {
+            foreach (SysMenu item in items)
+            {
+                result[item.Id] = level;
+                Walk(item.Children, level + 1);
+            }
+        }
+
+        Walk(menus, 0);
+        return result;
+    }
+
+    private static List<SysMenu> FlattenRows(IEnumerable<SysMenu> menus)
+    {
+        List<SysMenu> rows = new();
+        void Walk(IEnumerable<SysMenu> items)
+        {
+            foreach (SysMenu item in items)
+            {
+                rows.Add(item);
+                Walk(item.Children);
+            }
+        }
+
+        Walk(menus);
+        return rows;
+    }
+
+    private void ShowSuccess(string value)
+    {
+        message = value;
+        messageVariant = AlertVariant.Success;
+    }
+
+    private void ShowError(string value)
+    {
+        message = value;
+        messageVariant = AlertVariant.Destructive;
+    }
+
+    private string GetMessageTitle()
+    {
+        return messageVariant == AlertVariant.Success ? "操作成功" : "操作失败";
+    }
+
+    private string GetMessageIcon()
+    {
+        return messageVariant == AlertVariant.Success ? "circle-check" : "circle-x";
+    }
+
+    private void ClearMessage()
+    {
+        message = null;
+    }
+
+    private RenderFragment ToolbarFragment => __builder =>
+    {
+        <Select TValue="string"
+                Class="w-[280px]"
+                Value="@typeFilter"
+                ValueChanged="HandleTypeFilterChanged">
+            <SelectTrigger>
+                <SelectValue Placeholder="选择类型筛选" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem Value="@TypeFilterDefault" TValue="string">类型：菜单 + 增删改查</SelectItem>
+                <SelectItem Value="@TypeFilterAll" TValue="string">类型：全部</SelectItem>
+                <SelectItem Value="@TypeFilterMenu" TValue="string">类型：菜单</SelectItem>
+                <SelectItem Value="@TypeFilterCrud" TValue="string">类型：增删改查</SelectItem>
+                <SelectItem Value="@TypeFilterButton" TValue="string">类型：按钮</SelectItem>
+                <SelectItem Value="@TypeFilterApi" TValue="string">类型：接口</SelectItem>
+            </SelectContent>
+        </Select>
+    };
+
+    private async Task CreateRootMenu()
+    {
+        SysMenu root = new()
+        {
+            Icon = "circle"
+        };
+        await table.EditItemAsync(root);
+    }
+}

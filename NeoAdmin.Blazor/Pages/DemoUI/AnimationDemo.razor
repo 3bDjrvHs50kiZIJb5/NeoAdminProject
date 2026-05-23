@@ -1,0 +1,312 @@
+@page "/neo-demo/ui/animation"
+@layout LayoutAdmin
+
+<PageTitle>动画演示</PageTitle>
+
+<div class="flex flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">动画</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                Carousel、Motion、Page Transition、Screen Transition、Selection Indicator —
+                轮播、声明式动效、路由过渡与选中指示器。
+                参考
+                <a class="text-primary underline-offset-4 hover:underline"
+                   href="https://demos.neoui.io/components/motion"
+                   target="_blank"
+                   rel="noopener noreferrer">NeoUI Motion</a>、
+                <a class="text-primary underline-offset-4 hover:underline"
+                   href="https://demos.neoui.io/components/carousel"
+                   target="_blank"
+                   rel="noopener noreferrer">Carousel</a>。
+            </p>
+        </div>
+
+        <div class="p-4">
+            <Tabs DefaultValue="carousel" Class="w-full">
+                <TabsList Class="flex flex-wrap gap-1">
+                    <TabsTrigger Value="carousel">Carousel</TabsTrigger>
+                    <TabsTrigger Value="motion">Motion</TabsTrigger>
+                    <TabsTrigger Value="page-transition">Page Transition</TabsTrigger>
+                    <TabsTrigger Value="screen-transition">Screen Transition</TabsTrigger>
+                    <TabsTrigger Value="selection-indicator">Selection Indicator</TabsTrigger>
+                </TabsList>
+
+                <TabsContent Value="carousel" Class="mt-4">
+                    <DemoSection Title="Carousel"
+                                 Description="Slideshow component with touch gestures and animations"
+                                 Code="@AnimationDemoSnippets.Carousel">
+                        <div class="space-y-3">
+                            <Carousel Class="max-w-xl"
+                                      ShowIndicators="true"
+                                      ShowNavigation="true"
+                                      EnableDrag="true"
+                                      Loop="true"
+                                      OnSlideChange="OnCarouselSlideChanged">
+                                <CarouselItem>
+                                    <div class="flex h-48 items-center justify-center rounded-lg bg-sky-500 text-2xl font-semibold text-white">
+                                        Slide 1
+                                    </div>
+                                </CarouselItem>
+                                <CarouselItem>
+                                    <div class="flex h-48 items-center justify-center rounded-lg bg-emerald-500 text-2xl font-semibold text-white">
+                                        Slide 2
+                                    </div>
+                                </CarouselItem>
+                                <CarouselItem>
+                                    <div class="flex h-48 items-center justify-center rounded-lg bg-violet-500 text-2xl font-semibold text-white">
+                                        Slide 3
+                                    </div>
+                                </CarouselItem>
+                                <CarouselItem>
+                                    <AspectRatio Ratio="16/9" Class="overflow-hidden rounded-lg bg-muted">
+                                        <img src="https://picsum.photos/seed/neocarousel/640/360"
+                                             alt="示例图片"
+                                             class="h-full w-full object-cover" />
+                                    </AspectRatio>
+                                </CarouselItem>
+                            </Carousel>
+                            <p class="text-sm text-muted-foreground">
+                                当前幻灯片：@(carouselSlideIndex + 1) / 4（支持拖拽与箭头导航）
+                            </p>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="motion" Class="mt-4">
+                    <DemoSection Title="Motion"
+                                 Description="Declarative animation system with 20+ presets powered by Motion.dev"
+                                 Code="@AnimationDemoSnippets.Motion">
+                        <div class="grid gap-8 lg:grid-cols-2">
+                            <div class="space-y-2">
+                                <p class="text-sm font-medium">OnAppear — FadeIn</p>
+                                <Motion Trigger="MotionTrigger.OnAppear" DisableOnPrerender="true" @key="motionAppearKey">
+                                    <FadeIn Duration="0.5" />
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle>淡入卡片</CardTitle>
+                                            <CardDescription>进入视口时自动播放</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <p class="text-sm text-muted-foreground">使用 DisableOnPrerender 避免 SSR 与交互态切换时的闪烁。</p>
+                                        </CardContent>
+                                    </Card>
+                                </Motion>
+                            </div>
+
+                            <div class="space-y-2">
+                                <p class="text-sm font-medium">OnAppear — ScaleIn + Spring</p>
+                                <Motion Trigger="MotionTrigger.OnAppear" DisableOnPrerender="true" @key="motionSpringKey">
+                                    <ScaleIn From="0.85" To="1" Duration="0.5" />
+                                    <Spring Stiffness="300" Damping="20" />
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle>弹性缩放</CardTitle>
+                                            <CardDescription>ScaleIn 配合 Spring 物理曲线</CardDescription>
+                                        </CardHeader>
+                                    </Card>
+                                </Motion>
+                            </div>
+
+                            <div class="space-y-3 lg:col-span-2">
+                                <p class="text-sm font-medium">Manual — FadeIn + SlideInFromLeft</p>
+                                <Motion @ref="manualMotion" Trigger="MotionTrigger.Manual" Class="inline-block">
+                                    <FadeIn Duration="0.35" />
+                                    <SlideInFromLeft From="-24" Duration="0.4" />
+                                    <Button OnClick="PlayManualMotionAsync">
+                                        <LucideIcon Name="play" Size="16" Class="mr-2" />
+                                        播放动画
+                                    </Button>
+                                </Motion>
+                                <Button Variant="ButtonVariant.Outline"
+                                        Size="ButtonSize.Small"
+                                        OnClick="ReplayAppearAnimations">
+                                    重播 OnAppear 示例
+                                </Button>
+                            </div>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="page-transition" Class="mt-4">
+                    <DemoSection Title="Page Transition"
+                                 Description="Automatic fade transition on SPA navigation, SSR-aware and zero-config when wrapped at the router"
+                                 Code="@AnimationDemoSnippets.PageTransition">
+                        <div class="max-w-2xl space-y-4">
+                            <Alert Variant="AlertVariant.Info" AccentBorder="true">
+                                <Icon>
+                                    <LucideIcon Name="info" Class="h-4 w-4" />
+                                </Icon>
+                                <ChildContent>
+                                    <AlertTitle>应用级配置</AlertTitle>
+                                    <AlertDescription>
+                                        Page Transition 需在 <code class="text-xs">Routes.razor</code> 或根布局处，
+                                        用 <code class="text-xs">RenderStateProvider</code> 包裹 <code class="text-xs">Router</code>，
+                                        并在 <code class="text-xs">RouteView</code> 外包一层 <code class="text-xs">PageTransition</code>。
+                                        本演示页内无法单独模拟整站路由切换；请在侧边栏切换其他 NeoDemo 页面体验当前项目的默认导航（未启用时无淡入效果）。
+                                    </AlertDescription>
+                                </ChildContent>
+                            </Alert>
+
+                            <Card Class="max-w-lg">
+                                <CardHeader>
+                                    <CardTitle>推荐参数</CardTitle>
+                                    <CardDescription>零配置淡入淡出</CardDescription>
+                                </CardHeader>
+                                <CardContent class="space-y-2 text-sm text-muted-foreground">
+                                    <p><strong>Duration</strong>：0.25s（默认）</p>
+                                    <p><strong>EnableSlide</strong>：可选轻微位移</p>
+                                    <p><strong>DisableAnimation</strong>：调试或用户偏好时关闭</p>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="screen-transition" Class="mt-4">
+                    <DemoSection Title="Screen Transition"
+                                 Description="Direction-aware animated screen switcher (Tab / Push / Pop)"
+                                 Code="@AnimationDemoSnippets.ScreenTransition">
+                        <div class="max-w-lg space-y-4">
+                            <div class="flex flex-wrap gap-2">
+                                <Button Size="ButtonSize.Small"
+                                        Variant="@(screenKey == "home" ? ButtonVariant.Default : ButtonVariant.Outline)"
+                                        OnClick='() => GoScreen("home", ScreenTransitionDirection.Tab)'>
+                                    Tab → 首页
+                                </Button>
+                                <Button Size="ButtonSize.Small"
+                                        Variant="ButtonVariant.Outline"
+                                        OnClick='() => GoScreen("detail", ScreenTransitionDirection.Push)'>
+                                    Push → 详情
+                                </Button>
+                                <Button Size="ButtonSize.Small"
+                                        Variant="ButtonVariant.Outline"
+                                        OnClick='() => GoScreen("settings", ScreenTransitionDirection.Push)'>
+                                    Push → 设置
+                                </Button>
+                                <Button Size="ButtonSize.Small"
+                                        Variant="ButtonVariant.Outline"
+                                        OnClick='() => GoScreen("home", ScreenTransitionDirection.Pop)'>
+                                    Pop ← 返回
+                                </Button>
+                            </div>
+
+                            <ScreenTransition Key="@screenKey"
+                                              Direction="@screenDirection"
+                                              Class="h-56 overflow-hidden rounded-lg border bg-muted/30">
+                                @GetScreenContent()
+                            </ScreenTransition>
+
+                            <p class="text-sm text-muted-foreground">
+                                当前：<strong>@screenKey</strong>，方向：<strong>@screenDirection</strong>
+                                （先设置 Direction，再变更 Key）
+                            </p>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="selection-indicator" Class="mt-4">
+                    <DemoSection Title="Selection Indicator"
+                                 Description="Composable spring-animated indicator that slides between active items"
+                                 Code="@AnimationDemoSnippets.SelectionIndicator">
+                        <div class="space-y-8">
+                            <div class="max-w-md space-y-2">
+                                <p class="text-sm font-medium">Tabs + SelectionIndicator</p>
+                                <Tabs @bind-Value="indicatorTab" Class="w-full">
+                                    <TabsList Class="relative inline-flex h-10 w-full rounded-lg bg-muted p-1">
+                                        <SelectionIndicator Class="rounded-md bg-background shadow-sm" />
+                                        <TabsTrigger Value="overview" Class="relative z-10 flex-1">概览</TabsTrigger>
+                                        <TabsTrigger Value="analytics" Class="relative z-10 flex-1">分析</TabsTrigger>
+                                        <TabsTrigger Value="settings" Class="relative z-10 flex-1">设置</TabsTrigger>
+                                    </TabsList>
+                                    <TabsContent Value="overview" Class="mt-3 text-sm text-muted-foreground">
+                                        概览面板内容
+                                    </TabsContent>
+                                    <TabsContent Value="analytics" Class="mt-3 text-sm text-muted-foreground">
+                                        分析面板内容
+                                    </TabsContent>
+                                    <TabsContent Value="settings" Class="mt-3 text-sm text-muted-foreground">
+                                        设置面板内容
+                                    </TabsContent>
+                                </Tabs>
+                            </div>
+
+                            <div class="max-w-md space-y-2">
+                                <p class="text-sm font-medium">按钮组（data-state=active）</p>
+                                <div class="relative inline-flex rounded-lg border bg-muted/40 p-1" id="si-button-group">
+                                    <SelectionIndicator Selector="[data-state=active]" />
+                                    @foreach (var option in indicatorOptions)
+                                    {
+                                        <button type="button"
+                                                class="relative z-10 rounded-md px-4 py-2 text-sm transition-colors @(indicatorButton == option ? "text-foreground" : "text-muted-foreground")"
+                                                data-state="@(indicatorButton == option ? "active" : "inactive")"
+                                                @onclick="() => indicatorButton = option">
+                                            @option
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+            </Tabs>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int carouselSlideIndex;
+
+    private Motion? manualMotion;
+    private int motionAppearKey;
+    private int motionSpringKey;
+
+    private string screenKey = "home";
+    private ScreenTransitionDirection screenDirection = ScreenTransitionDirection.Tab;
+
+    private string indicatorTab = "overview";
+    private string indicatorButton = "日";
+
+    private static readonly string[] indicatorOptions = ["日", "周", "月"];
+
+    private void OnCarouselSlideChanged(int index) => carouselSlideIndex = index;
+
+    private async Task PlayManualMotionAsync()
+    {
+        if (manualMotion is not null)
+            await manualMotion.PlayAsync();
+    }
+
+    private void ReplayAppearAnimations()
+    {
+        motionAppearKey++;
+        motionSpringKey++;
+    }
+
+    private void GoScreen(string key, ScreenTransitionDirection direction)
+    {
+        screenDirection = direction;
+        screenKey = key;
+    }
+
+    private RenderFragment GetScreenContent() => screenKey switch
+    {
+        "detail" => @<div class="flex h-full flex-col justify-center gap-2 p-6">
+            <p class="text-lg font-semibold">详情页</p>
+            <p class="text-sm text-muted-foreground">Push 从右侧滑入，Pop 向右滑出。</p>
+            <Button Size="ButtonSize.Small" Variant="ButtonVariant.Outline"
+                    OnClick='() => GoScreen("home", ScreenTransitionDirection.Pop)'>
+                返回首页
+            </Button>
+        </div>,
+        "settings" => @<div class="flex h-full flex-col justify-center gap-2 p-6">
+            <p class="text-lg font-semibold">设置</p>
+            <p class="text-sm text-muted-foreground">同级 Tab 切换使用淡入淡出。</p>
+        </div>,
+        _ => @<div class="flex h-full flex-col items-center justify-center gap-2 p-6">
+            <LucideIcon Name="home" Size="32" Class="text-primary" />
+            <p class="text-lg font-semibold">首页</p>
+            <p class="text-sm text-muted-foreground">选择 Push 进入子页面。</p>
+        </div>
+    };
+}

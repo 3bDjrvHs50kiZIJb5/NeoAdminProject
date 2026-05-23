@@ -1,0 +1,12 @@
+{
+  "[aspnetcorerazor]": {
+    "editor.renderValidationDecorations": "off"
+  },
+  "[razor]": {
+    "editor.renderValidationDecorations": "off"
+  },
+  "dotnet.backgroundAnalysis.analyzerDiagnosticsScope": "none",
+  "dotnet.backgroundAnalysis.compilerDiagnosticsScope": "none",
+  "omnisharp.enableRoslynAnalyzers": false,
+  "problems.decorations.enabled": false
+}

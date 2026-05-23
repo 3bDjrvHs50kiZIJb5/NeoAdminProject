@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>NeoAdmin.Blazor</AssemblyName>
+    <RootNamespace>NeoAdmin.Blazor</RootNamespace>
+    <OutputType>Library</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>12.0</LangVersion>
+    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+    <Description>NeoAdmin.Blazor 的基础框架骨架。</Description>
+    <Title>NeoAdmin.Blazor</Title>
+    <Product>NeoAdmin.Blazor</Product>
+    <PackageId>NeoAdmin.Blazor</PackageId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="FreeSql" Version="3.5.304" />
+    <PackageReference Include="FreeSql.Provider.SqliteCore" Version="3.5.304" />
+    <PackageReference Include="FreeScheduler" Version="2.1.4" />
+    <PackageReference Include="NCrontab" Version="3.4.0" />
+    <PackageReference Include="NeoUI.Blazor" Version="4.0.0" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+    <PackageReference Include="Yitter.IdGenerator" Version="1.0.14" />
+  </ItemGroup>
+</Project>

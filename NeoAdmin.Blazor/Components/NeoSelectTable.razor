@@ -1,0 +1,180 @@
+@typeparam TItem where TItem : class, new()
+@typeparam TKey where TKey : notnull
+@using FreeSql.Internal.Model
+@using NeoAdmin.Blazor.Utils
+@inject IFreeSql FreeSql
+
+<CrudTable @ref="tableRef"
+           TItem="TItem"
+           Title=""
+           Compact="true"
+           PageSize="@PageSize"
+           IsAdd="false"
+           IsEdit="false"
+           IsRemove="false"
+           IsRefresh="false"
+           IsRowNumber="false"
+           IsSearchText="@IsSearchText"
+           SearchPlaceholder="@SearchPlaceholder"
+           IsMultiSelect="@IsMultiSelect"
+           IsSingleSelect="@IsSingleSelect"
+           KeepSelectionOnPaging="@KeepSelectionOnPaging"
+           SelectionKey="GetSelectionKey"
+           SelectedKeys="selectedKeys"
+           SelectedKeysChanged="HandleSelectedKeysChanged"
+           OnQuery="HandleQuery"
+           OnSelectChanged="HandleSelectChanged">
+    <Columns>
+        <DataTableColumn TData="CrudGridRow<TItem>"
+                         TValue="TKey"
+                         Property="@(row => GetItemId(row.Item))"
+                         Header="ID"
+                         Sortable="false"
+                         Width="180px" />
+        <DataTableColumn TData="CrudGridRow<TItem>"
+                         TValue="string"
+                         Property="@(_ => string.Empty)"
+                         Header=""
+                         Sortable="false">
+            <CellTemplate Context="row">
+                @if (RowTemplate != null)
+                {
+                    @RowTemplate(row.Item)
+                }
+                else
+                {
+                    <span>@GetDefaultLabel(row.Item)</span>
+                }
+            </CellTemplate>
+        </DataTableColumn>
+    </Columns>
+</CrudTable>
+
+@code {
+    private CrudTable<TItem>? tableRef;
+    private HashSet<object> selectedKeys = new();
+    private ColumnInfo? firstStringColumn;
+
+    [Parameter]
+    public TKey Value { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<TKey> ValueChanged { get; set; }
+
+    [Parameter]
+    public List<TItem>? Items { get; set; }
+
+    [Parameter]
+    public EventCallback<List<TItem>> ItemsChanged { get; set; }
+
+    [Parameter]
+    public int PageSize { get; set; } = 20;
+
+    [Parameter]
+    public bool IsSearchText { get; set; } = true;
+
+    [Parameter]
+    public string SearchPlaceholder { get; set; } = "搜索..";
+
+    [Parameter]
+    public bool KeepSelectionOnPaging { get; set; } = true;
+
+    [Parameter]
+    public RenderFragment<TItem>? RowTemplate { get; set; }
+
+    [Parameter]
+    public EventCallback<CrudQueryEventArgs<TItem>> OnQuery { get; set; }
+
+    private bool IsMultiSelect => ItemsChanged.HasDelegate;
+    private bool IsSingleSelect => ValueChanged.HasDelegate;
+
+    protected override void OnInitialized()
+    {
+        NeoEntitySelectHelper.EnsureSinglePrimaryKey<TItem, TKey>(FreeSql);
+        firstStringColumn = NeoEntitySelectHelper.GetFirstStringColumn(FreeSql, typeof(TItem));
+        SyncKeysFromBoundValues();
+    }
+
+    protected override void OnParametersSet()
+    {
+        SyncKeysFromBoundValues();
+    }
+
+    private void SyncKeysFromBoundValues()
+    {
+        selectedKeys.Clear();
+        if (Items != null)
+        {
+            foreach (TItem item in Items)
+            {
+                selectedKeys.Add(GetSelectionKey(item));
+            }
+        }
+        else if (ValueChanged.HasDelegate && !EqualityComparer<TKey>.Default.Equals(Value, default!))
+        {
+            selectedKeys.Add(Value!);
+        }
+    }
+
+    private Task HandleQuery(CrudQueryEventArgs<TItem> args) => OnQuery.InvokeAsync(args);
+
+    private Task HandleSelectedKeysChanged(HashSet<object> keys)
+    {
+        selectedKeys = keys;
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleSelectChanged(IReadOnlyList<CrudGridRow<TItem>> rows)
+    {
+        if (ValueChanged.HasDelegate)
+        {
+            TItem? selected = rows.Select(row => row.Item).FirstOrDefault();
+            TKey key = selected is null
+                ? default!
+                : NeoEntitySelectHelper.GetPrimaryKey<TItem, TKey>(FreeSql, selected);
+            await ValueChanged.InvokeAsync(key);
+            return;
+        }
+
+        if (ItemsChanged.HasDelegate)
+        {
+            List<TItem> selectedItems = tableRef?.GetSelectedItems().ToList() ?? rows.Select(row => row.Item).ToList();
+            if (KeepSelectionOnPaging && selectedKeys.Count > 0)
+            {
+                selectedItems = await ResolveSelectedItemsAsync();
+            }
+
+            Items = selectedItems;
+            await ItemsChanged.InvokeAsync(selectedItems);
+        }
+    }
+
+    private async Task<List<TItem>> ResolveSelectedItemsAsync()
+    {
+        if (selectedKeys.Count == 0)
+        {
+            return new List<TItem>();
+        }
+
+        List<TItem> loaded = await FreeSql.Select<TItem>().ToListAsync();
+        return loaded
+            .Where(item => selectedKeys.Contains(GetSelectionKey(item)))
+            .ToList();
+    }
+
+    private object GetSelectionKey(TItem item) =>
+        NeoEntitySelectHelper.GetPrimaryKey<TItem, TKey>(FreeSql, item)!;
+
+    private TKey GetItemId(TItem item) =>
+        NeoEntitySelectHelper.GetPrimaryKey<TItem, TKey>(FreeSql, item);
+
+    private string GetDefaultLabel(TItem item)
+    {
+        if (firstStringColumn != null)
+        {
+            return firstStringColumn.GetValue(item)?.ToString() ?? string.Empty;
+        }
+
+        return GetSelectionKey(item).ToString() ?? string.Empty;
+    }
+}

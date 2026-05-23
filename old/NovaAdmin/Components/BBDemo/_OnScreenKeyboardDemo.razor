@@ -1,0 +1,98 @@
+@page "/BBDemo/OnScreenKeyboardDemo"
+
+<PageTitle>屏幕键盘演示</PageTitle>
+
+<div class="container-fluid py-3 demo-page">
+    <div class="card mb-3">
+        <div class="card-header">
+            <strong>屏幕键盘演示</strong>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">
+                这个页面演示屏幕键盘如何绑定不同输入框，适合触摸屏、终端机和特殊输入场景。
+            </p>
+
+            <div class="mb-3">
+                <div class="border rounded p-3 bg-light">
+                    <div class="fw-semibold mb-2">完整键盘</div>
+                    <p class="small text-muted mb-3">
+                        这个输入框使用普通文本输入，屏幕键盘会通过 `ClassName` 匹配到它。
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label">普通文本</label>
+                        <input class="form-control virtualkeyboard" placeholder="点击后可用屏幕键盘输入" @bind="fullKeyboardValue" @bind:event="oninput" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">屏幕键盘</label>
+                        <OnScreenKeyboard ClassName="virtualkeyboard" />
+                    </div>
+
+                    <div class="border rounded p-3 bg-white">
+                        <div class="text-muted small mb-1">当前值</div>
+                        <div class="fw-semibold text-break">@(string.IsNullOrWhiteSpace(fullKeyboardValue) ? "尚未输入" : fullKeyboardValue)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <div class="border rounded p-3 bg-light">
+                    <div class="fw-semibold mb-2">数字键盘与密码输入</div>
+                    <p class="small text-muted mb-3">
+                        这个区域演示数字输入和密码输入，适合身份证号、验证码、账号密码等场景。
+                    </p>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">数字输入</label>
+                            <input class="form-control numkeyboard" placeholder="请输入数字" inputmode="numeric" @bind="numberKeyboardValue" @bind:event="oninput" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">密码输入</label>
+                            <input type="password" class="form-control passwordkeyboard" placeholder="请输入密码" @bind="passwordKeyboardValue" @bind:event="oninput" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">数字键盘</label>
+                        <OnScreenKeyboard ClassName="numkeyboard" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">密码键盘</label>
+                        <OnScreenKeyboard ClassName="passwordkeyboard" />
+                    </div>
+
+                    <div class="border rounded p-3 bg-white">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <div class="text-muted small mb-1">数字值</div>
+                                <div class="fw-semibold text-break">@(string.IsNullOrWhiteSpace(numberKeyboardValue) ? "尚未输入" : numberKeyboardValue)</div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="text-muted small mb-1">密码值</div>
+                                <div class="fw-semibold text-break">@(string.IsNullOrWhiteSpace(passwordKeyboardValue) ? "尚未输入" : new string('*', passwordKeyboardValue.Length))</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border rounded p-3 bg-light">
+                <div class="fw-semibold mb-2">适用场景</div>
+                <ul class="mb-0 ps-3">
+                    <li>自助终端</li>
+                    <li>触摸屏输入</li>
+                    <li>需要规避物理键盘的场景</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string fullKeyboardValue = "";
+    private string numberKeyboardValue = "";
+    private string passwordKeyboardValue = "";
+}

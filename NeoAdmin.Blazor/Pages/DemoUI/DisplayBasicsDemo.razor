@@ -1,0 +1,145 @@
+@page "/neo-demo/ui/display-basics"
+@layout LayoutAdmin
+
+<PageTitle>内容与装饰演示</PageTitle>
+
+<div class="flex flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">内容与装饰</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                Aspect Ratio、Avatar、Badge、Card、Typography — 内容展示与视觉装饰组件。
+                参考 <a class="text-primary underline-offset-4 hover:underline"
+                       href="https://demos.neoui.io/components"
+                       target="_blank"
+                       rel="noopener noreferrer">NeoUI Components</a>。
+            </p>
+        </div>
+
+        <div class="p-4">
+            <Tabs DefaultValue="aspect-ratio" Class="w-full">
+                <TabsList Class="flex flex-wrap gap-1">
+                    <TabsTrigger Value="aspect-ratio">Aspect Ratio</TabsTrigger>
+                    <TabsTrigger Value="avatar">Avatar</TabsTrigger>
+                    <TabsTrigger Value="badge">Badge</TabsTrigger>
+                    <TabsTrigger Value="card">Card</TabsTrigger>
+                    <TabsTrigger Value="typography">Typography</TabsTrigger>
+                </TabsList>
+
+                <TabsContent Value="aspect-ratio" Class="mt-4">
+                    <DemoSection Title="Aspect Ratio"
+                                 Description="Displays content within a desired aspect ratio"
+                                 Code="@DisplayBasicsDemoSnippets.AspectRatio">
+                        <div class="flex flex-wrap items-start gap-6">
+                            <AspectRatio Ratio="16/9" Class="max-w-md overflow-hidden rounded-lg bg-muted">
+                                <img src="https://picsum.photos/seed/neoadmin/640/360"
+                                     alt="示例图片"
+                                     class="h-full w-full object-cover" />
+                            </AspectRatio>
+                            <AspectRatio Ratio="1" Class="w-32 overflow-hidden rounded-full bg-muted">
+                                <div class="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                                    1:1
+                                </div>
+                            </AspectRatio>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="avatar" Class="mt-4">
+                    <DemoSection Title="Avatar"
+                                 Description="An image element with a fallback for representing the user"
+                                 Code="@DisplayBasicsDemoSnippets.Avatar">
+                        <div class="flex flex-wrap items-center gap-6">
+                            <Avatar Size="AvatarSize.Default">
+                                <AvatarImage Source="https://picsum.photos/seed/user1/80" Alt="用户头像" />
+                                <AvatarFallback>NA</AvatarFallback>
+                            </Avatar>
+                            <Avatar Size="AvatarSize.Large">
+                                <AvatarFallback>
+                                    <LucideIcon Name="user" Size="20" />
+                                </AvatarFallback>
+                            </Avatar>
+                            <Avatar Size="AvatarSize.Small">
+                                <AvatarFallback Class="text-xs">小</AvatarFallback>
+                            </Avatar>
+                            <div class="flex -space-x-2">
+                                <Avatar Class="border-2 border-background">
+                                    <AvatarFallback>A</AvatarFallback>
+                                </Avatar>
+                                <Avatar Class="border-2 border-background">
+                                    <AvatarFallback>B</AvatarFallback>
+                                </Avatar>
+                                <Avatar Class="border-2 border-background">
+                                    <AvatarFallback>+3</AvatarFallback>
+                                </Avatar>
+                            </div>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="badge" Class="mt-4">
+                    <DemoSection Title="Badge"
+                                 Description="Displays a badge or a component that looks like a badge"
+                                 Code="@DisplayBasicsDemoSnippets.Badge">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <Badge Variant="BadgeVariant.Default">默认</Badge>
+                            <Badge Variant="BadgeVariant.Secondary">次要</Badge>
+                            <Badge Variant="BadgeVariant.Destructive">3</Badge>
+                            <Badge Variant="BadgeVariant.Outline">轮廓</Badge>
+                            <Badge>
+                                <BadgeIcon>
+                                    <LucideIcon Name="check" Size="12" />
+                                </BadgeIcon>
+                                已完成
+                            </Badge>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="card" Class="mt-4">
+                    <DemoSection Title="Card"
+                                 Description="Displays a card with header, content, and footer"
+                                 Code="@DisplayBasicsDemoSnippets.Card">
+                        <Card Class="max-w-sm">
+                            <CardHeader>
+                                <CardTitle>卡片标题</CardTitle>
+                                <CardDescription>简短说明文字，用于补充上下文。</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <p class="text-sm text-muted-foreground">
+                                    卡片主体内容区域，可放置表单、列表或任意组件。
+                                </p>
+                            </CardContent>
+                            <CardFooter class="justify-end gap-2">
+                                <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small">取消</Button>
+                                <Button Size="ButtonSize.Small">确定</Button>
+                            </CardFooter>
+                        </Card>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="typography" Class="mt-4">
+                    <DemoSection Title="Typography"
+                                 Description="Styles for headings, paragraphs, lists, and other text elements"
+                                 Code="@DisplayBasicsDemoSnippets.Typography">
+                        <div class="max-w-xl space-y-3">
+                            <Typography Variant="TypographyVariant.H1">一级标题 H1</Typography>
+                            <Typography Variant="TypographyVariant.H2">二级标题 H2</Typography>
+                            <Typography Variant="TypographyVariant.H3">三级标题 H3</Typography>
+                            <Typography Variant="TypographyVariant.P">
+                                正文段落：用于展示主要阅读内容，保持合适的行高与字重。
+                            </Typography>
+                            <Typography Variant="TypographyVariant.Muted">
+                                辅助说明：次要信息、提示或标注文字。
+                            </Typography>
+                            <Typography Variant="TypographyVariant.Blockquote">
+                                「设计不仅是外观，更是工作方式。」
+                            </Typography>
+                            <Typography Variant="TypographyVariant.InlineCode">npm install neoui.blazor</Typography>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+            </Tabs>
+        </div>
+    </div>
+</div>

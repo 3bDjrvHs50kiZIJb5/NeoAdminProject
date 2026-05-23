@@ -1,0 +1,256 @@
+@page "/neo-demo/ui/data-display"
+@layout LayoutAdmin
+
+<PageTitle>数据展示演示</PageTitle>
+
+<div class="flex flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">数据展示</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                Data Table、Data Grid、Data View、Tree View、Timeline — 表格、网格、列表与树形时间线（静态模拟数据）。
+                参考 <a class="text-primary underline-offset-4 hover:underline"
+                       href="https://demos.neoui.io/components"
+                       target="_blank"
+                       rel="noopener noreferrer">NeoUI Components</a>。
+            </p>
+        </div>
+
+        <div class="p-4">
+            <Tabs DefaultValue="data-table" Class="w-full">
+                <TabsList Class="flex flex-wrap gap-1">
+                    <TabsTrigger Value="data-table">Data Table</TabsTrigger>
+                    <TabsTrigger Value="data-grid">Data Grid</TabsTrigger>
+                    <TabsTrigger Value="data-view">Data View</TabsTrigger>
+                    <TabsTrigger Value="tree-view">Tree View</TabsTrigger>
+                    <TabsTrigger Value="timeline">Timeline</TabsTrigger>
+                </TabsList>
+
+                <TabsContent Value="data-table" Class="mt-4">
+                    <DemoSection Title="Data Table"
+                                 Description="Powerful table and datagrids for displaying tabular data"
+                                 Code="@DataDisplayDemoSnippets.DataTable">
+                        <DataTable TData="DemoProduct"
+                                   Data="@products"
+                                   ShowToolbar="true"
+                                   InitialPageSize="5"
+                                   Class="max-w-3xl">
+                            <Columns>
+                                <DataTableColumn TData="DemoProduct"
+                                                 TValue="string"
+                                                 Property="@(p => p.Name)"
+                                                 Header="名称"
+                                                 Sortable="true"
+                                                 Filterable="true" />
+                                <DataTableColumn TData="DemoProduct"
+                                                 TValue="string"
+                                                 Property="@(p => p.Category)"
+                                                 Header="分类"
+                                                 Sortable="true" />
+                                <DataTableColumn TData="DemoProduct"
+                                                 TValue="decimal"
+                                                 Property="@(p => p.Price)"
+                                                 Header="价格"
+                                                 Sortable="true"
+                                                 Alignment="ColumnAlignment.Right">
+                                    <CellTemplate Context="row">
+                                        @row.Price.ToString("C2")
+                                    </CellTemplate>
+                                </DataTableColumn>
+                                <DataTableColumn TData="DemoProduct"
+                                                 TValue="int"
+                                                 Property="@(p => p.Stock)"
+                                                 Header="库存"
+                                                 Sortable="true"
+                                                 Width="90px" />
+                            </Columns>
+                        </DataTable>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="data-grid" Class="mt-4">
+                    <DemoSection Title="Data Grid"
+                                 Description="High-performance data grid with sorting, filtering, and pagination"
+                                 Code="@DataDisplayDemoSnippets.DataGrid">
+                        <DataGrid TItem="DemoProduct"
+                                  Items="@products"
+                                  Height="320px"
+                                  PageSize="10"
+                                  FillWidth="true"
+                                  Class="max-w-3xl">
+                            <DataGridColumn TItem="DemoProduct" Field="Name" Header="名称" Sortable="true" Flex="1" />
+                            <DataGridColumn TItem="DemoProduct" Field="Category" Header="分类" Sortable="true" />
+                            <DataGridColumn TItem="DemoProduct" Field="Price" Header="价格" Sortable="true" Width="110px" />
+                            <DataGridColumn TItem="DemoProduct" Field="Stock" Header="库存" Sortable="true" Width="90px" />
+                        </DataGrid>
+                        <p class="mt-2 text-xs text-muted-foreground">基于 AG Grid，首次加载可能需要短暂初始化。</p>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="data-view" Class="mt-4">
+                    <DemoSection Title="Data View"
+                                 Description="Displays collections in switchable list or grid layouts with search and sort"
+                                 Code="@DataDisplayDemoSnippets.DataView">
+                        <DataView TItem="DemoProduct"
+                                  Items="@products"
+                                  PageSize="6"
+                                  Layout="@dataViewLayout"
+                                  LayoutChanged="OnDataViewLayoutChanged"
+                                  Class="max-w-3xl">
+                            <Fields>
+                                <DataViewColumn TItem="DemoProduct"
+                                                Header="名称"
+                                                Property="@(p => p.Name)"
+                                                Sortable="true"
+                                                Filterable="true" />
+                                <DataViewColumn TItem="DemoProduct"
+                                                Header="分类"
+                                                Property="@(p => p.Category)"
+                                                Sortable="true"
+                                                Filterable="true" />
+                            </Fields>
+                            <ListTemplate Context="product">
+                                <div class="flex items-center justify-between rounded-lg border p-3">
+                                    <div>
+                                        <div class="font-medium">@product.Name</div>
+                                        <div class="text-sm text-muted-foreground">@product.Category · 库存 @product.Stock</div>
+                                    </div>
+                                    <span class="text-sm font-medium">@product.Price.ToString("C0")</span>
+                                </div>
+                            </ListTemplate>
+                            <GridTemplate Context="product">
+                                <Card>
+                                    <CardHeader Class="pb-2">
+                                        <CardTitle Class="text-base">@product.Name</CardTitle>
+                                        <CardDescription>@product.Category</CardDescription>
+                                    </CardHeader>
+                                    <CardContent Class="pt-0 text-sm">
+                                        <p>@product.Price.ToString("C2")</p>
+                                        <p class="text-muted-foreground">库存 @product.Stock</p>
+                                    </CardContent>
+                                </Card>
+                            </GridTemplate>
+                        </DataView>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="tree-view" Class="mt-4">
+                    <DemoSection Title="Tree View"
+                                 Description="A hierarchical tree structure for displaying nested data"
+                                 Code="@DataDisplayDemoSnippets.TreeView">
+                        <div class="max-w-md rounded-md border p-3">
+                            <TreeView TItem="DemoTreeNode"
+                                      Items="@treeNodes"
+                                      ValueField="n => n.Id"
+                                      TextField="n => n.Name"
+                                      ChildrenProperty="n => n.Children"
+                                      SelectionMode="TreeSelectionMode.Single"
+                                      @bind-SelectedValue="selectedTreeId"
+                                      DefaultExpandDepth="2"
+                                      ShowLines="true" />
+                        </div>
+                        <p class="mt-3 text-sm text-muted-foreground">
+                            当前选中：@(string.IsNullOrWhiteSpace(selectedTreeId) ? "（无）" : selectedTreeId)
+                        </p>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="timeline" Class="mt-4">
+                    <DemoSection Title="Timeline"
+                                 Description="A chronological list of events with status indicators"
+                                 Code="@DataDisplayDemoSnippets.Timeline">
+                        <Timeline Class="max-w-2xl">
+                            <TimelineItem Title="项目启动"
+                                          Time="2025-01-10"
+                                          Description="完成立项与资源分配"
+                                          Status="TimelineStatus.Completed" />
+                            <TimelineItem Title="核心开发"
+                                          Time="2025-02-15"
+                                          Description="表单与权限模块开发中"
+                                          Status="TimelineStatus.InProgress" />
+                            <TimelineItem Title="联调测试"
+                                          Time="2025-03-20"
+                                          Description="集成测试与缺陷修复"
+                                          Status="TimelineStatus.Pending" />
+                            <TimelineItem Title="正式上线"
+                                          Time="2025-04-01"
+                                          Description="生产环境发布"
+                                          Status="TimelineStatus.Pending"
+                                          ShowConnector="false" />
+                        </Timeline>
+                    </DemoSection>
+                </TabsContent>
+            </Tabs>
+        </div>
+    </div>
+</div>
+
+@code {
+    private DataViewLayout dataViewLayout = DataViewLayout.List;
+    private string? selectedTreeId;
+
+    private readonly List<DemoProduct> products =
+    [
+        new() { Id = 1, Name = "无线键盘", Category = "外设", Price = 299m, Stock = 42 },
+        new() { Id = 2, Name = "27 寸显示器", Category = "显示", Price = 1899m, Stock = 18 },
+        new() { Id = 3, Name = "USB-C 扩展坞", Category = "配件", Price = 459m, Stock = 65 },
+        new() { Id = 4, Name = "降噪耳机", Category = "音频", Price = 1299m, Stock = 31 },
+        new() { Id = 5, Name = "机械硬盘 2TB", Category = "存储", Price = 399m, Stock = 88 },
+        new() { Id = 6, Name = "笔记本支架", Category = "配件", Price = 159m, Stock = 120 },
+        new() { Id = 7, Name = "游戏鼠标", Category = "外设", Price = 249m, Stock = 54 },
+        new() { Id = 8, Name = "Web 摄像头", Category = "外设", Price = 329m, Stock = 27 },
+    ];
+
+    private readonly List<DemoTreeNode> treeNodes =
+    [
+        new()
+        {
+            Id = "org",
+            Name = "NeoAdmin",
+            Children =
+            [
+                new()
+                {
+                    Id = "sys",
+                    Name = "系统管理",
+                    Children =
+                    [
+                        new() { Id = "user", Name = "用户管理", Children = [] },
+                        new() { Id = "role", Name = "角色管理", Children = [] },
+                    ],
+                },
+                new()
+                {
+                    Id = "demo",
+                    Name = "NeoDemo",
+                    Children =
+                    [
+                        new() { Id = "form", Name = "表单输入", Children = [] },
+                        new() { Id = "display", Name = "数据展示", Children = [] },
+                    ],
+                },
+            ],
+        },
+    ];
+
+    private void OnDataViewLayoutChanged(DataViewLayout layout)
+    {
+        dataViewLayout = layout;
+    }
+
+    private sealed class DemoProduct
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public int Stock { get; set; }
+    }
+
+    private sealed class DemoTreeNode
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public List<DemoTreeNode> Children { get; set; } = [];
+    }
+}

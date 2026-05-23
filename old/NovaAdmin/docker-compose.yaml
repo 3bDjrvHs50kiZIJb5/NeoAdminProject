@@ -1,0 +1,21 @@
+services:
+  novaadmin:
+    build:
+      context: ..
+      dockerfile: NovaAdmin/Dockerfile
+    image: novaadmin:latest
+    container_name: novaadmin
+    ports:
+      - "${HOST_PORT:-6038}:80"
+    environment:
+      TZ: Asia/Shanghai
+    working_dir: /app
+    volumes:
+      - ./Logs:/app/Logs
+      - ./wwwroot/uploads:/app/wwwroot/uploads
+      - ./wwwroot/avatars:/app/wwwroot/avatars
+      - ./wwwroot/badge-photos:/app/wwwroot/badge-photos
+      - ./keys:/app/keys
+      - ./novaadmin.db:/app/novaadmin.db
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped

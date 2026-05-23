@@ -1,0 +1,163 @@
+@page "/admin/file"
+@layout LayoutAdmin
+@using Microsoft.AspNetCore.Components.Forms
+@using NeoAdmin.Blazor.Components
+@using NeoAdmin.Blazor.Data.Entities
+@using NeoAdmin.Blazor.Services
+@inject FileService FileService
+@inject IToastService ToastService
+
+<PageTitle>文件管理</PageTitle>
+
+<CrudTable @ref="table"
+           TItem="SysFile"
+           Title="文件"
+           PageSize="30"
+           SearchPlaceholder="文件名.."
+           AddText="上传"
+           SaveText="上传至服务器"
+           IsEdit="false"
+           IsRowEdit="false"
+           IsMultiSelect="true"
+           DialogContentSize="CrudDialogContentSize.X4l"
+           OnQuery="HandleQuery"
+           OnSaving="HandleSaving"
+           OnRemoving="HandleRemoving"
+           OnBatchRemoving="HandleBatchRemoving"
+           OnEditClose="HandleEditClose">
+    <Columns>
+        <DataTableColumn TData="CrudGridRow<SysFile>"
+                         TValue="long"
+                         Property="@(row => row.Item.Id)"
+                         Header="ID"
+                         Sortable="false"
+                         Width="180px" />
+        <DataTableColumn TData="CrudGridRow<SysFile>"
+                         TValue="string"
+                         Property="@(row => row.Item.OriginFileName)"
+                         Header="文件名"
+                         Sortable="false">
+            <CellTemplate Context="row">
+                <a class="text-primary hover:underline"
+                   href="@row.Item.LinkUrl"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   @onclick:stopPropagation="true">
+                    @row.Item.OriginFileName
+                </a>
+            </CellTemplate>
+        </DataTableColumn>
+        <DataTableColumn TData="CrudGridRow<SysFile>"
+                         TValue="string"
+                         Property="@(row => row.Item.Extension)"
+                         Header="扩展名"
+                         Sortable="false"
+                         Width="100px" />
+        <DataTableColumn TData="CrudGridRow<SysFile>"
+                         TValue="string"
+                         Property="@(row => row.Item.SizeFormat)"
+                         Header="大小"
+                         Sortable="false"
+                         Width="120px" />
+        <DataTableColumn TData="CrudGridRow<SysFile>"
+                         TValue="string"
+                         Property="@(row => row.Item.CreatedUserName)"
+                         Header="创建者"
+                         Sortable="false"
+                         Width="120px" />
+        <DataTableColumn TData="CrudGridRow<SysFile>"
+                         TValue="string"
+                         Property="@(_ => string.Empty)"
+                         Header="创建时间"
+                         Sortable="false"
+                         Width="160px">
+            <CellTemplate Context="row">
+                @(row.Item.CreatedTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")
+            </CellTemplate>
+        </DataTableColumn>
+    </Columns>
+    <EditTemplate>
+        <div class="space-y-3 p-1">
+            <p class="text-sm text-muted-foreground">选择一个或多个文件后，再点保存。</p>
+            <FileUpload @ref="fileUpload"
+                        @bind-Files="pendingFiles"
+                        Multiple="true"
+                        ShowProgress="true"
+                        MaxFileSize="104857600" />
+        </div>
+    </EditTemplate>
+</CrudTable>
+
+@code {
+    private CrudTable<SysFile> table = default!;
+    private FileUpload? fileUpload;
+    private List<IBrowserFile> pendingFiles = new();
+
+    private void HandleQuery(CrudQueryEventArgs<SysFile> e)
+    {
+        e.Select!
+            .WhereIf(!string.IsNullOrWhiteSpace(e.SearchText),
+                a => a.OriginFileName.Contains(e.SearchText!)
+                     || a.Extension.Contains(e.SearchText!)
+                     || a.CreatedUserName.Contains(e.SearchText!))
+            .OrderByDescending(a => a.CreatedTime);
+    }
+
+    private async Task HandleSaving(CrudConfirmEventArgs<SysFile> e)
+    {
+        e.Cancel = true;
+
+        if (pendingFiles.Count == 0)
+        {
+            ToastService.Warning("上传文件", "请先选择要上传的文件。");
+            return;
+        }
+
+        int total = 0;
+        foreach (IBrowserFile file in pendingFiles)
+        {
+            try
+            {
+                await FileService.UploadFileAsync(file);
+                total++;
+            }
+            catch (Exception ex)
+            {
+                ToastService.Error("上传失败", $"{file.Name}: {ex.Message}");
+            }
+        }
+
+        if (total > 0)
+        {
+            ToastService.Success("上传文件", $"已成功上传 {total} 个文件。");
+        }
+
+        pendingFiles.Clear();
+        await fileUpload!.ClearFiles();
+        await table.ReloadAsync();
+    }
+
+    private async Task HandleRemoving(CrudConfirmEventArgs<SysFile> e)
+    {
+        e.Cancel = true;
+        await FileService.DeleteAsync(e.Item.Id);
+        await table.ReloadAsync();
+    }
+
+    private async Task HandleBatchRemoving(CrudBatchConfirmEventArgs<SysFile> e)
+    {
+        e.Cancel = true;
+        foreach (SysFile item in e.Items)
+        {
+            await FileService.DeleteAsync(item.Id);
+        }
+
+        await table.ReloadAsync();
+    }
+
+    private Task HandleEditClose(SysFile _)
+    {
+        pendingFiles.Clear();
+        return Task.CompletedTask;
+    }
+}

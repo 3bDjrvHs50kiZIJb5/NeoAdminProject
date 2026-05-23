@@ -1,0 +1,259 @@
+@page "/admin/param"
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Components
+@using NeoAdmin.Blazor.Data.Entities
+@inject IFreeSql FreeSql
+
+<PageTitle>参数配置</PageTitle>
+
+<div class="flex flex-col flex-1 min-h-0">
+    <CrudTable @ref="table"
+               TItem="SysParam"
+               Title="参数配置"
+               PageSize="30"
+               SearchPlaceholder="编码/描述/备注.."
+               OnQuery="HandleQuery"
+               OnEdit="HandleEdit"
+               OnSaving="HandleSaving"
+               DialogContentSize="CrudDialogContentSize.X4l">
+        <Columns>
+            <DataTableColumn TData="CrudGridRow<SysParam>"
+                             TValue="long"
+                             Property="@(row => row.Item.Id)"
+                             Header="ID"
+                             Sortable="false"
+                             Width="180px" />
+            <DataTableColumn TData="CrudGridRow<SysParam>"
+                             TValue="string"
+                             Property="@(row => row.Item.Key)"
+                             Header="编码"
+                             Sortable="false"
+                             Width="180px">
+                <CellTemplate Context="row">
+                    <span class="block truncate font-medium" title="@row.Item.Key">@row.Item.Key</span>
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<SysParam>"
+                             TValue="string"
+                             Property="@(row => row.Item.Title)"
+                             Header="描述"
+                             Sortable="false"
+                             Width="200px">
+                <CellTemplate Context="row">
+                    <span class="block truncate" title="@row.Item.Title">@row.Item.Title</span>
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<SysParam>"
+                             TValue="string"
+                             Property="@(row => row.Item.Value)"
+                             Header="值1"
+                             Sortable="false">
+                <CellTemplate Context="row">
+                    <span class="block truncate" title="@row.Item.Value">@row.Item.Value</span>
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<SysParam>"
+                             TValue="string"
+                             Property="@(row => row.Item.Value2)"
+                             Header="值2"
+                             Sortable="false">
+                <CellTemplate Context="row">
+                    <span class="block truncate" title="@row.Item.Value2">@row.Item.Value2</span>
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<SysParam>"
+                             TValue="string"
+                             Property="@(row => row.Item.Value3)"
+                             Header="值3"
+                             Sortable="false">
+                <CellTemplate Context="row">
+                    <span class="block truncate" title="@row.Item.Value3">@row.Item.Value3</span>
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<SysParam>"
+                             TValue="int"
+                             Property="@(row => row.Item.Sort)"
+                             Header="排序"
+                             Sortable="false"
+                             Width="80px" />
+            <DataTableColumn TData="CrudGridRow<SysParam>"
+                             TValue="bool"
+                             Property="@(row => row.Item.Enabled)"
+                             Header="启用"
+                             Sortable="false"
+                             Width="80px">
+                <CellTemplate Context="row">
+                    @if (row.Item.Enabled)
+                    {
+                        <span class="text-emerald-600">是</span>
+                    }
+                    else
+                    {
+                        <span class="text-red-500">否</span>
+                    }
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<SysParam>"
+                             TValue="string"
+                             Property="@(row => row.Item.Description)"
+                             Header="备注"
+                             Sortable="false">
+                <CellTemplate Context="row">
+                    <span class="block truncate" title="@row.Item.Description">@row.Item.Description</span>
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<SysParam>"
+                             TValue="string"
+                             Property="@(_ => string.Empty)"
+                             Header="创建时间"
+                             Sortable="false"
+                             Width="160px">
+                <CellTemplate Context="row">
+                    @row.Item.CreatedTime.ToString("yyyy-MM-dd HH:mm:ss")
+                </CellTemplate>
+            </DataTableColumn>
+        </Columns>
+        <EditTemplate Context="item">
+            <div class="grid gap-3 sm:grid-cols-2">
+                <div class="space-y-2">
+                    <Label For="param-key">编码</Label>
+                    @if (item.Id == 0)
+                    {
+                        <Input id="param-key"
+                               Class="w-full"
+                               MaxLength="50"
+                               Placeholder="如 Site_Title"
+                               @bind-Value="item.Key" />
+                    }
+                    else
+                    {
+                        <Input id="param-key"
+                               Class="w-full bg-muted"
+                               Value="@item.Key"
+                               Disabled="true" />
+                    }
+                </div>
+                <div class="space-y-2">
+                    <Label For="param-title">描述</Label>
+                    <Input id="param-title"
+                           Class="w-full"
+                           MaxLength="500"
+                           @bind-Value="item.Title" />
+                </div>
+            </div>
+
+            <div class="grid gap-3 sm:grid-cols-3">
+                <div class="space-y-2">
+                    <Label For="param-sort">排序</Label>
+                    <input id="param-sort"
+                           type="number"
+                           class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                           @bind="item.Sort" />
+                </div>
+                <div class="flex items-end gap-2 pb-2">
+                    <Checkbox @bind-Checked="item.Enabled" Id="param-enabled" />
+                    <Label for="param-enabled">启用</Label>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <Label For="param-value">值1</Label>
+                <Input id="param-value" Class="w-full" MaxLength="1024" @bind-Value="item.Value" />
+            </div>
+            <div class="space-y-2">
+                <Label For="param-value2">值2</Label>
+                <Input id="param-value2" Class="w-full" MaxLength="1024" @bind-Value="item.Value2" />
+            </div>
+            <div class="space-y-2">
+                <Label For="param-value3">值3</Label>
+                <Input id="param-value3" Class="w-full" MaxLength="1024" @bind-Value="item.Value3" />
+            </div>
+            <div class="space-y-2">
+                <Label For="param-value4">值4</Label>
+                <Input id="param-value4" Class="w-full" MaxLength="1024" @bind-Value="item.Value4" />
+            </div>
+            <div class="space-y-2">
+                <Label For="param-value5">值5</Label>
+                <Input id="param-value5" Class="w-full" MaxLength="1024" @bind-Value="item.Value5" />
+            </div>
+            <div class="space-y-2">
+                <Label For="param-value6">值6</Label>
+                <Input id="param-value6" Class="w-full" MaxLength="1024" @bind-Value="item.Value6" />
+            </div>
+            <div class="space-y-2">
+                <Label For="param-value7">值7</Label>
+                <Input id="param-value7" Class="w-full" MaxLength="1024" @bind-Value="item.Value7" />
+            </div>
+            <div class="space-y-2">
+                <Label For="param-description">备注</Label>
+                <Textarea Id="param-description"
+                          Class="min-h-24 w-full"
+                          MaxLength="500"
+                          @bind-Value="item.Description" />
+            </div>
+        </EditTemplate>
+    </CrudTable>
+</div>
+
+@code {
+    private CrudTable<SysParam> table = default!;
+
+    private void HandleQuery(CrudQueryEventArgs<SysParam> e)
+    {
+        e.Select!
+            .WhereIf(!string.IsNullOrWhiteSpace(e.SearchText),
+                a => a.Key.Contains(e.SearchText!)
+                     || a.Title.Contains(e.SearchText!)
+                     || a.Description.Contains(e.SearchText!))
+            .OrderBy(a => a.Sort)
+            .OrderBy(a => a.Id);
+    }
+
+    private async Task HandleEdit(SysParam item)
+    {
+        if (item.Id != 0)
+        {
+            return;
+        }
+
+        int? maxSort = await FreeSql.Select<SysParam>().MaxAsync(a => (int?)a.Sort);
+        item.Sort = (maxSort ?? 0) + 1;
+        item.Enabled = true;
+    }
+
+    private async Task HandleSaving(CrudConfirmEventArgs<SysParam> e)
+    {
+        SysParam item = e.Item;
+        item.Key = item.Key?.Trim() ?? string.Empty;
+        item.Title = item.Title?.Trim() ?? string.Empty;
+        item.Value = item.Value?.Trim() ?? string.Empty;
+        item.Value2 = item.Value2?.Trim() ?? string.Empty;
+        item.Value3 = item.Value3?.Trim() ?? string.Empty;
+        item.Value4 = item.Value4?.Trim() ?? string.Empty;
+        item.Value5 = item.Value5?.Trim() ?? string.Empty;
+        item.Value6 = item.Value6?.Trim() ?? string.Empty;
+        item.Value7 = item.Value7?.Trim() ?? string.Empty;
+        item.Description = item.Description?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(item.Key))
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        bool keyExists = await FreeSql.Select<SysParam>()
+            .Where(a => a.Key == item.Key && a.Id != item.Id)
+            .AnyAsync();
+
+        if (keyExists)
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        if (item.Id == 0)
+        {
+            item.CreatedTime = DateTime.Now;
+        }
+    }
+}

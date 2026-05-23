@@ -1,0 +1,357 @@
+@page "/admin/org"
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Auth
+@using NeoAdmin.Blazor.Components
+@using NeoAdmin.Blazor.Data.Entities
+@using NeoAdmin.Blazor.Services
+@inject OrgService OrgService
+
+<PageTitle>组织结构</PageTitle>
+
+<div class="flex flex-col flex-1 min-h-0">
+    @if (!string.IsNullOrWhiteSpace(message))
+    {
+        <Alert Variant="@messageVariant" AccentBorder="true" Class="mb-3 shrink-0">
+            <Icon>
+                <LucideIcon Name="@GetMessageIcon()" Class="h-4 w-4" />
+            </Icon>
+            <ChildContent>
+                <AlertTitle>@GetMessageTitle()</AlertTitle>
+                <AlertDescription>@message</AlertDescription>
+            </ChildContent>
+        </Alert>
+    }
+
+    <CrudTable @ref="table"
+               TItem="SysOrg"
+               Title="组织结构"
+               PageSize="0"
+               IsSearchText="false"
+               IsCascadeSelection="true"
+               LevelSelector="GetOrgLevel"
+               InitQuery="InitQuery"
+               OnQuery="HandleQuery"
+               LoadFunc="LoadOrgsAsync"
+               OnSaveAsync="HandleSaveAsync"
+               OnDeleteAsync="HandleDeleteAsync"
+               OnEdit="HandleOnEdit"
+               DialogContentSize="CrudDialogContentSize.Lg">
+        <Columns>
+            <DataTableColumn TData="CrudGridRow<SysOrg>"
+                             TValue="long"
+                             Property="@(row => row.Item.Id)"
+                             Header="ID"
+                             Sortable="false"
+                             Width="180px" />
+            <DataTableColumn TData="CrudGridRow<SysOrg>"
+                             TValue="string"
+                             Property="@(row => row.Item.Label)"
+                             Header="组织名称"
+                             Sortable="false"
+                             Width="36%">
+                <CellTemplate Context="row">
+                    <div class="flex items-center gap-1.5" style="padding-left:@(orgLevels.GetValueOrDefault(row.Item.Id) * 18)px">
+                        <span class="truncate font-medium">@row.Item.Label</span>
+                        <span @onclick:stopPropagation="true">
+                        <Button Variant="ButtonVariant.Ghost"
+                                Size="ButtonSize.Small"
+                                Title="添加子组织"
+                                OnClick="@(() => AddChild(row.Item))">
+                            <LucideIcon Name="plus" Size="14" />
+                            <span class="sr-only">添加子组织</span>
+                        </Button>
+                        </span>
+                    </div>
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<SysOrg>"
+                             TValue="SysOrgType"
+                             Property="@(row => row.Item.Type)"
+                             Header="类型"
+                             Sortable="false"
+                             Width="120px">
+                <CellTemplate Context="row">@row.Item.Type</CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<SysOrg>"
+                             TValue="int"
+                             Property="@(row => row.Item.Sort)"
+                             Header="排序"
+                             Sortable="false"
+                             Width="80px" />
+            <DataTableColumn TData="CrudGridRow<SysOrg>"
+                             TValue="bool"
+                             Property="@(row => row.Item.IsEnabled)"
+                             Header="可用"
+                             Sortable="false"
+                             Width="80px">
+                <CellTemplate Context="row">
+                    @if (row.Item.IsEnabled)
+                    {
+                        <span class="text-muted-foreground">-</span>
+                    }
+                    else
+                    {
+                        <span class="text-red-500">否</span>
+                    }
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<SysOrg>"
+                             TValue="string"
+                             Property="@(row => row.Item.Description)"
+                             Header="备注"
+                             Sortable="false">
+                <CellTemplate Context="row">
+                    <span class="block truncate" title="@row.Item.Description">@row.Item.Description</span>
+                </CellTemplate>
+            </DataTableColumn>
+        </Columns>
+        <EditTemplate Context="item">
+            <div class="space-y-2">
+                <Label For="org-label">组织名称</Label>
+                <Input id="org-label" Class="w-full" MaxLength="50" @bind-Value="item.Label" />
+            </div>
+
+            <div class="space-y-2">
+                <Label For="org-parent">父组织</Label>
+                <Select TValue="long" Class="w-full" @bind-Value="item.ParentId">
+                    <SelectTrigger>
+                        <SelectValue Placeholder="选择父组织" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem Value="0" TValue="long">根组织</SelectItem>
+                        @foreach (SysOrg option in GetParentOptions(item))
+                        {
+                            <SelectItem Value="@option.Id" TValue="long">@GetIndentedLabel(option)</SelectItem>
+                        }
+                    </SelectContent>
+                </Select>
+            </div>
+
+            <div class="grid gap-3 sm:grid-cols-3">
+                <div class="space-y-2">
+                    <Label For="org-type">组织类型</Label>
+                    <Select TValue="SysOrgType" Class="w-full" @bind-Value="item.Type">
+                        <SelectTrigger>
+                            <SelectValue Placeholder="选择类型" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            @foreach (SysOrgType type in Enum.GetValues<SysOrgType>())
+                            {
+                                <SelectItem Value="@type" TValue="SysOrgType">@type</SelectItem>
+                            }
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div class="space-y-2">
+                    <Label For="org-sort">排序</Label>
+                    <Input id="org-sort"
+                           Type="InputType.Number"
+                           Class="w-full"
+                           Value="@item.Sort.ToString()"
+                           ValueChanged="@(value => item.Sort = int.TryParse(value, out int sort) ? sort : 0)" />
+                </div>
+                <div class="flex items-end gap-2 pb-2">
+                    <Checkbox @bind-Checked="item.IsEnabled" Id="org-is-enabled" />
+                    <Label for="org-is-enabled">是否可用</Label>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <Label For="org-description">备注</Label>
+                <Textarea Id="org-description"
+                          Class="min-h-24 w-full"
+                          MaxLength="500"
+                          @bind-Value="item.Description" />
+            </div>
+        </EditTemplate>
+    </CrudTable>
+</div>
+
+@code {
+    private CrudTable<SysOrg> table = default!;
+    private List<SysOrg> flatOrgs = new();
+    private Dictionary<long, int> orgLevels = new();
+    private string? message;
+    private AlertVariant messageVariant = AlertVariant.Default;
+
+    private Task InitQuery(CrudQueryInfo e)
+    {
+        string typeNames = string.Join(',', Enum.GetNames<SysOrgType>());
+        string typeValues = string.Join(',', Enum.GetValues<SysOrgType>().Select(a => ((int)a).ToString()));
+        e.Filters =
+        [
+            new CrudFilterInfo("类型", "Type", multiple: true, 12, typeNames, typeValues)
+        ];
+        return Task.CompletedTask;
+    }
+
+    private void HandleQuery(CrudQueryEventArgs<SysOrg> e)
+    {
+        if (e.Queryable is null)
+        {
+            return;
+        }
+
+        IQueryable<SysOrg> query = e.Queryable;
+        if (e.Filters[0].HasValue)
+        {
+            SysOrgType[] types = e.Filters[0].Values<SysOrgType>();
+            query = query.Where(a => types.Contains(a.Type));
+        }
+
+        e.Queryable = query.OrderBy(a => a.Sort).ThenBy(a => a.Id);
+    }
+
+    private async Task<List<SysOrg>> LoadOrgsAsync()
+    {
+        flatOrgs = await OrgService.GetAllAsync();
+        List<SysOrg> tree = OrgService.BuildTree(flatOrgs);
+        orgLevels = BuildLevels(tree);
+        return FlattenRows(tree);
+    }
+
+    private async Task<bool> HandleSaveAsync(SysOrg item, bool isNewItem)
+    {
+        ApiResult<SysOrg> result = await OrgService.SaveAsync(item);
+        if (!result.Succeeded)
+        {
+            ShowError(result.Message);
+            return false;
+        }
+
+        ShowSuccess(result.Message);
+        if (result.Data is not null)
+        {
+            item.Id = result.Data.Id;
+        }
+
+        return true;
+    }
+
+    private async Task<bool> HandleDeleteAsync(SysOrg item)
+    {
+        ApiResult result = await OrgService.DeleteAsync(item.Id);
+        if (!result.Succeeded)
+        {
+            ShowError(result.Message);
+            return false;
+        }
+
+        ShowSuccess(result.Message);
+        return true;
+    }
+
+    private async Task AddChild(SysOrg parent)
+    {
+        SysOrg child = new()
+        {
+            ParentId = parent.Id,
+            IsEnabled = true,
+            Sort = await OrgService.GetNextSortAsync(parent.Id)
+        };
+        await table.EditItemAsync(child);
+    }
+
+    private Task HandleOnEdit(SysOrg item)
+    {
+        if (item.Id == 0 && item.ParentId > 0 && item.Sort == 0)
+        {
+            item.Sort = GetNextSortLocal(item.ParentId);
+        }
+
+        ClearMessage();
+        return Task.CompletedTask;
+    }
+
+    private IEnumerable<SysOrg> GetParentOptions(SysOrg item)
+    {
+        HashSet<long> blocked = CollectDescendantIds(flatOrgs, item.Id).ToHashSet();
+        return flatOrgs.Where(a => a.Id != item.Id && !blocked.Contains(a.Id));
+    }
+
+    private static List<long> CollectDescendantIds(List<SysOrg> all, long id)
+    {
+        if (id == 0)
+        {
+            return [];
+        }
+
+        List<long> ids = [id];
+        for (int index = 0; index < ids.Count; index++)
+        {
+            long parentId = ids[index];
+            ids.AddRange(all.Where(a => a.ParentId == parentId).Select(a => a.Id));
+        }
+
+        return ids;
+    }
+
+    private int GetNextSortLocal(long parentId)
+    {
+        int? max = flatOrgs
+            .Where(a => a.ParentId == parentId)
+            .Select(a => (int?)a.Sort)
+            .Max();
+        return (max ?? 0) + 1;
+    }
+
+    private string GetIndentedLabel(SysOrg org)
+    {
+        int level = orgLevels.GetValueOrDefault(org.Id);
+        return $"{new string('　', level)}[{org.Id}] {org.Label}";
+    }
+
+    private static Dictionary<long, int> BuildLevels(IEnumerable<SysOrg> orgs)
+    {
+        Dictionary<long, int> result = new();
+        void Walk(IEnumerable<SysOrg> items, int level)
+        {
+            foreach (SysOrg item in items)
+            {
+                result[item.Id] = level;
+                Walk(item.Children, level + 1);
+            }
+        }
+
+        Walk(orgs, 0);
+        return result;
+    }
+
+    private static List<SysOrg> FlattenRows(IEnumerable<SysOrg> orgs)
+    {
+        List<SysOrg> rows = new();
+        void Walk(IEnumerable<SysOrg> items)
+        {
+            foreach (SysOrg item in items)
+            {
+                rows.Add(item);
+                Walk(item.Children);
+            }
+        }
+
+        Walk(orgs);
+        return rows;
+    }
+
+    private void ShowSuccess(string value)
+    {
+        message = value;
+        messageVariant = AlertVariant.Success;
+    }
+
+    private void ShowError(string value)
+    {
+        message = value;
+        messageVariant = AlertVariant.Destructive;
+    }
+
+    private string GetMessageTitle() =>
+        messageVariant == AlertVariant.Success ? "操作成功" : "操作失败";
+
+    private string GetMessageIcon() =>
+        messageVariant == AlertVariant.Success ? "circle-check" : "circle-x";
+
+    private void ClearMessage() => message = null;
+
+    private int GetOrgLevel(SysOrg org) => orgLevels.GetValueOrDefault(org.Id);
+}

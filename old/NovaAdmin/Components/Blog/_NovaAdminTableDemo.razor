@@ -1,0 +1,747 @@
+@page "/Blog/NovaAdminTableDemo"
+@using System
+@using System.Collections.Generic
+@using System.Linq
+@using LinCms.Entities.Blog
+
+<PageTitle>NovaAdminTable 演示</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <strong>NovaAdminTable 属性演示</strong>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        这个页面用几个小场景，把 <code>docs/tutorials/01-novaadmintable.md</code> 里提到的常用属性逐个演示出来。
+                    </p>
+                    <ul class="mb-0">
+                        <li><code>ItemsSource</code>：内存数据源</li>
+                        <li><code>PageSize</code>：分页大小</li>
+                        <li><code>IsSearchText</code> / <code>SearchPlaceholder</code>：搜索栏</li>
+                        <li><code>IsQueryString</code>：是否同步查询参数</li>
+                        <li><code>IsSingleSelect</code> / <code>IsMultiSelect</code>：单选和多选</li>
+                        <li><code>IsConfirmEdit</code> / <code>IsConfirmRemove</code>：确认弹窗</li>
+                        <li><code>IsDrawer</code> / <code>DialogClassName</code> / <code>DialogSize</code>：编辑弹窗样式</li>
+                        <li><code>NoDataText</code>：空状态文案</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xxl-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <strong>示例一：基础列表 + 搜索</strong>
+                    <span class="text-muted small">演示 `ItemsSource`、`PageSize`、`SearchPlaceholder`</span>
+                </div>
+                <div class="card-body">
+                    <NovaAdminTable TItem="NovaAdminTableDemoItem"
+                                 Context="item"
+                                 Title="基础演示"
+                                 ItemsSource="basicItems"
+                                 PageSize="3"
+                                 SearchPlaceholder="搜索标题、分类或状态..."
+                                 IsQueryString="false"
+                                 IsNotifyChanged="true"
+                                 DialogClassName="modal-lg">
+                        <TableHeader>
+                            <th>标题</th>
+                            <th>分类</th>
+                            <th>状态</th>
+                            <th>优先级</th>
+                            <th>创建时间</th>
+                        </TableHeader>
+                        <TableRow>
+                            <td>@item.Title</td>
+                            <td>@item.Category</td>
+                            <td>@item.Status</td>
+                            <td>@item.Priority</td>
+                            <td>@item.CreatedTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        </TableRow>
+                        <EditTemplate>
+                            <div class="row form-inline form-inline-end">
+                                <div class="form-group col-12">
+                                    <label class="form-label">标题</label>
+                                    <input @bind="item.Title" type="text" class="form-control" maxlength="100" />
+                                </div>
+                                <div class="form-group col-6">
+                                    <label class="form-label">分类</label>
+                                    <input @bind="item.Category" type="text" class="form-control" maxlength="50" />
+                                </div>
+                                <div class="form-group col-6">
+                                    <label class="form-label">状态</label>
+                                    <input @bind="item.Status" type="text" class="form-control" maxlength="20" />
+                                </div>
+                                <div class="form-group col-6">
+                                    <label class="form-label">优先级</label>
+                                    <input @bind="item.Priority" type="number" class="form-control" />
+                                </div>
+                                <div class="form-group col-6">
+                                    <label class="form-label">创建时间</label>
+                                    <input value="@item.CreatedTimeText" type="text" class="form-control" disabled />
+                                </div>
+                            </div>
+                        </EditTemplate>
+                    </NovaAdminTable>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xxl-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <strong>示例二：单选模式</strong>
+                    <span class="text-muted small">演示 `IsSingleSelect`、`IsMultiSelect`</span>
+                </div>
+                <div class="card-body">
+                    <NovaAdminTable TItem="NovaAdminTableDemoItem"
+                                 Context="item"
+                                 Title="单选演示"
+                                 ItemsSource="singleSelectItems"
+                                 PageSize="5"
+                                 IsSingleSelect="true"
+                                 IsMultiSelect="false"
+                                 IsSearchText="false"
+                                 NoDataText="没有可选记录">
+                        <TableHeader>
+                            <th>标题</th>
+                            <th>分类</th>
+                            <th>状态</th>
+                            <th>创建时间</th>
+                        </TableHeader>
+                        <TableRow>
+                            <td>@item.Title</td>
+                            <td>@item.Category</td>
+                            <td>@item.Status</td>
+                            <td>@item.CreatedTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        </TableRow>
+                        <EditTemplate>
+                            <div class="row form-inline form-inline-end">
+                                <div class="form-group col-12">
+                                    <label class="form-label">标题</label>
+                                    <input @bind="item.Title" type="text" class="form-control" maxlength="100" />
+                                </div>
+                                <div class="form-group col-12">
+                                    <label class="form-label">状态</label>
+                                    <input @bind="item.Status" type="text" class="form-control" maxlength="20" />
+                                </div>
+                            </div>
+                        </EditTemplate>
+                    </NovaAdminTable>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xxl-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <strong>示例三：抽屉编辑 + 确认弹窗</strong>
+                    <span class="text-muted small">演示 `IsDrawer`、`IsConfirmEdit`、`IsConfirmRemove`</span>
+                </div>
+                <div class="card-body">
+                    <NovaAdminTable TItem="NovaAdminTableDemoItem"
+                                 Context="item"
+                                 Title="抽屉演示"
+                                 ItemsSource="drawerItems"
+                                 PageSize="4"
+                                 IsDrawer="true"
+                                 DialogClassName="modal-xl"
+                                 IsConfirmEdit="true"
+                                 IsConfirmRemove="true"
+                                 IsExportExcel="false"
+                                 IsQueryString="false"
+                                 SearchPlaceholder="输入关键字后查看抽屉编辑"
+                                 NoDataText="这里暂时没有记录">
+                        <TableHeader>
+                            <th>标题</th>
+                            <th>分类</th>
+                            <th>状态</th>
+                            <th>优先级</th>
+                            <th>创建时间</th>
+                        </TableHeader>
+                        <TableRow>
+                            <td>@item.Title</td>
+                            <td>@item.Category</td>
+                            <td>@item.Status</td>
+                            <td>@item.Priority</td>
+                            <td>@item.CreatedTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        </TableRow>
+                        <EditTemplate>
+                            <div class="row form-inline form-inline-end">
+                                <div class="form-group col-12">
+                                    <label class="form-label">标题</label>
+                                    <input @bind="item.Title" type="text" class="form-control" maxlength="100" />
+                                </div>
+                                <div class="form-group col-6">
+                                    <label class="form-label">分类</label>
+                                    <input @bind="item.Category" type="text" class="form-control" maxlength="50" />
+                                </div>
+                                <div class="form-group col-6">
+                                    <label class="form-label">优先级</label>
+                                    <input @bind="item.Priority" type="number" class="form-control" />
+                                </div>
+                                <div class="form-group col-12">
+                                    <label class="form-label">说明</label>
+                                    <textarea @bind="item.Description" class="form-control" rows="4"></textarea>
+                                </div>
+                            </div>
+                        </EditTemplate>
+                    </NovaAdminTable>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 mb-3">
+            <div class="card">
+                <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <strong>示例四：不同弹窗大小</strong>
+                    <span class="text-muted small">演示 `DialogSize`、`TableTd1`、`TableTd99`</span>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-secondary mb-3">
+                        当前最后标记的大小：<strong>@lastMarkedSize</strong>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-lg-6 col-xxl-4 mb-3">
+                            <NovaAdminTable TItem="NovaAdminTableDemoItem"
+                                         Context="item"
+                                         Title="Small"
+                                         ItemsSource="dialogSmallItems"
+                                         PageSize="2"
+                                         TableTd99Width="200"
+                                         DialogSize="NovaModalSize.Small"
+                                         IsQueryString="false"
+                                         IsExportExcel="false"
+                                         IsNotifyChanged="true">
+                                <TableTd1 Context="sizeItem">
+                                    <span class="badge bg-info me-2">TableTd1</span>
+                                    <strong>@sizeItem.Title</strong>
+                                </TableTd1>
+                                <TableHeader>
+                                    <th>标题</th>
+                                    <th>状态</th>
+                                </TableHeader>
+                                <TableRow>
+                                    <td>@item.Title</td>
+                                    <td>@item.Status</td>
+                                </TableRow>
+                                <EditTemplate>
+                                    <div class="row form-inline form-inline-end">
+                                        <div class="form-group col-12">
+                                            <label class="form-label">标题</label>
+                                            <input @bind="item.Title" type="text" class="form-control" />
+                                        </div>
+                                        <div class="form-group col-12">
+                                            <label class="form-label">状态</label>
+                                            <input @bind="item.Status" type="text" class="form-control" />
+                                        </div>
+                                    </div>
+                                </EditTemplate>
+                                <TableTd99>
+                                    <button type="button" class="btn btn-outline-primary btn-xs me-2" @onclick="() => MarkSizeDemo(SizeSmall)">标记 Small</button>
+                                </TableTd99>
+                            </NovaAdminTable>
+                        </div>
+
+                        <div class="col-12 col-lg-6 col-xxl-4 mb-3">
+                            <NovaAdminTable TItem="NovaAdminTableDemoItem"
+                                         Context="item"
+                                         Title="Large"
+                                         ItemsSource="dialogLargeItems"
+                                         PageSize="2"
+                                         TableTd99Width="200"
+                                         DialogSize="NovaModalSize.Large"
+                                         IsQueryString="false"
+                                         IsExportExcel="false">
+                                <TableTd1 Context="sizeItem">
+                                    <span class="badge bg-success me-2">TableTd1</span>
+                                    <strong>@sizeItem.Title</strong>
+                                </TableTd1>
+                                <TableHeader>
+                                    <th>标题</th>
+                                    <th>状态</th>
+                                </TableHeader>
+                                <TableRow>
+                                    <td>@item.Title</td>
+                                    <td>@item.Status</td>
+                                </TableRow>
+                                <EditTemplate>
+                                    <div class="row form-inline form-inline-end">
+                                        <div class="form-group col-12">
+                                            <label class="form-label">标题</label>
+                                            <input @bind="item.Title" type="text" class="form-control" />
+                                        </div>
+                                        <div class="form-group col-12">
+                                            <label class="form-label">状态</label>
+                                            <input @bind="item.Status" type="text" class="form-control" />
+                                        </div>
+                                    </div>
+                                </EditTemplate>
+                                <TableTd99>
+                                    <button type="button" class="btn btn-outline-success btn-xs me-2" @onclick="() => MarkSizeDemo(SizeLarge)">标记 Large</button>
+                                </TableTd99>
+                            </NovaAdminTable>
+                        </div>
+
+                        <div class="col-12 col-lg-6 col-xxl-4 mb-3">
+                            <NovaAdminTable TItem="NovaAdminTableDemoItem"
+                                         Context="item"
+                                         Title="Extra Large"
+                                         ItemsSource="dialogXlItems"
+                                         PageSize="2"
+                                         TableTd99Width="200"
+                                         DialogSize="NovaModalSize.ExtraLarge"
+                                         IsQueryString="false"
+                                         IsExportExcel="false">
+                                <TableTd1 Context="sizeItem">
+                                    <span class="badge bg-warning text-dark me-2">TableTd1</span>
+                                    <strong>@sizeItem.Title</strong>
+                                </TableTd1>
+                                <TableHeader>
+                                    <th>标题</th>
+                                    <th>状态</th>
+                                </TableHeader>
+                                <TableRow>
+                                    <td>@item.Title</td>
+                                    <td>@item.Status</td>
+                                </TableRow>
+                                <EditTemplate>
+                                    <div class="row form-inline form-inline-end">
+                                        <div class="form-group col-12">
+                                            <label class="form-label">标题</label>
+                                            <input @bind="item.Title" type="text" class="form-control" />
+                                        </div>
+                                        <div class="form-group col-12">
+                                            <label class="form-label">状态</label>
+                                            <input @bind="item.Status" type="text" class="form-control" />
+                                        </div>
+                                    </div>
+                                </EditTemplate>
+                                <TableTd99>
+                                    <button type="button" class="btn btn-outline-warning btn-xs me-2" @onclick="() => MarkSizeDemo(SizeExtraLarge)">标记 XL</button>
+                                </TableTd99>
+                            </NovaAdminTable>
+                        </div>
+
+                        <div class="col-12 col-lg-6 col-xxl-4 mb-3 mb-lg-0">
+                            <NovaAdminTable TItem="NovaAdminTableDemoItem"
+                                         Context="item"
+                                         Title="Extra 2 Large"
+                                         ItemsSource="dialogXxlItems"
+                                         PageSize="2"
+                                         TableTd99Width="200"
+                                         DialogSize="NovaModalSize.Extra2Large"
+                                         IsQueryString="false"
+                                         IsExportExcel="false">
+                                <TableTd1 Context="sizeItem">
+                                    <span class="badge bg-danger me-2">TableTd1</span>
+                                    <strong>@sizeItem.Title</strong>
+                                </TableTd1>
+                                <TableHeader>
+                                    <th>标题</th>
+                                    <th>状态</th>
+                                </TableHeader>
+                                <TableRow>
+                                    <td>@item.Title</td>
+                                    <td>@item.Status</td>
+                                </TableRow>
+                                <EditTemplate>
+                                    <div class="row form-inline form-inline-end">
+                                        <div class="form-group col-12">
+                                            <label class="form-label">标题</label>
+                                            <input @bind="item.Title" type="text" class="form-control" />
+                                        </div>
+                                        <div class="form-group col-12">
+                                            <label class="form-label">状态</label>
+                                            <input @bind="item.Status" type="text" class="form-control" />
+                                        </div>
+                                    </div>
+                                </EditTemplate>
+                                <TableTd99>
+                                    <button type="button" class="btn btn-outline-danger btn-xs me-2" @onclick="() => MarkSizeDemo(SizeExtra2Large)">标记 XXL</button>
+                                </TableTd99>
+                            </NovaAdminTable>
+                        </div>
+
+                        <div class="col-12 col-lg-6 col-xxl-4 mb-3 mb-lg-0">
+                            <NovaAdminTable TItem="NovaAdminTableDemoItem"
+                                         Context="item"
+                                         Title="Full Screen"
+                                         ItemsSource="dialogFullItems"
+                                         PageSize="2"
+                                         TableTd99Width="200"
+                                         DialogSize="NovaModalSize.FullScreen"
+                                         IsQueryString="false"
+                                         IsExportExcel="false"
+                                         >
+                                <TableTd1 Context="sizeItem">
+                                    <span class="badge bg-dark me-2">TableTd1</span>
+                                    <strong>@sizeItem.Title</strong>
+                                </TableTd1>
+                                <TableHeader>
+                                    <th>标题</th>
+                                    <th>状态</th>
+                                </TableHeader>
+                                <TableRow>
+                                    <td>@item.Title</td>
+                                    <td>@item.Status</td>
+                                </TableRow>
+                                <EditTemplate>
+                                    <div class="row form-inline form-inline-end">
+                                        <div class="form-group col-12">
+                                            <label class="form-label">标题</label>
+                                            <input @bind="item.Title" type="text" class="form-control" />
+                                        </div>
+                                        <div class="form-group col-12">
+                                            <label class="form-label">状态</label>
+                                            <input @bind="item.Status" type="text" class="form-control" />
+                                        </div>
+                                    </div>
+                                </EditTemplate>
+                                <TableTd99>
+                                    <button type="button" class="btn btn-outline-dark btn-xs me-2" @onclick="() => MarkSizeDemo(SizeFullScreen)">标记全屏</button>
+                                </TableTd99>
+                            </NovaAdminTable>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xxl-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <strong>示例五：空状态和查询提示</strong>
+                    <span class="text-muted small">演示 `NoDataText`、`SearchPlaceholder`、`IsQueryString`</span>
+                </div>
+                <div class="card-body">
+                    <NovaAdminTable TItem="NovaAdminTableDemoItem"
+                                 Context="item"
+                                 Title="空状态演示"
+                                 ItemsSource="emptyItems"
+                                 PageSize="5"
+                                 SearchPlaceholder="这个表目前是空的"
+                                 NoDataText="当前没有任何演示数据"
+                                 IsQueryString="false"
+                                 IsSearchText="true"
+                                 IsExportExcel="false"
+                                 IsAdd="false"
+                                 IsEdit="false"
+                                 IsRemove="false"
+                                 IsView="false"
+                                 IsMultiSelect="false">
+                        <TableHeader>
+                            <th>标题</th>
+                            <th>分类</th>
+                            <th>状态</th>
+                        </TableHeader>
+                        <TableRow>
+                            <td>@item.Title</td>
+                            <td>@item.Category</td>
+                            <td>@item.Status</td>
+                        </TableRow>
+                    </NovaAdminTable>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 mb-3">
+            <div class="card">
+                <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <strong>示例六：分类筛选</strong>
+                    <span class="text-muted small">演示 `CardHeader` 里放筛选控件</span>
+                </div>
+                <div class="card-body">
+                    <NovaAdminTable TItem="NovaAdminTableDemoItem"
+                                 Context="item"
+                                 Title="CardHeader 筛选演示"
+                                 ItemsSource="filteredCategoryItems"
+                                 PageSize="5"
+                                 IsQueryString="false"
+                                 IsExportExcel="false"
+                                 IsSearchText="false"
+                                 DialogClassName="modal-lg">
+                        <CardHeader>
+                            <strong class="me-3">分类筛选</strong>
+                            <select class="form-select form-select-sm d-inline-block me-2" style="width:260px;height:32px;line-height:1.2;" @bind="selectedCategory" @bind:after="OnCategoryChange">
+                                @foreach (var option in examCategoryItems)
+                                {
+                                    <option value="@option.Value">@option.Text</option>
+                                }
+                            </select>
+                            <span class="text-muted small align-middle">
+                                这个示例演示把筛选控件放进 `NovaAdminTable` 的 `CardHeader` 里
+                                <span class="ms-2">当前选择：<strong>@selectedCategoryLabel</strong></span>
+                            </span>
+                        </CardHeader>
+                        <TableHeader>
+                            <th>标题</th>
+                            <th>分类</th>
+                            <th>状态</th>
+                            <th>创建时间</th>
+                        </TableHeader>
+                        <TableRow>
+                            <td>@item.Title</td>
+                            <td>@item.Category</td>
+                            <td>@item.Status</td>
+                            <td>@item.CreatedTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        </TableRow>
+                        <EditTemplate>
+                            <div class="row form-inline form-inline-end">
+                                <div class="form-group col-12">
+                                    <label class="form-label">标题</label>
+                                    <input @bind="item.Title" type="text" class="form-control" />
+                                </div>
+                                <div class="form-group col-6">
+                                    <label class="form-label">分类</label>
+                                    <input @bind="item.Category" type="text" class="form-control" />
+                                </div>
+                                <div class="form-group col-6">
+                                    <label class="form-label">状态</label>
+                                    <input @bind="item.Status" type="text" class="form-control" />
+                                </div>
+                            </div>
+                        </EditTemplate>
+                    </NovaAdminTable>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly List<CategoryOption> examCategoryItems = new()
+    {
+        new CategoryOption("all", "全部分类"),
+        new CategoryOption("教程", "教程"),
+        new CategoryOption("选择", "选择"),
+        new CategoryOption("布局", "布局"),
+        new CategoryOption("交互", "交互"),
+        new CategoryOption("说明", "说明"),
+    };
+
+    private string selectedCategory = "all";
+
+    private string selectedCategoryLabel => examCategoryItems.FirstOrDefault(a => a.Value == selectedCategory)?.Text ?? selectedCategory;
+
+    private List<NovaAdminTableDemoItem> filteredCategoryItems => selectedCategory == "all"
+        ? basicItems.Concat(singleSelectItems).Concat(drawerItems).Concat(dialogSmallItems)
+            .ToList()
+        : basicItems
+            .Concat(singleSelectItems)
+            .Concat(drawerItems)
+            .Concat(dialogSmallItems)
+            .Concat(dialogLargeItems)
+            .Concat(dialogXlItems)
+            .Concat(dialogXxlItems)
+            .Concat(dialogFullItems)
+            .Where(a => a.Category == selectedCategory)
+            .ToList();
+
+    private void OnCategoryChange()
+    {
+        // 这里保留一个显式回调，方便和教程里的 OnSelectedItemChanged 对应理解。
+    }
+
+    private readonly List<NovaAdminTableDemoItem> basicItems = new()
+    {
+        new NovaAdminTableDemoItem
+        {
+            Id = 1,
+            Title = "新手认识 NovaAdminTable",
+            Category = "教程",
+            Status = "草稿",
+            Priority = 1,
+            Description = "展示 TableHeader、TableRow 和 EditTemplate 的基本组合。",
+            CreatedTime = new DateTime(2026, 5, 10, 9, 0, 0)
+        },
+        new NovaAdminTableDemoItem
+        {
+            Id = 2,
+            Title = "筛选条件与查询流程",
+            Category = "教程",
+            Status = "已发布",
+            Priority = 2,
+            Description = "说明 InitQuery 和 OnQuery 的职责分工。",
+            CreatedTime = new DateTime(2026, 5, 10, 10, 0, 0)
+        },
+        new NovaAdminTableDemoItem
+        {
+            Id = 3,
+            Title = "后台 CRUD 的统一工作台",
+            Category = "说明",
+            Status = "已发布",
+            Priority = 3,
+            Description = "说明 NovaAdminTable 为什么适合实体列表页。",
+            CreatedTime = new DateTime(2026, 5, 10, 11, 0, 0)
+        }
+    };
+
+    private readonly List<NovaAdminTableDemoItem> singleSelectItems = new()
+    {
+        new NovaAdminTableDemoItem
+        {
+            Id = 11,
+            Title = "单选后只能挑一个",
+            Category = "选择",
+            Status = "可选",
+            Priority = 1,
+            CreatedTime = new DateTime(2026, 5, 10, 12, 0, 0)
+        },
+        new NovaAdminTableDemoItem
+        {
+            Id = 12,
+            Title = "多选会切换成复选框",
+            Category = "选择",
+            Status = "可选",
+            Priority = 2,
+            CreatedTime = new DateTime(2026, 5, 10, 12, 30, 0)
+        }
+    };
+
+    private readonly List<NovaAdminTableDemoItem> drawerItems = new()
+    {
+        new NovaAdminTableDemoItem
+        {
+            Id = 21,
+            Title = "抽屉样式更适合连续编辑",
+            Category = "布局",
+            Status = "启用",
+            Priority = 1,
+            Description = "这个示例把编辑区放到了抽屉里，适合横向内容较多的表单。",
+            CreatedTime = new DateTime(2026, 5, 10, 13, 0, 0)
+        },
+        new NovaAdminTableDemoItem
+        {
+            Id = 22,
+            Title = "确认弹窗适合重要操作",
+            Category = "交互",
+            Status = "启用",
+            Priority = 2,
+            Description = "演示保存和删除前确认，避免误操作。",
+            CreatedTime = new DateTime(2026, 5, 10, 13, 30, 0)
+        }
+    };
+
+    private readonly List<NovaAdminTableDemoItem> dialogSmallItems = new()
+    {
+        new NovaAdminTableDemoItem
+        {
+            Id = 31,
+            Title = "Small 弹窗 1",
+            Status = "Small",
+            CreatedTime = new DateTime(2026, 5, 10, 14, 0, 0)
+        },
+        new NovaAdminTableDemoItem
+        {
+            Id = 32,
+            Title = "Small 弹窗 2",
+            Status = "Small",
+            CreatedTime = new DateTime(2026, 5, 10, 14, 10, 0)
+        }
+    };
+
+    private readonly List<NovaAdminTableDemoItem> dialogLargeItems = new()
+    {
+        new NovaAdminTableDemoItem
+        {
+            Id = 41,
+            Title = "Large 弹窗 1",
+            Status = "Large",
+            CreatedTime = new DateTime(2026, 5, 10, 14, 20, 0)
+        },
+        new NovaAdminTableDemoItem
+        {
+            Id = 42,
+            Title = "Large 弹窗 2",
+            Status = "Large",
+            CreatedTime = new DateTime(2026, 5, 10, 14, 30, 0)
+        }
+    };
+
+    private readonly List<NovaAdminTableDemoItem> dialogXlItems = new()
+    {
+        new NovaAdminTableDemoItem
+        {
+            Id = 51,
+            Title = "XL 弹窗 1",
+            Status = "XL",
+            CreatedTime = new DateTime(2026, 5, 10, 14, 40, 0)
+        },
+        new NovaAdminTableDemoItem
+        {
+            Id = 52,
+            Title = "XL 弹窗 2",
+            Status = "XL",
+            CreatedTime = new DateTime(2026, 5, 10, 14, 50, 0)
+        }
+    };
+
+    private readonly List<NovaAdminTableDemoItem> dialogXxlItems = new()
+    {
+        new NovaAdminTableDemoItem
+        {
+            Id = 61,
+            Title = "XXL 弹窗 1",
+            Status = "XXL",
+            CreatedTime = new DateTime(2026, 5, 10, 15, 0, 0)
+        },
+        new NovaAdminTableDemoItem
+        {
+            Id = 62,
+            Title = "XXL 弹窗 2",
+            Status = "XXL",
+            CreatedTime = new DateTime(2026, 5, 10, 15, 10, 0)
+        }
+    };
+
+    private readonly List<NovaAdminTableDemoItem> dialogFullItems = new()
+    {
+        new NovaAdminTableDemoItem
+        {
+            Id = 71,
+            Title = "FullScreen 弹窗 1",
+            Status = "FullScreen",
+            CreatedTime = new DateTime(2026, 5, 10, 15, 20, 0)
+        },
+        new NovaAdminTableDemoItem
+        {
+            Id = 72,
+            Title = "FullScreen 弹窗 2",
+            Status = "FullScreen",
+            CreatedTime = new DateTime(2026, 5, 10, 15, 30, 0)
+        }
+    };
+
+    private readonly List<NovaAdminTableDemoItem> emptyItems = [];
+
+    private const string SizeSmall = "Small";
+    private const string SizeLarge = "Large";
+    private const string SizeExtraLarge = "Extra Large";
+    private const string SizeExtra2Large = "Extra 2 Large";
+    private const string SizeFullScreen = "Full Screen";
+
+    private string lastMarkedSize = "未标记";
+
+    private void MarkSizeDemo(string sizeName)
+    {
+        lastMarkedSize = sizeName;
+    }
+
+    private sealed record CategoryOption(string Value, string Text);
+
+    private sealed class NovaAdminTableDemoItem
+    {
+        public long Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public int Priority { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public DateTime CreatedTime { get; set; }
+        public string CreatedTimeText => CreatedTime.ToString("yyyy-MM-dd HH:mm:ss");
+    }
+}

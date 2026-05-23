@@ -1,0 +1,190 @@
+@page "/neo-demo/ui/mobile"
+@layout LayoutAdmin
+@inject IToastService ToastService
+
+<PageTitle>移动端演示</PageTitle>
+
+<div class="flex flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">移动端</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                AppBar、BottomNav、Notification Badge、Quantity Stepper、Section Header — 移动端导航与布局组件。
+                参考 <a class="text-primary underline-offset-4 hover:underline"
+                       href="https://demos.neoui.io/components"
+                       target="_blank"
+                       rel="noopener noreferrer">NeoUI Components</a>。
+            </p>
+        </div>
+
+        <div class="p-4">
+            <Tabs DefaultValue="app-bar" Class="w-full">
+                <TabsList Class="flex flex-wrap gap-1">
+                    <TabsTrigger Value="app-bar">AppBar</TabsTrigger>
+                    <TabsTrigger Value="bottom-nav">BottomNav</TabsTrigger>
+                    <TabsTrigger Value="notification-badge">Notification Badge</TabsTrigger>
+                    <TabsTrigger Value="quantity-stepper">Quantity Stepper</TabsTrigger>
+                    <TabsTrigger Value="section-header">Section Header</TabsTrigger>
+                </TabsList>
+
+                <TabsContent Value="app-bar" Class="mt-4">
+                    <DemoSection Title="AppBar"
+                                 Description="Mobile top bar with centered title, optional back button, and right action slot"
+                                 Code="@MobileDemoSnippets.AppBar">
+                        <MobileDevicePreview>
+                            <div class="flex min-h-full flex-col">
+                                <AppBar Title="详情" OnBack="HandleAppBarBack">
+                                    <RightContent>
+                                        <Button Variant="ButtonVariant.Ghost"
+                                                Size="ButtonSize.Icon"
+                                                OnClick="HandleAppBarShare">
+                                            <LucideIcon Name="share-2" Size="20" />
+                                        </Button>
+                                    </RightContent>
+                                </AppBar>
+                                <div class="flex-1 p-4 text-sm text-muted-foreground">
+                                    页面主体内容区域，AppBar 固定在顶部。
+                                </div>
+                            </div>
+                        </MobileDevicePreview>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="bottom-nav" Class="mt-4">
+                    <DemoSection Title="BottomNav"
+                                 Description="Persistent bottom tab bar with icon, label, and notification badge per item"
+                                 Code="@MobileDemoSnippets.BottomNav">
+                        <MobileDevicePreview DeviceLabel="BottomNav">
+                            <div class="flex min-h-full flex-col">
+                                <div class="flex flex-1 items-center justify-center p-4 text-sm text-muted-foreground">
+                                    当前标签：<span class="ml-1 font-medium text-foreground">@activeTab</span>
+                                </div>
+                                <BottomNav @bind-ActiveTab="activeTab" Fixed="false">
+                                    <BottomNavItem Value="home" Icon="house" Label="首页" />
+                                    <BottomNavItem Value="search" Icon="search" Label="搜索" />
+                                    <BottomNavItem Value="orders" Icon="clipboard-list" Label="订单" BadgeCount="3" />
+                                    <BottomNavItem Value="account" Icon="user" Label="我的" />
+                                </BottomNav>
+                            </div>
+                        </MobileDevicePreview>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="notification-badge" Class="mt-4">
+                    <DemoSection Title="Notification Badge"
+                                 Description="Wraps any element with a count or dot badge in the top-right corner"
+                                 Code="@MobileDemoSnippets.NotificationBadge">
+                        <MobileDevicePreview>
+                            <div class="flex min-h-full flex-col justify-center gap-10 p-6">
+                                <div class="flex items-center justify-around">
+                                    <NotificationBadge Count="5">
+                                        <Button Variant="ButtonVariant.Ghost" Size="ButtonSize.Icon">
+                                            <LucideIcon Name="shopping-cart" Size="20" />
+                                        </Button>
+                                    </NotificationBadge>
+
+                                    <NotificationBadge Count="1" Dot="true">
+                                        <Button Variant="ButtonVariant.Ghost" Size="ButtonSize.Icon">
+                                            <LucideIcon Name="bell" Size="20" />
+                                        </Button>
+                                    </NotificationBadge>
+                                </div>
+
+                                <div class="flex items-center justify-around">
+                                    <NotificationBadge Count="12" Max="9">
+                                        <LucideIcon Name="message-circle" Size="24" />
+                                    </NotificationBadge>
+
+                                    <NotificationBadge Count="3" Variant="NotificationBadgeVariant.Primary">
+                                        <Avatar>
+                                            <AvatarFallback>NA</AvatarFallback>
+                                        </Avatar>
+                                    </NotificationBadge>
+                                </div>
+                            </div>
+                        </MobileDevicePreview>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="quantity-stepper" Class="mt-4">
+                    <DemoSection Title="Quantity Stepper"
+                                 Description="Circular +/- buttons for quantity selection; trash icon at min for cart remove"
+                                 Code="@MobileDemoSnippets.QuantityStepper">
+                        <MobileDevicePreview>
+                            <div class="flex min-h-full flex-col justify-center gap-4 p-6">
+                                <QuantityStepper @bind-Value="quantity"
+                                                 Min="1"
+                                                 Max="10"
+                                                 DestructiveAtMin="true"
+                                                 OnDestructiveClick="HandleRemoveFromCart" />
+                                <p class="text-sm text-muted-foreground">
+                                    当前数量：<span class="font-medium text-foreground">@quantity</span>
+                                    @if (!string.IsNullOrEmpty(stepperMessage))
+                                    {
+                                        <span class="ml-2 text-destructive">@stepperMessage</span>
+                                    }
+                                </p>
+                                <Button Variant="ButtonVariant.Outline"
+                                        Size="ButtonSize.Small"
+                                        Class="w-fit"
+                                        OnClick="ResetQuantity">
+                                    重置为 1
+                                </Button>
+                            </div>
+                        </MobileDevicePreview>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="section-header" Class="mt-4">
+                    <DemoSection Title="Section Header"
+                                 Description="Title row with optional view-all link and separator for mobile layouts"
+                                 Code="@MobileDemoSnippets.SectionHeader">
+                        <MobileDevicePreview>
+                            <div class="space-y-6 p-4">
+                                <SectionHeader Title="热门推荐"
+                                               ViewAllText="查看全部"
+                                               OnViewAll="HandleViewAllPromo" />
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="aspect-square rounded-md bg-muted" />
+                                    <div class="aspect-square rounded-md bg-muted" />
+                                </div>
+
+                                <SectionHeader Title="订单摘要" ShowSeparator="false" />
+                                <p class="text-sm text-muted-foreground">
+                                    无分隔线、无「查看全部」的区块标题，适合表单或摘要区域。
+                                </p>
+                            </div>
+                        </MobileDevicePreview>
+                    </DemoSection>
+                </TabsContent>
+            </Tabs>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string activeTab = "home";
+    private int quantity = 1;
+    private string stepperMessage = string.Empty;
+
+    private void HandleAppBarBack() =>
+        ToastService.Info("返回", "已触发返回操作。");
+
+    private void HandleAppBarShare() =>
+        ToastService.Info("分享", "已触发分享操作。");
+
+    private void HandleRemoveFromCart()
+    {
+        stepperMessage = "已从购物车移除";
+        quantity = 1;
+    }
+
+    private void ResetQuantity()
+    {
+        quantity = 1;
+        stepperMessage = string.Empty;
+    }
+
+    private void HandleViewAllPromo() =>
+        ToastService.Info("查看全部", "跳转到「热门推荐」列表。");
+}

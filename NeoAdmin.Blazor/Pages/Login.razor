@@ -1,0 +1,168 @@
+@page "/login"
+@layout LayoutEmpty
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components.Forms
+@using NeoAdmin.Blazor.Auth
+@inject NeoAdminAuthService AuthService
+@inject SiteSettingsService SiteSettingsService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@using NeoAdmin.Blazor.Data.Entities
+@using NeoAdmin.Blazor.Services
+
+@* auth-01: https://neoui.io/blocks/auth-01 — 有登录页配图时左右分栏展示。 *@
+<div class="flex w-full flex-col overflow-hidden rounded-xl border bg-card shadow-sm @(
+    string.IsNullOrWhiteSpace(siteSettings?.LoginImage) ? "max-w-sm" : "max-w-4xl md:flex-row")">
+    @if (!string.IsNullOrWhiteSpace(siteSettings?.LoginImage))
+    {
+        <img src="@NavigationManager.ToMediaUrl(siteSettings.LoginImage)"
+             alt=""
+             class="h-40 w-full shrink-0 object-cover sm:h-48 md:h-auto md:max-w-xs md:min-h-[26rem]" />
+    }
+    <div class="flex flex-1 items-center justify-center p-4 md:p-6">
+        <div class="w-full" style="max-width: 24rem;">
+    <Card Class="@("@container")">
+        <CardHeader Class="space-y-1 pb-4">
+            <div class="mb-2 flex items-center justify-center">
+                @if (!string.IsNullOrWhiteSpace(siteSettings?.Logo))
+                {
+                    <img src="@NavigationManager.ToMediaUrl(siteSettings.Logo)"
+                         alt=""
+                         class="size-10 rounded-xl object-cover" />
+                }
+                else
+                {
+                    <div class="flex size-10 items-center justify-center rounded-xl bg-foreground">
+                        <LucideIcon Name="layers" Size="18" Class="text-background" />
+                    </div>
+                }
+            </div>
+            <CardTitle Class="text-center text-xl font-semibold">欢迎回来</CardTitle>
+            <CardDescription Class="text-center">登录 @(siteSettings?.Title ?? "NeoAdmin") 管理后台</CardDescription>
+        </CardHeader>
+        <CardContent Class="space-y-4">
+            <EditForm Model="@loginModel" OnValidSubmit="@HandleLoginAsync" class="space-y-4">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-sm text-destructive" />
+                @if (!string.IsNullOrWhiteSpace(errorMessage))
+                {
+                    <div class="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                        @errorMessage
+                    </div>
+                }
+
+                <Field>
+                    <FieldLabel For="userName">用户名</FieldLabel>
+                    <FieldContent>
+                        <Input Id="userName"
+                               Placeholder="请输入用户名"
+                               @bind-Value="loginModel.Username" />
+                    </FieldContent>
+                    <ValidationMessage For="@(() => loginModel.Username)" class="text-xs text-destructive" />
+                </Field>
+
+                <Field>
+                    <FieldLabel For="password">密码</FieldLabel>
+                    <FieldContent>
+                        <Input Id="password"
+                               Type="InputType.Password"
+                               Placeholder="请输入密码"
+                               @bind-Value="loginModel.Password" />
+                    </FieldContent>
+                    <ValidationMessage For="@(() => loginModel.Password)" class="text-xs text-destructive" />
+                </Field>
+
+                <div class="flex items-center gap-2">
+                    <Checkbox Id="remember" @bind-Checked="loginModel.RememberMe" />
+                    <Label For="remember" Class="cursor-pointer text-sm font-normal">记住我 30 天</Label>
+                </div>
+
+                <Button Type="ButtonType.Submit" Class="w-full" Variant="ButtonVariant.Outline">
+                    登录
+                </Button>
+            </EditForm>
+        </CardContent>
+    </Card>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly LoginModel loginModel = new();
+    private string? errorMessage;
+    private SysSiteSettings? siteSettings;
+
+    protected override async Task OnInitializedAsync()
+    {
+        siteSettings = await SiteSettingsService.GetAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        string? token = await JSRuntime.InvokeAsync<string?>("neoAdminAuth.getToken");
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            ApiResult<UserSummaryResponse> checkResult = await AuthService.CheckAsync(token);
+            if (checkResult.Succeeded)
+            {
+                NavigationManager.NavigateTo(GetRedirectUrl(), true);
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("neoAdminAuth.clearToken");
+            }
+        }
+    }
+
+    private async Task HandleLoginAsync()
+    {
+        errorMessage = null;
+        ApiResult<LoginResponse> result = await AuthService.LoginAsync(new LoginRequest
+        {
+            Username = loginModel.Username,
+            Password = loginModel.Password
+        });
+
+        if (!result.Succeeded || result.Data is null)
+        {
+            errorMessage = result.Message;
+            return;
+        }
+
+        await JSRuntime.InvokeVoidAsync("neoAdminAuth.setToken", result.Data.Token);
+        NavigationManager.NavigateTo(GetRedirectUrl(), true);
+    }
+
+    private string GetRedirectUrl()
+    {
+        Uri uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        if (!string.IsNullOrWhiteSpace(uri.Query))
+        {
+            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+            if (query.TryGetValue("redirect", out var redirect) && !string.IsNullOrWhiteSpace(redirect))
+            {
+                return redirect.ToString();
+            }
+        }
+
+        return "/Admin";
+    }
+
+    private sealed class LoginModel
+    {
+        [Required(ErrorMessage = "请输入用户名")]
+        [StringLength(50, ErrorMessage = "用户名不能超过 50 个字符")]
+        public string Username { get; set; } = "admin";
+
+        [Required(ErrorMessage = "请输入密码")]
+        [StringLength(50, ErrorMessage = "密码不能超过 50 个字符")]
+        public string Password { get; set; } = "admin";
+
+        public bool RememberMe { get; set; } = true;
+    }
+}

@@ -1,0 +1,201 @@
+@page "/neo-demo/comp/select-components"
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Data.Entities
+@using NeoAdmin.Blazor.Pages.DemoUI
+@using NeoAdmin.Blazor.Services
+@inject IFreeSql FreeSql
+@inject RoleService RoleService
+
+<PageTitle>实体选择组件演示</PageTitle>
+
+<div class="flex flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">实体选择组件</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                对应旧版 NovaSelect* / NovaInput* / NovaAllocTable 组件，统一使用 Neo 前缀。
+            </p>
+        </div>
+
+        <div class="p-4">
+            <Tabs DefaultValue="select-dict" Class="w-full">
+                <div class="overflow-x-auto pb-1">
+                    <TabsList Class="inline-flex h-auto w-max min-w-full flex-wrap gap-1">
+                        <TabsTrigger Value="select-dict">NeoSelectDict</TabsTrigger>
+                        <TabsTrigger Value="select-enum">NeoSelectEnum</TabsTrigger>
+                        <TabsTrigger Value="select-entity">NeoSelectEntity</TabsTrigger>
+                        <TabsTrigger Value="input-table">NeoInputTable</TabsTrigger>
+                        <TabsTrigger Value="select-table">NeoSelectTable</TabsTrigger>
+                        <TabsTrigger Value="input-tags">NeoInputTags</TabsTrigger>
+                        <TabsTrigger Value="alloc-table">NeoAllocTable</TabsTrigger>
+                    </TabsList>
+                </div>
+
+                <TabsContent Value="select-dict" Class="mt-4">
+                    <DemoSection Title="NeoSelectDict"
+                                 Description="按字典分类 ParentName 绑定字符串值。"
+                                 Code="@NeoSelectComponentsDemoSnippets.SelectDict">
+                        <NeoSelectDict ParentName="Gender" @bind-Value="genderValue" />
+                        <p class="text-sm text-muted-foreground">当前：@(string.IsNullOrWhiteSpace(genderValue) ? "未选择" : genderValue)</p>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="select-enum" Class="mt-4">
+                    <DemoSection Title="NeoSelectEnum"
+                                 Description="枚举类型下拉，TEnum 指定枚举。"
+                                 Code="@NeoSelectComponentsDemoSnippets.SelectEnum">
+                        <NeoSelectEnum TEnum="SysMenuType" @bind-Value="menuTypeValue" />
+                        <p class="text-sm text-muted-foreground">当前：@menuTypeValue</p>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="select-entity" Class="mt-4">
+                    <DemoSection Title="NeoSelectEntity"
+                                 Description="实体下拉选择，绑定主键并自定义显示文本。"
+                                 Code="@NeoSelectComponentsDemoSnippets.SelectEntity">
+                        <NeoSelectEntity TItem="SysOrg" TKey="long" @bind-Value="orgId" DisplayText="o => o.Label" />
+                        <p class="text-sm text-muted-foreground">组织 Id：@orgId</p>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="input-table" Class="mt-4">
+                    <DemoSection Title="NeoInputTable"
+                                 Description="弹窗表格单选实体，OnQuery 过滤查询。"
+                                 Code="@NeoSelectComponentsDemoSnippets.InputTable">
+                        <NeoInputTable TItem="SysOrg" TKey="long"
+                                       @bind-Value="orgId2"
+                                       DisplayText="o => o.Label"
+                                       OnQuery="FilterOrgQuery">
+                            <TableCell Context="org">@org.Label</TableCell>
+                        </NeoInputTable>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="select-table" Class="mt-4">
+                    <DemoSection Title="NeoSelectTable"
+                                 Description="弹窗表格多选实体，Items 与 ItemsChanged 双向绑定列表。"
+                                 Code="@NeoSelectComponentsDemoSnippets.SelectTable">
+                        <NeoSelectTable TItem="SysRole" TKey="long"
+                                        Items="selectedRoles"
+                                        ItemsChanged="OnRolesChanged"
+                                        OnQuery="FilterRoleQuery">
+                            <RowTemplate Context="role">@role.Name</RowTemplate>
+                        </NeoSelectTable>
+                        <p class="text-sm text-muted-foreground">
+                            已选：@string.Join("、", selectedRoles.Select(r => r.Name))
+                        </p>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="input-tags" Class="mt-4">
+                    <DemoSection Title="NeoInputTags"
+                                 Description="标签输入，支持搜索建议与自定义创建。"
+                                 Code="@NeoSelectComponentsDemoSnippets.InputTags">
+                        <NeoInputTags TItem="string"
+                                      Value="tags"
+                                      ValueChanged="OnTagsChanged"
+                                      DisplayText="s => s"
+                                      OnCreate="s => s"
+                                      OnSearch="SearchTagsAsync" />
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="alloc-table" Class="mt-4">
+                    <DemoSection Title="NeoAllocTable"
+                                 Description="主从分配弹窗，加载已选键并保存关联。"
+                                 Code="@NeoSelectComponentsDemoSnippets.AllocTable">
+                        <Button OnClick="OpenRoleAlloc">打开「分配用户」示例</Button>
+                        <NeoAllocTable TItem="SysRole"
+                                       TChild="SysUser"
+                                       TKey="long"
+                                       @bind-Item="allocRole"
+                                       Title="@($"分配用户 — {allocRole?.Name}")"
+                                       KeySelector="u => u.Id"
+                                       DisplayText="u => u.Username"
+                                       LoadSelectedKeysAsync="LoadRoleUserKeysAsync"
+                                       OnSaveAsync="SaveRoleUsersAsync"
+                                       OnQuery="FilterUserAllocQuery" 
+                                       DialogContentSize="CrudDialogContentSize.Sm"/>
+                    </DemoSection>
+                </TabsContent>
+            </Tabs>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string genderValue = string.Empty;
+    private SysMenuType menuTypeValue = SysMenuType.菜单;
+    private long orgId;
+    private long orgId2;
+    private List<SysRole> selectedRoles = new();
+    private List<string> tags = new() { "Blazor", "FreeSql" };
+    private SysRole? allocRole;
+
+    private Task FilterOrgQuery(CrudQueryEventArgs<SysOrg> args)
+    {
+        if (!string.IsNullOrWhiteSpace(args.SearchText))
+        {
+            args.Select!.Where(o => o.Label.Contains(args.SearchText));
+        }
+
+        args.Select!.OrderBy(o => o.Id);
+        return Task.CompletedTask;
+    }
+
+    private Task FilterRoleQuery(CrudQueryEventArgs<SysRole> args)
+    {
+        if (!string.IsNullOrWhiteSpace(args.SearchText))
+        {
+            args.Select!.Where(r => r.Name.Contains(args.SearchText) || r.Description.Contains(args.SearchText));
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task FilterUserAllocQuery(CrudQueryEventArgs<SysUser> args)
+    {
+        if (!string.IsNullOrWhiteSpace(args.SearchText))
+        {
+            args.Select!.Where(u =>
+                u.Username.Contains(args.SearchText) || u.Nickname.Contains(args.SearchText));
+        }
+
+        args.Select!.OrderBy(u => u.Username);
+        return Task.CompletedTask;
+    }
+
+    private Task OnRolesChanged(List<SysRole> roles)
+    {
+        selectedRoles = roles;
+        return Task.CompletedTask;
+    }
+
+    private Task OnTagsChanged(ICollection<string> value)
+    {
+        tags = value.ToList();
+        return Task.CompletedTask;
+    }
+
+    private Task<IEnumerable<string>> SearchTagsAsync(string keyword)
+    {
+        string[] pool = ["Blazor", "FreeSql", "SQLite", "NeoUI", "Admin", "Razor", "C#"];
+        IEnumerable<string> results = pool.Where(item =>
+            item.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+        return Task.FromResult(results);
+    }
+
+    private async Task OpenRoleAlloc()
+    {
+        allocRole = await FreeSql.Select<SysRole>().OrderBy(r => r.Id).FirstAsync();
+    }
+
+    private async Task<IReadOnlyCollection<long>> LoadRoleUserKeysAsync(SysRole role) =>
+        await RoleService.GetUserIdsAsync(role.Id);
+
+    private async Task<bool> SaveRoleUsersAsync(SysRole role, IReadOnlyCollection<long> userIds)
+    {
+        var result = await RoleService.SetUsersAsync(role.Id, userIds);
+        return result.Succeeded;
+    }
+}

@@ -1,0 +1,163 @@
+@page "/NovaDemo/FileCacheDemo"
+<PageTitle>文件缓存演示</PageTitle>
+
+<div class="card mb-3">
+    <div class="card-header">
+        <strong>FileCacheAttribute 演示</strong>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">
+            这个页面演示 <code>FileCacheAttribute</code> 的基础缓存行为、请求结果和说明信息。
+        </p>
+
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-lg-6">
+                <div class="border rounded p-3 h-100 bg-white">
+                    <div class="fw-semibold mb-2">请求参数</div>
+                    <div class="mb-3">
+                        <label class="form-label">参数 a</label>
+                        <input class="form-control" @bind="queryValue" @bind:event="oninput" />
+                    </div>
+
+                    <div class="d-flex gap-2 flex-wrap mb-3">
+                        <button type="button" class="btn btn-primary" @onclick="RequestAsync">请求一次</button>
+                        <button type="button" class="btn btn-outline-primary"
+                            @onclick="RequestTwiceAsync">连续请求两次</button>
+                        <button type="button" class="btn btn-outline-secondary"
+                            @onclick="ChangeAndRequestAsync">变更参数后请求</button>
+                    </div>
+
+                    <div class="border rounded p-3 bg-light">
+                        <div class="fw-bold mb-1">当前状态</div>
+                        <div class="small text-muted">@statusText</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-6">
+                <div class="border rounded p-3 h-100 bg-white">
+                    <div class="fw-semibold mb-2">返回结果</div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-12">
+                            <div class="border rounded p-3 h-100">
+                                <div class="text-muted small">参数</div>
+                                <div class="fw-semibold">@lastInput</div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="border rounded p-3 h-100">
+                                <div class="text-muted small">构建次数</div>
+                                <div class="fw-semibold">@lastBuildCount</div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="border rounded p-3 h-100">
+                                <div class="text-muted small">缓存键</div>
+                                <div class="fw-semibold text-break">@lastCacheKey</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border rounded p-3 bg-dark text-light">
+                        <div class="text-muted small mb-1">原始返回</div>
+                        <pre class="mb-0 text-light" style="white-space: pre-wrap;">@rawResponse</pre>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <div class="col-12"></div>
+        <div class="border rounded p-3 h-100 bg-white">
+            <div class="fw-semibold mb-2">说明</div>
+            <p class="mb-3">
+                下面这段就是页面里实际使用的写法，按钮点击后会调用这个方法，
+                第一次进入方法体时会生成结果，后续相同参数会直接命中缓存。
+            </p>
+            <pre class="mb-3"><code>[FileCache(60, CacheDirectory = "Cache/FileCache.Tests")]
+private string BuildCacheResult(string a)
+{
+    var currentBuildCount = Interlocked.Increment(ref buildCount);
+    return $"input={a};buildCount={currentBuildCount};cacheKey=page:{a}";
+}</code></pre>
+            <p class="mb-2">
+                删除规则也一起写在这里，方便演示时直接说明：
+            </p>
+            <pre class="mb-3"><code>最直白地说：
+
+“过期了还被访问” -> 立刻删
+“过期了但没人访问” -> 下次有人进缓存逻辑时，按 10 分钟节流统一扫掉
+“文件坏了” -> 也删</code></pre>
+            <pre class="mb-0"><code>同一个参数：第一次会执行方法体并生成缓存
+同一个参数：第二次会直接命中缓存
+参数变化：会生成新的缓存文件</code></pre>
+        </div>
+    </div>
+</div>
+@code {
+    private string queryValue = "alpha";
+    private string statusText = "尚未请求";
+    private string rawResponse = "暂无结果";
+    private string lastInput = "-";
+    private string lastBuildCount = "-";
+    private string lastCacheKey = "-";
+    private int buildCount;
+
+    [FileCache(60, CacheDirectory = "Cache/FileCache.Tests")]
+    private string BuildCacheResult(string a)
+    {
+        var currentBuildCount = Interlocked.Increment(ref buildCount);
+        return $"input={a};buildCount={currentBuildCount};cacheKey=page:{a}";
+    }
+
+    private async Task RequestAsync()
+    {
+        await ExecuteRequestAsync(queryValue);
+    }
+
+    private async Task RequestTwiceAsync()
+    {
+        await ExecuteRequestAsync(queryValue);
+        await Task.Delay(150);
+        await ExecuteRequestAsync(queryValue);
+    }
+
+    private async Task ChangeAndRequestAsync()
+    {
+        queryValue = $"{queryValue}-new";
+        await ExecuteRequestAsync(queryValue);
+    }
+
+    private async Task ExecuteRequestAsync(string value)
+    {
+        statusText = $"正在请求参数 {value}";
+        var response = BuildCacheResult(value);
+        rawResponse = response;
+
+        foreach (var part in response.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var kv = part.Split('=', 2, StringSplitOptions.TrimEntries);
+            if (kv.Length != 2)
+            {
+                continue;
+            }
+
+            switch (kv[0])
+            {
+                case "input":
+                    lastInput = kv[1];
+                    break;
+                case "buildCount":
+                    lastBuildCount = kv[1];
+                    break;
+                case "cacheKey":
+                    lastCacheKey = kv[1];
+                    break;
+            }
+        }
+
+        statusText = $"已完成请求：{value}";
+        await InvokeAsync(StateHasChanged);
+    }
+}

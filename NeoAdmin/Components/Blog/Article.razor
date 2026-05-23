@@ -1,0 +1,388 @@
+@page "/Blog/Article"
+@namespace NeoAdmin.Components.Blog
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Components
+@inject IFreeSql FreeSql
+@inject IToastService ToastService
+
+<PageTitle>随笔文章</PageTitle>
+
+<div class="flex flex-col flex-1 min-h-0">
+    <CrudTable @ref="table"
+               TItem="BlogArticle"
+               Title="随笔文章"
+               PageSize="50"
+               SearchPlaceholder="标题 / 关键字 / 摘要.."
+               InitQuery="InitQuery"
+               OnQuery="HandleQuery"
+               OnEdit="HandleEdit"
+               OnSaveAsync="HandleSaveAsync"
+               OnSaving="HandleSaving"
+               DialogContentSize="CrudDialogContentSize.X6l">
+        <Columns>
+            <DataTableColumn TData="CrudGridRow<BlogArticle>"
+                             TValue="long"
+                             Property="@(row => row.Item.Id)"
+                             Header="ID"
+                             Sortable="false"
+                             Width="180px" />
+            <DataTableColumn TData="CrudGridRow<BlogArticle>"
+                             TValue="string"
+                             Property="@(row => row.Item.Classify != null ? row.Item.Classify.ClassifyName : string.Empty)"
+                             Header="随笔专栏"
+                             Sortable="false"
+                             Width="120px">
+                <CellTemplate Context="row">@row.Item.Classify?.ClassifyName</CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<BlogArticle>"
+                             TValue="string"
+                             Property="@(row => row.Item.Channel != null ? row.Item.Channel.ChannelName : string.Empty)"
+                             Header="技术频道"
+                             Sortable="false"
+                             Width="120px">
+                <CellTemplate Context="row">@row.Item.Channel?.ChannelName</CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<BlogArticle>"
+                             TValue="string"
+                             Property="@(row => row.Item.Title)"
+                             Header="标题"
+                             Sortable="false">
+                <CellTemplate Context="row">
+                    <span class="block truncate font-medium" title="@row.Item.Title">@row.Item.Title</span>
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<BlogArticle>"
+                             TValue="int"
+                             Property="@(row => row.Item.ViewHits)"
+                             Header="浏览量"
+                             Sortable="false"
+                             Width="80px" />
+            <DataTableColumn TData="CrudGridRow<BlogArticle>"
+                             TValue="int"
+                             Property="@(row => row.Item.CommentQuantity)"
+                             Header="评论"
+                             Sortable="false"
+                             Width="72px" />
+            <DataTableColumn TData="CrudGridRow<BlogArticle>"
+                             TValue="int"
+                             Property="@(row => row.Item.LikesQuantity)"
+                             Header="点赞"
+                             Sortable="false"
+                             Width="72px" />
+            <DataTableColumn TData="CrudGridRow<BlogArticle>"
+                             TValue="int"
+                             Property="@(row => row.Item.CollectQuantity)"
+                             Header="收藏"
+                             Sortable="false"
+                             Width="72px" />
+            <DataTableColumn TData="CrudGridRow<BlogArticle>"
+                             TValue="ArticleType"
+                             Property="@(row => row.Item.ArticleType)"
+                             Header="类型"
+                             Sortable="false"
+                             Width="80px" />
+            <DataTableColumn TData="CrudGridRow<BlogArticle>"
+                             TValue="string"
+                             Property="@(_ => string.Empty)"
+                             Header="创建时间"
+                             Sortable="false"
+                             Width="160px">
+                <CellTemplate Context="row">
+                    @(row.Item.CreatedTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")
+                </CellTemplate>
+            </DataTableColumn>
+        </Columns>
+        <EditTemplate Context="item">
+            <Tabs DefaultValue="content" Class="w-full">
+                <TabsList>
+                    <TabsTrigger Value="content">随笔</TabsTrigger>
+                    <TabsTrigger Value="settings">设置</TabsTrigger>
+                    <TabsTrigger Value="collections">收藏集</TabsTrigger>
+                </TabsList>
+                <TabsContent Value="content" Class="mt-4 space-y-4">
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="space-y-2">
+                            <Label>随笔专栏</Label>
+                            <NeoSelectEntity TItem="BlogClassify"
+                                             TKey="long?"
+                                             @bind-Value="item.ClassifyId"
+                                             DisplayText="e => e.ClassifyName" />
+                        </div>
+                        <div class="space-y-2">
+                            <Label>技术频道</Label>
+                            <NeoSelectEntity TItem="BlogChannel"
+                                             TKey="long"
+                                             @bind-Value="item.ChannelId"
+                                             DisplayText="e => e.ChannelName" />
+                        </div>
+                    </div>
+                    <div class="grid gap-4 sm:grid-cols-3">
+                        <div class="space-y-2 sm:col-span-2">
+                            <Label For="article-title">标题</Label>
+                            <Input id="article-title" Class="w-full" MaxLength="200" @bind-Value="item.Title" />
+                        </div>
+                        <div class="space-y-2">
+                            <Label>随笔类型</Label>
+                            <NeoSelectEnum TEnum="ArticleType" @bind-Value="item.ArticleType" />
+                        </div>
+                    </div>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="space-y-2">
+                            <Label For="article-keywords">关键字</Label>
+                            <Input id="article-keywords" Class="w-full" MaxLength="400" @bind-Value="item.Keywords" />
+                        </div>
+                        <div class="space-y-2">
+                            <Label For="article-source">来源</Label>
+                            <Input id="article-source" Class="w-full" MaxLength="400" @bind-Value="item.Source" />
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="article-excerpt">摘要</Label>
+                        <Textarea id="article-excerpt" Class="min-h-20 w-full" MaxLength="500" @bind-Value="item.Excerpt" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="article-content">正文</Label>
+                        <Textarea id="article-content" Class="min-h-48 w-full" @bind-Value="item.Content" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="article-thumb">缩略图</Label>
+                        <Input id="article-thumb" Class="w-full" MaxLength="400" @bind-Value="item.Thumbnail" />
+                    </div>
+                </TabsContent>
+                <TabsContent Value="settings" Class="mt-4 space-y-4">
+                    <div class="grid gap-4 sm:grid-cols-4">
+                        <div class="space-y-2">
+                            <Label For="article-views">浏览量</Label>
+                            <Input id="article-views"
+                                   Type="InputType.Number"
+                                   Class="w-full"
+                                   Value="@item.ViewHits.ToString()"
+                                   ValueChanged="@(v => item.ViewHits = int.TryParse(v, out var n) ? n : 0)" />
+                        </div>
+                        <div class="space-y-2">
+                            <Label For="article-comments">评论数量</Label>
+                            <Input id="article-comments"
+                                   Type="InputType.Number"
+                                   Class="w-full"
+                                   Value="@item.CommentQuantity.ToString()"
+                                   ValueChanged="@(v => item.CommentQuantity = int.TryParse(v, out var n) ? n : 0)" />
+                        </div>
+                        <div class="space-y-2">
+                            <Label For="article-likes">点赞数量</Label>
+                            <Input id="article-likes"
+                                   Type="InputType.Number"
+                                   Class="w-full"
+                                   Value="@item.LikesQuantity.ToString()"
+                                   ValueChanged="@(v => item.LikesQuantity = int.TryParse(v, out var n) ? n : 0)" />
+                        </div>
+                        <div class="space-y-2">
+                            <Label For="article-collects">收藏数量</Label>
+                            <Input id="article-collects"
+                                   Type="InputType.Number"
+                                   Class="w-full"
+                                   Value="@item.CollectQuantity.ToString()"
+                                   ValueChanged="@(v => item.CollectQuantity = int.TryParse(v, out var n) ? n : 0)" />
+                        </div>
+                    </div>
+                    <div class="grid gap-4 sm:grid-cols-3">
+                        <div class="flex items-center gap-2">
+                            <Checkbox @bind-Checked="item.IsAudit" Id="article-audit" />
+                            <Label for="article-audit">是否审核</Label>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <Checkbox @bind-Checked="item.Recommend" Id="article-recommend" />
+                            <Label for="article-recommend">是否推荐</Label>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <Checkbox @bind-Checked="item.IsStickie" Id="article-stickie" />
+                            <Label for="article-stickie">是否置顶</Label>
+                        </div>
+                    </div>
+                    <div class="grid gap-4 sm:grid-cols-3">
+                        <div class="space-y-2">
+                            <Label For="article-words">字数</Label>
+                            <Input id="article-words"
+                                   Type="InputType.Number"
+                                   Class="w-full"
+                                   Value="@item.WordNumber.ToString()"
+                                   ValueChanged="@(v => item.WordNumber = int.TryParse(v, out var n) ? n : 0)" />
+                        </div>
+                        <div class="space-y-2">
+                            <Label For="article-reading">阅读时长</Label>
+                            <Input id="article-reading"
+                                   Type="InputType.Number"
+                                   Class="w-full"
+                                   Value="@item.ReadingTime.ToString()"
+                                   ValueChanged="@(v => item.ReadingTime = int.TryParse(v, out var n) ? n : 0)" />
+                        </div>
+                        <div class="flex items-center gap-2 pt-6">
+                            <Checkbox @bind-Checked="item.Commentable" Id="article-commentable" />
+                            <Label for="article-commentable">开启评论</Label>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <Label>标签</Label>
+                        <NeoSelectTable TItem="BlogTag2"
+                                        TKey="long"
+                                        @bind-Items="item.Tags"
+                                        IsSearchText="false"
+                                        PageSize="-1"
+                                        OnQuery="FilterTagSelectQuery">
+                            <RowTemplate Context="tag">@tag.TagName</RowTemplate>
+                        </NeoSelectTable>
+                    </div>
+                </TabsContent>
+                <TabsContent Value="collections" Class="mt-4">
+                    <NeoSelectTable TItem="BlogCollection"
+                                    TKey="long"
+                                    @bind-Items="item.Collections"
+                                    IsSearchText="false"
+                                    PageSize="-1"
+                                    OnQuery="FilterCollectionSelectQuery">
+                        <RowTemplate Context="collection">@collection.Name</RowTemplate>
+                    </NeoSelectTable>
+                </TabsContent>
+            </Tabs>
+        </EditTemplate>
+    </CrudTable>
+</div>
+
+@code {
+    private CrudTable<BlogArticle> table = default!;
+
+    private async Task InitQuery(CrudQueryInfo e)
+    {
+        List<BlogClassify> classifies = await FreeSql.Select<BlogClassify>().ToListAsync();
+        List<BlogChannel> channels = await FreeSql.Select<BlogChannel>().ToListAsync();
+        List<BlogCollection> collections = await FreeSql.Select<BlogCollection>().ToListAsync();
+        List<BlogTag2> tags = await FreeSql.Select<BlogTag2>().ToListAsync();
+
+        e.Filters =
+        [
+            new CrudFilterInfo(
+                "随笔专栏",
+                "ClassifyId",
+                false,
+                12,
+                string.Join(",", classifies.Select(a => a.ClassifyName)),
+                string.Join(",", classifies.Select(a => a.Id))),
+            new CrudFilterInfo(
+                "技术频道",
+                "ChannelId",
+                false,
+                6,
+                string.Join(",", channels.Select(a => a.ChannelName)),
+                string.Join(",", channels.Select(a => a.Id))),
+            new CrudFilterInfo("随笔类型", "ArticleType", typeof(ArticleType), false, 6),
+            new CrudFilterInfo(
+                "收藏集",
+                "Collections",
+                false,
+                6,
+                string.Join(",", collections.Select(a => a.Name)),
+                string.Join(",", collections.Select(a => a.Id))),
+            new CrudFilterInfo(
+                "标签",
+                "Tags",
+                multiple: true,
+                col: 6,
+                string.Join(",", tags.Select(a => a.TagName)),
+                string.Join(",", tags.Select(a => a.Id))),
+            new CrudFilterInfo("标题", "Title", CrudFilterType.Text, 6),
+        ];
+    }
+
+    private void HandleQuery(CrudQueryEventArgs<BlogArticle> e)
+    {
+        CrudFilterInfo classifyFilter = e.Filters[0];
+        CrudFilterInfo channelFilter = e.Filters[1];
+        CrudFilterInfo typeFilter = e.Filters[2];
+        CrudFilterInfo collectionFilter = e.Filters[3];
+        CrudFilterInfo tagFilter = e.Filters[4];
+        CrudFilterInfo titleFilter = e.Filters[5];
+
+        e.Select!
+            .Include(a => a.Classify)
+            .Include(a => a.Channel)
+            .WhereIf(classifyFilter.HasValue, a => classifyFilter.Values<long?>().Contains(a.ClassifyId))
+            .WhereIf(channelFilter.HasValue, a => channelFilter.Values<long>().Contains(a.ChannelId))
+            .WhereIf(typeFilter.HasValue, a => a.ArticleType == typeFilter.Value<ArticleType>())
+            .WhereIf(collectionFilter.HasValue,
+                a => FreeSql.Select<BlogArticle.ArticleCollection>()
+                    .Where(j => j.ArticleId == a.Id && collectionFilter.Values<long>().Contains(j.CollectionId))
+                    .Any())
+            .WhereIf(tagFilter.HasValue,
+                a => FreeSql.Select<BlogTag2.TagArticle>()
+                    .Where(j => j.ArticleId == a.Id && tagFilter.Values<long>().Contains(j.TagId))
+                    .Any())
+            .WhereIf(titleFilter.HasValue && !string.IsNullOrWhiteSpace(titleFilter.Options[0].Value),
+                a => a.Title.Contains(titleFilter.Options[0].Value!))
+            .WhereIf(!string.IsNullOrWhiteSpace(e.SearchText),
+                a => a.Title.Contains(e.SearchText!)
+                     || a.Keywords.Contains(e.SearchText!)
+                     || a.Excerpt.Contains(e.SearchText!))
+            .OrderByDescending(a => a.Id);
+    }
+
+    private async Task HandleEdit(BlogArticle item)
+    {
+        if (item.Id == 0)
+        {
+            item.Tags = [];
+            item.Collections = [];
+            return;
+        }
+
+        IReadOnlyCollection<long> tagIds = await BlogRelationService.GetArticleTagIdsAsync(FreeSql, item.Id);
+        IReadOnlyCollection<long> collectionIds = await BlogRelationService.GetArticleCollectionIdsAsync(FreeSql, item.Id);
+        item.Tags = await BlogRelationService.LoadTagsByIdsAsync(FreeSql, tagIds);
+        item.Collections = await BlogRelationService.LoadCollectionsByIdsAsync(FreeSql, collectionIds);
+    }
+
+    private Task HandleSaving(CrudConfirmEventArgs<BlogArticle> e)
+    {
+        if (string.IsNullOrWhiteSpace(e.Item.Content))
+        {
+            ToastService.Error("保存失败", "请录入正文内容！");
+            e.Cancel = true;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task<bool> HandleSaveAsync(BlogArticle item, bool isNewItem)
+    {
+        List<BlogTag2> tags = item.Tags ?? [];
+        List<BlogCollection> collections = item.Collections ?? [];
+        item.Tags = [];
+        item.Collections = [];
+        item.Classify = null;
+        item.Channel = null;
+
+        if (isNewItem)
+        {
+            await FreeSql.Insert(item).ExecuteAffrowsAsync();
+        }
+        else
+        {
+            await FreeSql.Update<BlogArticle>().SetSource(item).ExecuteAffrowsAsync();
+        }
+
+        await BlogRelationService.SaveArticleTagsAsync(FreeSql, item.Id, tags.Select(t => t.Id).ToList());
+        await BlogRelationService.SaveArticleCollectionsAsync(
+            FreeSql, item.Id, collections.Select(c => c.Id).ToList(), null, string.Empty);
+        return true;
+    }
+
+    private Task FilterTagSelectQuery(CrudQueryEventArgs<BlogTag2> args)
+    {
+        args.Select!.OrderBy(t => t.TagName);
+        return Task.CompletedTask;
+    }
+
+    private Task FilterCollectionSelectQuery(CrudQueryEventArgs<BlogCollection> args)
+    {
+        args.Select!.OrderBy(c => c.Name);
+        return Task.CompletedTask;
+    }
+}

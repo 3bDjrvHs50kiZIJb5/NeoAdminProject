@@ -1,0 +1,291 @@
+@page "/neo-demo/ui/overlays-modal"
+@layout LayoutAdmin
+@inject DialogService DialogService
+@inject IToastService ToastService
+
+<PageTitle>模态与侧板演示</PageTitle>
+
+<div class="flex flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">模态与侧板</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                Alert Dialog、Dialog、Dialog Service、Drawer、Sheet — 模态确认、对话框、程序化弹窗与侧滑面板。
+                参考 <a class="text-primary underline-offset-4 hover:underline"
+                       href="https://demos.neoui.io/components"
+                       target="_blank"
+                       rel="noopener noreferrer">NeoUI Components</a>。
+            </p>
+        </div>
+
+        <div class="p-4">
+            <Tabs DefaultValue="alert-dialog" Class="w-full">
+                <TabsList Class="flex flex-wrap gap-1">
+                    <TabsTrigger Value="alert-dialog">Alert Dialog</TabsTrigger>
+                    <TabsTrigger Value="dialog">Dialog</TabsTrigger>
+                    <TabsTrigger Value="dialog-service">Dialog Service</TabsTrigger>
+                    <TabsTrigger Value="drawer">Drawer</TabsTrigger>
+                    <TabsTrigger Value="sheet">Sheet</TabsTrigger>
+                </TabsList>
+
+                <TabsContent Value="alert-dialog" Class="mt-4">
+                    <DemoSection Title="Alert Dialog"
+                                 Description="Modal dialog for critical confirmations and warnings"
+                                 Code="@OverlaysModalDemoSnippets.AlertDialog">
+                        <AlertDialog @bind-Open="deleteAlertOpen">
+                            <AlertDialogTrigger AsChild>
+                                <Button Variant="ButtonVariant.Destructive">删除账户</Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>确定要删除吗？</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        此操作不可撤销，将永久删除你的账户及所有数据。
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>取消</AlertDialogCancel>
+                                    <AlertDialogAction OnClick="OnDeleteConfirmed">继续</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                        @if (!string.IsNullOrEmpty(alertDialogMessage))
+                        {
+                            <p class="mt-3 text-sm text-muted-foreground">@alertDialogMessage</p>
+                        }
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="dialog" Class="mt-4">
+                    <DemoSection Title="Dialog"
+                                 Description="Modal dialogs with backdrop and focus management"
+                                 Code="@OverlaysModalDemoSnippets.Dialog">
+                        <Dialog @bind-Open="editDialogOpen">
+                            <DialogTrigger AsChild>
+                                <Button>编辑资料</Button>
+                            </DialogTrigger>
+                            <DialogContent Class="sm:max-w-md">
+                                <DialogHeader>
+                                    <DialogTitle>编辑资料</DialogTitle>
+                                    <DialogDescription>修改显示名称后点击保存。</DialogDescription>
+                                </DialogHeader>
+                                <div class="py-2">
+                                    <Label For="dialog-display-name">显示名称</Label>
+                                    <Input Id="dialog-display-name"
+                                           Class="mt-2"
+                                           @bind-Value="displayName"
+                                           Placeholder="显示名称" />
+                                </div>
+                                <DialogFooter Class="mt-4">
+                                    <Button Variant="ButtonVariant.Outline" OnClick="CloseEditDialog">取消</Button>
+                                    <Button OnClick="SaveEditDialog">保存</Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                        <p class="mt-3 text-sm text-muted-foreground">
+                            当前名称：@(string.IsNullOrWhiteSpace(savedDisplayName) ? "（未设置）" : savedDisplayName)
+                        </p>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="dialog-service" Class="mt-4">
+                    <DemoSection Title="Dialog Service"
+                                 Description="Programmatic dialogs with async/await API"
+                                 Code="@OverlaysModalDemoSnippets.DialogService">
+                        <div class="flex flex-wrap gap-2">
+                            <Button OnClick="RunConfirmAsync">确认对话框</Button>
+                            <Button Variant="ButtonVariant.Outline" OnClick="RunAlertAsync">提示对话框</Button>
+                            <Button Variant="ButtonVariant.Destructive" OnClick="RunDeleteConfirmAsync">删除确认</Button>
+                        </div>
+                        @if (!string.IsNullOrEmpty(dialogServiceMessage))
+                        {
+                            <p class="mt-3 text-sm text-muted-foreground">@dialogServiceMessage</p>
+                        }
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="drawer" Class="mt-4">
+                    <DemoSection Title="Drawer"
+                                 Description="Slide-out panel with gesture controls and backdrop"
+                                 Code="@OverlaysModalDemoSnippets.Drawer">
+                        <div class="flex flex-wrap gap-2">
+                            <Drawer @bind-Open="drawerRightOpen" Direction="DrawerDirection.Right">
+                                <DrawerTrigger AsChild>
+                                    <Button Variant="ButtonVariant.Outline">右侧抽屉</Button>
+                                </DrawerTrigger>
+                                <DrawerContent>
+                                    <DrawerHeader>
+                                        <DrawerTitle>筛选条件</DrawerTitle>
+                                        <DrawerDescription>从右侧滑出，适合筛选或详情面板。</DrawerDescription>
+                                    </DrawerHeader>
+                                    <div class="px-4 pb-4">
+                                        <Label For="drawer-keyword">关键词</Label>
+                                        <Input Id="drawer-keyword"
+                                               Class="mt-2"
+                                               @bind-Value="drawerKeyword"
+                                               Placeholder="输入关键词…" />
+                                    </div>
+                                    <DrawerFooter>
+                                        <DrawerClose AsChild>
+                                            <Button Variant="ButtonVariant.Outline">关闭</Button>
+                                        </DrawerClose>
+                                        <Button OnClick="ApplyDrawerFilter">应用</Button>
+                                    </DrawerFooter>
+                                </DrawerContent>
+                            </Drawer>
+
+                            <Drawer @bind-Open="drawerBottomOpen" Direction="DrawerDirection.Bottom">
+                                <DrawerTrigger AsChild>
+                                    <Button Variant="ButtonVariant.Secondary">底部抽屉</Button>
+                                </DrawerTrigger>
+                                <DrawerContent SnapPoints="new[] { 0.4f, 0.85f }" @bind-SnapIndex="drawerSnapIndex">
+                                    <DrawerHeader>
+                                        <DrawerTitle>底部面板</DrawerTitle>
+                                        <DrawerDescription>可拖拽吸附点（演示 snap）。当前档位：@drawerSnapIndex</DrawerDescription>
+                                    </DrawerHeader>
+                                    <div class="px-4 pb-6 text-sm text-muted-foreground">
+                                        向上拖动可切换高度档位。
+                                    </div>
+                                </DrawerContent>
+                            </Drawer>
+                        </div>
+                        @if (!string.IsNullOrEmpty(drawerMessage))
+                        {
+                            <p class="mt-3 text-sm text-muted-foreground">@drawerMessage</p>
+                        }
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="sheet" Class="mt-4">
+                    <DemoSection Title="Sheet"
+                                 Description="Side panels that slide in from viewport edges"
+                                 Code="@OverlaysModalDemoSnippets.Sheet">
+                        <div class="flex flex-wrap gap-2">
+                            <Sheet @bind-Open="sheetRightOpen" Side="SheetSide.Right">
+                                <SheetTrigger AsChild>
+                                    <Button>右侧 Sheet</Button>
+                                </SheetTrigger>
+                                <SheetContent>
+                                    <SheetHeader>
+                                        <SheetTitle>通知设置</SheetTitle>
+                                        <SheetDescription>管理邮件与站内消息偏好。</SheetDescription>
+                                    </SheetHeader>
+                                    <div class="grid gap-4 py-4">
+                                        <div class="flex items-center justify-between gap-4">
+                                            <Label For="sheet-email">邮件通知</Label>
+                                            <Switch Id="sheet-email" @bind-Checked="sheetEmailNotify" />
+                                        </div>
+                                        <div class="flex items-center justify-between gap-4">
+                                            <Label For="sheet-push">推送通知</Label>
+                                            <Switch Id="sheet-push" @bind-Checked="sheetPushNotify" />
+                                        </div>
+                                    </div>
+                                    <SheetFooter>
+                                        <SheetClose AsChild>
+                                            <Button Variant="ButtonVariant.Outline">取消</Button>
+                                        </SheetClose>
+                                        <Button OnClick="SaveSheetSettings">保存</Button>
+                                    </SheetFooter>
+                                </SheetContent>
+                            </Sheet>
+
+                            <Sheet @bind-Open="sheetLeftOpen" Side="SheetSide.Left">
+                                <SheetTrigger AsChild>
+                                    <Button Variant="ButtonVariant.Outline">左侧 Sheet</Button>
+                                </SheetTrigger>
+                                <SheetContent>
+                                    <SheetHeader>
+                                        <SheetTitle>导航</SheetTitle>
+                                        <SheetDescription>从左侧滑入的窄面板示例。</SheetDescription>
+                                    </SheetHeader>
+                                    <nav class="grid gap-2 py-4 text-sm">
+                                        <Button Variant="ButtonVariant.Ghost" Class="justify-start">首页</Button>
+                                        <Button Variant="ButtonVariant.Ghost" Class="justify-start">文档</Button>
+                                        <Button Variant="ButtonVariant.Ghost" Class="justify-start">设置</Button>
+                                    </nav>
+                                </SheetContent>
+                            </Sheet>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+            </Tabs>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool deleteAlertOpen;
+    private string alertDialogMessage = string.Empty;
+
+    private bool editDialogOpen;
+    private string displayName = "NeoAdmin";
+    private string savedDisplayName = "NeoAdmin";
+
+    private string dialogServiceMessage = string.Empty;
+
+    private bool drawerRightOpen;
+    private bool drawerBottomOpen;
+    private string drawerKeyword = string.Empty;
+    private string drawerMessage = string.Empty;
+    private int drawerSnapIndex;
+
+    private bool sheetRightOpen;
+    private bool sheetLeftOpen;
+    private bool sheetEmailNotify = true;
+    private bool sheetPushNotify;
+
+    private void OnDeleteConfirmed()
+    {
+        deleteAlertOpen = false;
+        alertDialogMessage = "已确认删除（演示，未实际执行）。";
+    }
+
+    private void CloseEditDialog() => editDialogOpen = false;
+
+    private void SaveEditDialog()
+    {
+        savedDisplayName = displayName;
+        editDialogOpen = false;
+        ToastService.Success("Dialog", "资料已保存。");
+    }
+
+    private async Task RunConfirmAsync()
+    {
+        DialogResult result = await DialogService.ConfirmAsync(new DialogOptions
+        {
+            Title = "确认提交",
+            Message = "确定要保存当前更改吗？",
+            Buttons = DialogButtons.OkCancel,
+            ConfirmText = "保存",
+            CancelText = "取消"
+        });
+
+        dialogServiceMessage = result == DialogResult.Confirmed ? "用户已确认保存。" : "用户已取消。";
+    }
+
+    private async Task RunAlertAsync()
+    {
+        await DialogService.AlertAsync("操作已完成。", "提示", "好的");
+        dialogServiceMessage = "已关闭提示对话框。";
+    }
+
+    private async Task RunDeleteConfirmAsync()
+    {
+        bool confirmed = await DialogService.ConfirmDeleteAsync("演示记录", "删除后无法恢复。");
+        dialogServiceMessage = confirmed ? "用户确认删除。" : "用户取消删除。";
+    }
+
+    private void ApplyDrawerFilter()
+    {
+        drawerRightOpen = false;
+        drawerMessage = string.IsNullOrWhiteSpace(drawerKeyword)
+            ? "已应用筛选（无关键词）。"
+            : $"已应用筛选：{drawerKeyword}";
+    }
+
+    private void SaveSheetSettings()
+    {
+        sheetRightOpen = false;
+        ToastService.Success("Sheet", $"邮件={sheetEmailNotify}，推送={sheetPushNotify}");
+    }
+}

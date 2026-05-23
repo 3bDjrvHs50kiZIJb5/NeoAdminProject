@@ -1,0 +1,192 @@
+@page "/neo-demo/ui/advanced-datetime"
+@layout LayoutAdmin
+
+<PageTitle>日期与时间演示</PageTitle>
+
+<div class="flex flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">日期与时间</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                Calendar、Date Input、Date Picker、Date Range Picker、Time Input、Time Picker — 日期与时间录入与选择。
+                参考 <a class="text-primary underline-offset-4 hover:underline"
+                       href="https://demos.neoui.io/components"
+                       target="_blank"
+                       rel="noopener noreferrer">NeoUI Components</a>。
+            </p>
+        </div>
+
+        <div class="p-4">
+            <Tabs DefaultValue="calendar" Class="w-full">
+                <div class="overflow-x-auto pb-1">
+                    <TabsList Class="inline-flex h-auto w-max min-w-full flex-wrap gap-1">
+                        <TabsTrigger Value="calendar">Calendar</TabsTrigger>
+                        <TabsTrigger Value="date-input">Date Input</TabsTrigger>
+                        <TabsTrigger Value="date-picker">Date Picker</TabsTrigger>
+                        <TabsTrigger Value="date-range-picker">Date Range Picker</TabsTrigger>
+                        <TabsTrigger Value="time-input">Time Input</TabsTrigger>
+                        <TabsTrigger Value="time-picker">Time Picker</TabsTrigger>
+                    </TabsList>
+                </div>
+
+                <TabsContent Value="calendar" Class="mt-4">
+                    <DemoSection Title="Calendar"
+                                 Description="Date selection grid with month navigation"
+                                 Code="@AdvancedDateTimeDemoSnippets.Calendar">
+                        <div class="max-w-sm space-y-3">
+                            <Calendar @bind-SelectedDate="calendarDate"
+                                      Class="rounded-md border"
+                                      CaptionLayout="CalendarCaptionLayout.Dropdown" />
+                            <p class="text-sm text-muted-foreground">
+                                已选：@(calendarDate?.ToString("D") ?? "无")
+                            </p>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="date-input" Class="mt-4">
+                    <DemoSection Title="Date Input"
+                                 Description="Keyboard-driven segmented date field with optional calendar picker"
+                                 Code="@AdvancedDateTimeDemoSnippets.DateInput">
+                        <p class="mb-4 text-xs text-muted-foreground">
+                            NeoUI.Blazor 4.0.0 尚未包含 DateInput 组件，此处以 DatePicker 演示同类日期录入（官方文档见 demos.neoui.io）。
+                        </p>
+                        <div class="grid max-w-md gap-6">
+                            <div class="space-y-2">
+                                <Label For="date-input">日期</Label>
+                                <DatePicker Id="date-input"
+                                            Class="w-[280px]"
+                                            @bind-SelectedDate="dateInputValue"
+                                            Placeholder="选择日期" />
+                                <p class="text-sm text-muted-foreground">
+                                    值：@(dateInputValue?.ToString("D") ?? "无")
+                                </p>
+                            </div>
+                            <div class="space-y-2">
+                                <Label>预设出生日期</Label>
+                                <DatePicker Class="w-[280px]"
+                                            @bind-SelectedDate="dateInputBirth"
+                                            ShowIcon="false" />
+                                <p class="text-sm text-muted-foreground">
+                                    出生日期：@(dateInputBirth?.ToString("D") ?? "无")
+                                </p>
+                            </div>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="date-picker" Class="mt-4">
+                    <DemoSection Title="Date Picker"
+                                 Description="Date selection with calendar in popover"
+                                 Code="@AdvancedDateTimeDemoSnippets.DatePicker">
+                        <div class="space-y-2">
+                            <Label>选择日期</Label>
+                            <DatePicker @bind-SelectedDate="datePickerValue"
+                                        Class="w-[280px]"
+                                        Placeholder="选择日期" />
+                            <p class="text-sm text-muted-foreground">
+                                已选：@(datePickerValue?.ToString("D") ?? "无")
+                            </p>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="date-range-picker" Class="mt-4">
+                    <DemoSection Title="Date Range Picker"
+                                 Description="Select date ranges with optional presets and two-calendar view"
+                                 Code="@AdvancedDateTimeDemoSnippets.DateRangePicker">
+                        <div class="space-y-2">
+                            <DateRangePicker @bind-StartDate="rangeStart"
+                                             @bind-EndDate="rangeEnd"
+                                             Class="w-[320px]"
+                                             ShowPresets="true" />
+                            <p class="text-sm text-muted-foreground">
+                                范围：@(FormatRange(rangeStart, rangeEnd))
+                            </p>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="time-input" Class="mt-4">
+                    <DemoSection Title="Time Input"
+                                 Description="Keyboard-driven segmented time field with optional clock picker"
+                                 Code="@AdvancedDateTimeDemoSnippets.TimeInput">
+                        <p class="mb-4 text-xs text-muted-foreground">
+                            NeoUI.Blazor 4.0.0 尚未包含 TimeInput 组件，此处以 TimePicker 演示同类时间录入。
+                        </p>
+                        <div class="grid max-w-md gap-6">
+                            <div class="space-y-2">
+                                <Label For="time-input">时间（24 小时）</Label>
+                                <TimePicker Id="time-input"
+                                            Class="w-[240px]"
+                                            @bind-SelectedTime="timeInputValue"
+                                            Use12Hour="false" />
+                                <p class="text-sm text-muted-foreground">
+                                    值：@(timeInputValue?.ToString("HH:mm") ?? "无")
+                                </p>
+                            </div>
+                            <div class="space-y-2">
+                                <Label>12 小时制</Label>
+                                <TimePicker Class="w-[240px]"
+                                            @bind-SelectedTime="timeInput12h"
+                                            Use12Hour="true" />
+                                <p class="text-sm text-muted-foreground">
+                                    值：@(timeInput12h?.ToString("hh:mm tt") ?? "无")
+                                </p>
+                            </div>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="time-picker" Class="mt-4">
+                    <DemoSection Title="Time Picker"
+                                 Description="Time selection with hour and minute controls"
+                                 Code="@AdvancedDateTimeDemoSnippets.TimePicker">
+                        <div class="space-y-2">
+                            <Label>选择时间</Label>
+                            <TimePicker @bind-SelectedTime="timePickerValue"
+                                        Class="w-[240px]"
+                                        Use12Hour="false"
+                                        ShowSeconds="false" />
+                            <p class="text-sm text-muted-foreground">
+                                已选：@(timePickerValue?.ToString("HH:mm") ?? "无")
+                            </p>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+            </Tabs>
+        </div>
+    </div>
+</div>
+
+@code {
+    private DateOnly? calendarDate = DateOnly.FromDateTime(DateTime.Today);
+
+    private DateOnly? dateInputValue = DateOnly.FromDateTime(DateTime.Today);
+    private DateOnly? dateInputBirth = new DateOnly(1990, 3, 25);
+
+    private DateOnly? datePickerValue = DateOnly.FromDateTime(DateTime.Today);
+
+    private DateOnly? rangeStart;
+    private DateOnly? rangeEnd;
+
+    private TimeOnly? timeInputValue = new TimeOnly(9, 30);
+    private TimeOnly? timeInput12h = new TimeOnly(14, 30);
+
+    private TimeOnly? timePickerValue = new TimeOnly(9, 0);
+
+    private static string FormatRange(DateOnly? start, DateOnly? end)
+    {
+        if (start is null && end is null)
+        {
+            return "无";
+        }
+
+        if (start is not null && end is not null)
+        {
+            return $"{start.Value:D} — {end.Value:D}";
+        }
+
+        return start?.ToString("D") ?? end?.ToString("D") ?? "无";
+    }
+}

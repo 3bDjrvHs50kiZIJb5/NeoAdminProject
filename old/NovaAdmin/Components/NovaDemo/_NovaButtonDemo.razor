@@ -1,0 +1,98 @@
+@page "/NovaDemo/NovaButtonDemo"
+@using System.Threading.Tasks
+@using BootstrapBlazor.Components
+
+<PageTitle>NovaButton 演示</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <strong>NovaButtonAttribute 演示</strong>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        这个页面演示 <code>NovaButtonAttribute</code> 在方法执行前做权限拦截的效果。
+                    </p>
+                    <ul class="mb-0">
+                        <li><code>[NovaButton("demo_allow")]</code>：允许执行的按钮</li>
+                        <li><code>[NovaButton("demo_deny")]</code>：模拟无权限按钮</li>
+                        <li><code>ServiceProvider</code>：属性执行前必须能拿到服务容器</li>
+                        <li><code>TabInfo</code>：用于把页面路由和菜单权限接起来</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <strong>允许执行的按钮</strong>
+                    <span class="text-muted small">点击后会正常进入方法体</span>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex gap-2 flex-wrap mb-3">
+                        <button type="button" class="btn btn-success" @onclick="BeginAllowAction">执行允许动作</button>
+                    </div>
+                    <div class="border rounded p-3 bg-light">
+                        <div class="fw-bold mb-1">最近一次结果</div>
+                        <div class="small text-muted">@allowStatus</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <strong>拦截演示</strong>
+                    <span class="text-muted small">点击后会触发权限判断</span>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex gap-2 flex-wrap mb-3">
+                        <button type="button" class="btn btn-outline-danger" @onclick="BeginDenyAction">执行拦截动作</button>
+                    </div>
+                    <div class="alert alert-warning mb-0">
+                        如果当前菜单里没有 <code>demo_deny</code> 这个按钮权限，就会被 <code>NovaButtonAttribute</code> 拦住并提示“没有访问权限”。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 mb-3">
+            <div class="card">
+                <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <strong>调用说明</strong>
+                    <span class="text-muted small">适合放在页面按钮和业务动作上</span>
+                </div>
+                <div class="card-body">
+                    <pre class="mb-0"><code>[NovaButton("alloc_tags")]
+async Task BeginAllocTags(Channel item)
+{
+    allocItemTags = item;
+    await Task.Yield();
+}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string allowStatus = "尚未执行";
+
+    [NovaButton("demo_allow")]
+    private async Task BeginAllowAction()
+    {
+        allowStatus = "允许动作已进入方法体";
+        await Task.Yield();
+    }
+
+    [NovaButton("demo_deny")]
+    private async Task BeginDenyAction()
+    {
+        allowStatus = "如果你看到了这句，说明当前用户有 demo_deny 权限";
+        await Task.Yield();
+    }
+}

@@ -1,0 +1,96 @@
+@page "/Blog/Channel"
+@using LinCms.Entities.Blog
+@inject Microsoft.Extensions.Logging.ILogger<_Channel> Logger
+
+<PageTitle>技术频道</PageTitle>
+
+<NovaAdminTable TItem="Channel" Context="item" PageSize="50"  Title="技术频道"DialogClassName="modal-lg" TableTd99Width="230"
+    OnQuery="OnQuery" InitQuery="InitQuery" OnEdit="OnEdit">
+
+    <TableHeader>
+        <th>频道名称</th>
+        <th>编码</th>
+        <th>封面图</th>
+        <th>备注描述</th>
+        <th>排序</th>
+        <th>是否有效</th>
+        <th>创建时间</th>
+    </TableHeader>
+    <TableRow>
+        <td>@item.ChannelName</td>
+        <td>@item.ChannelCode</td>
+        <td>@item.Thumbnail</td>
+        <td>@item.Remark</td>
+        <td>@item.SortCode</td>
+        <td>@item.Status</td>
+        <td>@item?.CreatedTime?.ToString("yyyy-MM-dd HH:mm:ss")</td>
+    </TableRow>
+    <TableTd99>
+        <button @onclick="e => BeginAllocTags(item)" type="button" class="mr-2 btn btn-light btn-xs"><i class="fa fa-user-secret"></i>分配标签</button>
+    </TableTd99>
+    <EditTemplate>
+        <div class="row form-inline form-inline-end">
+            <div class="form-group col-6">
+                <label class="form-label">频道名称</label>
+                <input @bind="item.ChannelName" type="text" class="form-control" placeholder="" maxlength="50">
+            </div>
+            <div class="form-group col-6">
+                <label class="form-label">编码</label>
+                <input @bind="item.ChannelCode" type="text" class="form-control" placeholder="" maxlength="50">
+            </div>
+            <div class="form-group col-12">
+                <label class="form-label">封面图</label>
+                <input @bind="item.Thumbnail" type="text" class="form-control" placeholder="" maxlength="100">
+            </div>
+            <div class="form-group col-12">
+                <label class="form-label">备注描述</label>
+                <textarea @bind="item.Remark" class="form-control" placeholder="" maxlength="500"></textarea>
+            </div>
+            <div class="form-group col-6">
+                <label class="form-label">排序</label>
+                <input @bind="item.SortCode" type="number" class="form-control" placeholder="">
+            </div>
+            <div class="form-group col-6">
+                <label class="form-label">是否有效</label>
+                <Switch @bind-Value="item.Status" OnColor="Color.Success" />
+            </div>
+        </div>
+    </EditTemplate> 
+</NovaAdminTable>
+
+<NovaAllocTable TItem="Channel" TChild="Tag2" @bind-Item="@allocItemTags" ChildProperty="Tags" Title="@($"【分配标签】{allocItemTags?.ChannelName}")">
+    <TableTd1>@context.TagName</TableTd1>
+</NovaAllocTable>
+
+@code {
+
+    [Inject] IAggregateRootRepository<Channel> repo { get; set; }
+
+    async Task InitQuery(NovaAdminQueryInfo e)
+    {
+        Logger.LogInformation("Blog channel page query initialized.");
+        e.Filters = new NovaAdminFilterInfo[]
+        {
+        };
+        await Task.Yield();
+    }
+    void OnQuery(NovaAdminQueryEventArgs<Channel> e)
+    {
+        e.Select.WhereIf(!e.SearchText.IsNull(), a => a.ChannelName.Contains(e.SearchText) || 
+                a.ChannelCode.Contains(e.SearchText));
+    }
+
+    async Task OnEdit(Channel item)
+    {
+        await Task.Yield();
+    }
+
+    Channel allocItemTags;
+    [NovaButton("alloc_tags")]
+    async Task BeginAllocTags(Channel item) 
+    {
+        Logger.LogInformation("Opening tag allocation for channel. ChannelId={ChannelId}, ChannelName={ChannelName}", item.Id, item.ChannelName);
+        allocItemTags = item;
+        await Task.Yield();
+    }
+}

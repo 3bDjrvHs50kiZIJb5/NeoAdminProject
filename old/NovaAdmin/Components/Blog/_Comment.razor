@@ -1,0 +1,76 @@
+@page "/Blog/Comment"
+@using LinCms.Entities.Blog
+@inject Microsoft.Extensions.Logging.ILogger<_Comment> Logger
+
+<PageTitle>评论</PageTitle>
+
+<NovaAdminTable TItem="Comment" Context="item" PageSize="50"  Title="评论"DialogClassName="modal-xl"
+    OnQuery="OnQuery" InitQuery="InitQuery" OnEdit="OnEdit">
+
+    <TableHeader>
+        <th>关联随笔</th>
+        <th>内容</th>
+        <th>点赞量</th>
+        <th>是否已审核</th>
+        <th>创建时间</th>
+    </TableHeader>
+    <TableRow>
+        <td>[@item.ArticleId]@item.Article?.Title</td>
+        <td>@item.Text</td>
+        <td>@item.LikesQuantity</td>
+        <td>@item.IsAudit</td>
+        <td>@item?.CreatedTime?.ToString("yyyy-MM-dd HH:mm:ss")</td>
+    </TableRow>
+    <EditTemplate>
+        <div class="row form-inline form-inline-end">
+            <div class="form-group col-6">
+                <label class="form-label">关联随笔</label>
+                <NovaInputTable TItem="Article" TKey="long" @bind-Value="item.ArticleId" @bind-Item="item.Article" DisplayText="@(a => $"[{a.Id}]{a.Title}")" Context="item2" PageSize="3">
+                    <TableTh1>标题</TableTh1>
+                    <TableTd1>@item2.Title</TableTd1>
+                    <TableHeader>
+                    </TableHeader>
+                    <TableRow>
+                    </TableRow>
+                </NovaInputTable>
+            </div>
+            <div class="form-group col-12">
+                <label class="form-label">内容</label>
+                <textarea @bind="item.Text" class="form-control" placeholder="" maxlength="500"></textarea>
+            </div>
+            <div class="form-group col-4">
+                <label class="form-label">点赞量</label>
+                <input @bind="item.LikesQuantity" type="number" class="form-control" placeholder="">
+            </div>
+            <div class="form-group col-4">
+                <label class="form-label">是否已审核</label>
+                <Switch @bind-Value="item.IsAudit" OnColor="Color.Success" />
+            </div>
+        </div>
+    </EditTemplate> 
+</NovaAdminTable>
+
+@code {
+
+    [Inject] IAggregateRootRepository<Comment> repo { get; set; }
+
+    async Task InitQuery(NovaAdminQueryInfo e)
+    {
+        Logger.LogInformation("Blog comment page query initialized.");
+        e.Filters = new NovaAdminFilterInfo[]
+        {
+        };
+        await Task.Yield();
+    }
+    void OnQuery(NovaAdminQueryEventArgs<Comment> e)
+    {
+        e.Select.Include(a => a.Article)
+            .WhereIf(!e.SearchText.IsNull(), a => a.Text.Contains(e.SearchText));
+    }
+
+    async Task OnEdit(Comment item)
+    {
+        Logger.LogInformation("Editing comment item. Id={CommentId}, ArticleId={ArticleId}", item.Id, item.ArticleId);
+        await Task.Yield();
+    }
+}

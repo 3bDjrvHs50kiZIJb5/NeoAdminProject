@@ -1,0 +1,361 @@
+@page "/neo-demo/ui/form-controls"
+@layout LayoutAdmin
+
+<PageTitle>选择与开关演示</PageTitle>
+
+<div class="flex flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">选择与开关</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                Checkbox、Select、Switch、Toggle 等 — 从选项中取值或切换状态。
+                参考 <a class="text-primary underline-offset-4 hover:underline"
+                       href="https://demos.neoui.io/components"
+                       target="_blank"
+                       rel="noopener noreferrer">NeoUI Components</a>。
+            </p>
+        </div>
+
+        <div class="p-4">
+            <Tabs DefaultValue="checkbox" Class="w-full">
+                <div class="overflow-x-auto pb-1">
+                    <TabsList Class="inline-flex h-auto w-max min-w-full flex-wrap gap-1">
+                        <TabsTrigger Value="checkbox">Checkbox</TabsTrigger>
+                        <TabsTrigger Value="native-select">Native Select</TabsTrigger>
+                        <TabsTrigger Value="radio-group">Radio Group</TabsTrigger>
+                        <TabsTrigger Value="select">Select</TabsTrigger>
+                        <TabsTrigger Value="slider">Slider</TabsTrigger>
+                        <TabsTrigger Value="switch">Switch</TabsTrigger>
+                        <TabsTrigger Value="rating">Rating</TabsTrigger>
+                        <TabsTrigger Value="toggle">Toggle</TabsTrigger>
+                        <TabsTrigger Value="toggle-group">Toggle Group</TabsTrigger>
+                    </TabsList>
+                </div>
+
+                <TabsContent Value="checkbox" Class="mt-4">
+                    <DemoSection Title="Checkbox"
+                                 Description="Binary selection control with indeterminate state"
+                                 Code="@FormControlsDemoSnippets.Checkbox">
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-2">
+                                <Checkbox Id="terms" @bind-Checked="acceptTerms" />
+                                <Label For="terms" Class="cursor-pointer font-normal">接受条款和条件</Label>
+                            </div>
+                            <p class="text-sm text-muted-foreground">当前状态：@(acceptTerms ? "已选中" : "未选中")</p>
+
+                            <Separator />
+
+                            <div class="flex items-center gap-2">
+                                <Checkbox Id="select-all"
+                                          Checked="@selectAllChecked"
+                                          Indeterminate="@selectAllIndeterminate"
+                                          CheckedChanged="OnSelectAllChanged" />
+                                <Label For="select-all" Class="cursor-pointer font-normal">全选（半选状态）</Label>
+                            </div>
+                            <div class="ml-6 space-y-2">
+                                @foreach (string option in notificationOptions)
+                                {
+                                    <div class="flex items-center gap-2">
+                                        <Checkbox Id="@($"notify-{option}")"
+                                                  Checked="@notificationSelections.Contains(option)"
+                                                  CheckedChanged="@(value => OnNotificationChanged(option, value))" />
+                                        <Label For="@($"notify-{option}")" Class="cursor-pointer font-normal">@option</Label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="native-select" Class="mt-4">
+                    <DemoSection Title="Native Select"
+                                 Description="Styled native HTML select dropdown"
+                                 Code="@FormControlsDemoSnippets.NativeSelect">
+                        <div class="max-w-xs space-y-4">
+                            <NativeSelect TValue="string" Class="w-full" @bind-Value="nativeFruit" Placeholder="选择水果">
+                                <NativeSelectOption Value="apple">Apple</NativeSelectOption>
+                                <NativeSelectOption Value="banana">Banana</NativeSelectOption>
+                                <NativeSelectOption Value="orange">Orange</NativeSelectOption>
+                                <NativeSelectOption Value="grape">Grape</NativeSelectOption>
+                            </NativeSelect>
+                            <p class="text-sm text-muted-foreground">
+                                已选：@(string.IsNullOrWhiteSpace(nativeFruit) ? "无" : nativeFruit)
+                            </p>
+
+                            <div class="grid gap-2 sm:grid-cols-3">
+                                <NativeSelect TValue="string" Size="NativeSelectSize.Small" Placeholder="Small">
+                                    <NativeSelectOption Value="1">选项 1</NativeSelectOption>
+                                    <NativeSelectOption Value="2">选项 2</NativeSelectOption>
+                                </NativeSelect>
+                                <NativeSelect TValue="string" Size="NativeSelectSize.Default" Placeholder="Default">
+                                    <NativeSelectOption Value="1">选项 1</NativeSelectOption>
+                                    <NativeSelectOption Value="2">选项 2</NativeSelectOption>
+                                </NativeSelect>
+                                <NativeSelect TValue="string" Size="NativeSelectSize.Large" Placeholder="Large">
+                                    <NativeSelectOption Value="1">选项 1</NativeSelectOption>
+                                    <NativeSelectOption Value="2">选项 2</NativeSelectOption>
+                                </NativeSelect>
+                            </div>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="radio-group" Class="mt-4">
+                    <DemoSection Title="Radio Group"
+                                 Description="Mutually exclusive options with keyboard navigation"
+                                 Code="@FormControlsDemoSnippets.RadioGroup">
+                        <RadioGroup TValue="string" @bind-Value="radioPlan" Class="gap-3">
+                            <div class="flex items-center gap-2">
+                                <RadioGroupItem Value="@("free")" Id="plan-free" />
+                                <Label For="plan-free" Class="cursor-pointer font-normal">免费版</Label>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <RadioGroupItem Value="@("pro")" Id="plan-pro" />
+                                <Label For="plan-pro" Class="cursor-pointer font-normal">专业版</Label>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <RadioGroupItem Value="@("enterprise")" Id="plan-enterprise" />
+                                <Label For="plan-enterprise" Class="cursor-pointer font-normal">企业版</Label>
+                            </div>
+                        </RadioGroup>
+                        <p class="mt-3 text-sm text-muted-foreground">已选方案：@radioPlan</p>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="select" Class="mt-4">
+                    <DemoSection Title="Select"
+                                 Description="Dropdown selection with groups and labels"
+                                 Code="@FormControlsDemoSnippets.Select">
+                        <div class="max-w-xs space-y-4">
+                            <Select TValue="string" Class="w-full" @bind-Value="selectFruit">
+                                <SelectTrigger>
+                                    <SelectValue Placeholder="选择水果" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem Value="@("apple")" TValue="string">Apple</SelectItem>
+                                    <SelectItem Value="@("banana")" TValue="string">Banana</SelectItem>
+                                    <SelectItem Value="@("orange")" TValue="string">Orange</SelectItem>
+                                </SelectContent>
+                            </Select>
+
+                            <Select TValue="string" Class="w-full" @bind-Value="selectAnimal">
+                                <SelectTrigger>
+                                    <SelectValue Placeholder="选择动物" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup>
+                                        <SelectLabel>哺乳动物</SelectLabel>
+                                        <SelectItem Value="@("cat")" TValue="string">猫</SelectItem>
+                                        <SelectItem Value="@("dog")" TValue="string">狗</SelectItem>
+                                    </SelectGroup>
+                                    <SelectGroup>
+                                        <SelectLabel>鸟类</SelectLabel>
+                                        <SelectItem Value="@("eagle")" TValue="string">鹰</SelectItem>
+                                        <SelectItem Value="@("parrot")" TValue="string">鹦鹉</SelectItem>
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
+                            <p class="text-sm text-muted-foreground">
+                                水果：@(selectFruit ?? "无") · 动物：@(selectAnimal ?? "无")
+                            </p>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="slider" Class="mt-4">
+                    <DemoSection Title="Slider"
+                                 Description="Range input for numeric value selection"
+                                 Code="@FormControlsDemoSnippets.Slider">
+                        <div class="max-w-md space-y-3">
+                            <div class="flex items-center justify-between text-sm">
+                                <Label>音量</Label>
+                                <span class="text-muted-foreground">@sliderVolume</span>
+                            </div>
+                            <Slider @bind-Value="sliderVolume" Min="0" Max="100" Step="1" />
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="switch" Class="mt-4">
+                    <DemoSection Title="Switch"
+                                 Description="Toggle control for on/off states"
+                                 Code="@FormControlsDemoSnippets.Switch">
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-2">
+                                <Switch Id="switch-main" @bind-Checked="switchEnabled" />
+                                <Label For="switch-main" Class="cursor-pointer font-normal">启用通知</Label>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-6">
+                                <div class="flex items-center gap-2">
+                                    <Switch Size="SwitchSize.Small" @bind-Checked="switchSmall" />
+                                    <span class="text-sm text-muted-foreground">Small</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <Switch Size="SwitchSize.Medium" @bind-Checked="switchMedium" />
+                                    <span class="text-sm text-muted-foreground">Medium</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <Switch Size="SwitchSize.Large" @bind-Checked="switchLarge" />
+                                    <span class="text-sm text-muted-foreground">Large</span>
+                                </div>
+                            </div>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="rating" Class="mt-4">
+                    <DemoSection Title="Rating"
+                                 Description="Star rating input with half-star precision and readonly mode"
+                                 Code="@FormControlsDemoSnippets.Rating">
+                        <div class="space-y-4">
+                            <div class="space-y-2">
+                                <Label>可交互评分（支持半星）</Label>
+                                <Rating @bind-Value="ratingValue" AllowHalf="true" MaxRating="5" />
+                                <p class="text-sm text-muted-foreground">当前：@ratingValue 星</p>
+                            </div>
+                            <Separator />
+                            <div class="space-y-2">
+                                <Label>只读展示</Label>
+                                <Rating Value="4.5" ReadOnly="true" AllowHalf="true" MaxRating="5" />
+                            </div>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="toggle" Class="mt-4">
+                    <DemoSection Title="Toggle"
+                                 Description="Pressable toggle buttons with variants"
+                                 Code="@FormControlsDemoSnippets.Toggle">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <Toggle @bind-Pressed="toggleBold" Variant="ToggleVariant.Outline" aria-label="粗体">
+                                <LucideIcon Name="bold" Size="16" />
+                            </Toggle>
+                            <Toggle @bind-Pressed="toggleItalic" Variant="ToggleVariant.Outline" aria-label="斜体">
+                                <LucideIcon Name="italic" Size="16" />
+                            </Toggle>
+                            <Toggle @bind-Pressed="toggleUnderline" Variant="ToggleVariant.Outline" aria-label="下划线">
+                                <LucideIcon Name="underline" Size="16" />
+                            </Toggle>
+                        </div>
+                        <p class="mt-3 rounded-md border bg-muted/40 px-3 py-2 text-sm"
+                           style="@GetTogglePreviewStyle()">
+                            示例文本：@(toggleBold ? "粗体 " : "")@(toggleItalic ? "斜体 " : "")@(toggleUnderline ? "下划线" : "（无格式）")
+                        </p>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="toggle-group" Class="mt-4">
+                    <DemoSection Title="Toggle Group"
+                                 Description="Single/multiple selection toggle groups"
+                                 Code="@FormControlsDemoSnippets.ToggleGroup">
+                        <div class="space-y-6">
+                            <div class="space-y-2">
+                                <Label>单选</Label>
+                                <ToggleGroup Type="ToggleGroupType.Single" @bind-Value="toggleAlign">
+                                    <ToggleGroupItem Value="left">左</ToggleGroupItem>
+                                    <ToggleGroupItem Value="center">中</ToggleGroupItem>
+                                    <ToggleGroupItem Value="right">右</ToggleGroupItem>
+                                </ToggleGroup>
+                                <p class="text-sm text-muted-foreground">已选：@toggleAlign</p>
+                            </div>
+
+                            <div class="space-y-2">
+                                <Label>多选</Label>
+                                <ToggleGroup Type="ToggleGroupType.Multiple" @bind-Values="toggleFilters">
+                                    <ToggleGroupItem Value="design">设计</ToggleGroupItem>
+                                    <ToggleGroupItem Value="frontend">前端</ToggleGroupItem>
+                                    <ToggleGroupItem Value="backend">后端</ToggleGroupItem>
+                                </ToggleGroup>
+                                <p class="text-sm text-muted-foreground">
+                                    已选：@(toggleFilters.Count == 0 ? "无" : string.Join("、", toggleFilters))
+                                </p>
+                            </div>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+            </Tabs>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool acceptTerms;
+    private bool selectAllChecked;
+    private bool selectAllIndeterminate;
+    private readonly string[] notificationOptions = ["邮件通知", "短信通知", "推送通知"];
+    private readonly HashSet<string> notificationSelections = new(StringComparer.Ordinal);
+
+    private string nativeFruit = string.Empty;
+
+    private string radioPlan = "free";
+
+    private string? selectFruit;
+    private string? selectAnimal;
+
+    private double sliderVolume = 50;
+
+    private bool switchEnabled = true;
+    private bool switchSmall;
+    private bool switchMedium = true;
+    private bool switchLarge;
+
+    private double ratingValue = 3.5;
+
+    private bool toggleBold;
+    private bool toggleItalic;
+    private bool toggleUnderline;
+
+    private string toggleAlign = "left";
+    private List<string> toggleFilters = [];
+
+    private void OnSelectAllChanged(bool value)
+    {
+        selectAllChecked = value;
+        selectAllIndeterminate = false;
+        notificationSelections.Clear();
+        if (value)
+        {
+            foreach (string option in notificationOptions)
+            {
+                notificationSelections.Add(option);
+            }
+        }
+    }
+
+    private void OnNotificationChanged(string option, bool selected)
+    {
+        if (selected)
+        {
+            notificationSelections.Add(option);
+        }
+        else
+        {
+            notificationSelections.Remove(option);
+        }
+
+        int count = notificationSelections.Count;
+        selectAllChecked = count == notificationOptions.Length;
+        selectAllIndeterminate = count > 0 && count < notificationOptions.Length;
+    }
+
+    private string GetTogglePreviewStyle()
+    {
+        List<string> styles = [];
+        if (toggleBold)
+        {
+            styles.Add("font-weight:700");
+        }
+
+        if (toggleItalic)
+        {
+            styles.Add("font-style:italic");
+        }
+
+        if (toggleUnderline)
+        {
+            styles.Add("text-decoration:underline");
+        }
+
+        return styles.Count == 0 ? string.Empty : string.Join(";", styles);
+    }
+}

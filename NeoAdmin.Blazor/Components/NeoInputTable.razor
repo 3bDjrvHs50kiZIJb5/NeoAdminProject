@@ -1,0 +1,395 @@
+@typeparam TItem where TItem : class, new()
+@typeparam TKey
+@using FreeSql.Internal.Model
+@using NeoAdmin.Blazor.Utils
+@inject IFreeSql FreeSql
+
+@if (!IsCustomUI)
+{
+    <InputGroup Class="w-full">
+        <InputGroupInput Disabled="true"
+                         Value="@displayText"
+                         Placeholder="未选择" />
+        @if (HasSelection)
+        {
+            <InputGroupAddon Align="InputGroupAlign.InlineEnd">
+                <InputGroupButton Title="清除"
+                                  OnClick="ClearSelection"
+                                  Class="px-2">
+                    <LucideIcon Name="x" Size="16" />
+                </InputGroupButton>
+            </InputGroupAddon>
+        }
+        <InputGroupAddon Align="InputGroupAlign.InlineEnd">
+            <InputGroupButton OnClick="OpenModal" Class="whitespace-nowrap">
+                <LucideIcon Name="folder-open" Size="16" />
+                <span>选择</span>
+            </InputGroupButton>
+        </InputGroupAddon>
+    </InputGroup>
+}
+else
+{
+    @ChildContent
+}
+
+<Dialog @bind-Open="modalOpen">
+    <DialogContent Variant="DialogContentVariant.Form" Class="@($"sm:max-w-4xl {DialogClassName}")">
+        <DialogHeader>
+            <DialogTitle>@ModalTitle</DialogTitle>
+        </DialogHeader>
+        <div class="min-h-[40vh] max-h-[65vh] flex flex-col">
+            @if (modalOpen)
+            {
+                <CrudTable @ref="tableRef"
+                           @key="pickerTableKey"
+                           TItem="TItem"
+                           Title=""
+                           Compact="true"
+                           IsPickerMode="true"
+                           PageSize="@PageSize"
+                           IsAdd="false"
+                           IsEdit="false"
+                           IsRemove="false"
+                           IsRefresh="true"
+                           IsRowNumber="false"
+                           IsSearchText="@IsSearchText"
+                           SearchPlaceholder="@SearchPlaceholder"
+                           IsMultiSelect="@IsMultiSelectMode"
+                           IsSingleSelect="@IsSingleSelectMode"
+                           KeepSelectionOnPaging="true"
+                           SelectionKey="GetSelectionKey"
+                           SelectedKeys="selectedKeys"
+                           SelectedKeysChanged="HandleSelectedKeysChanged"
+                           OnQuery="HandleQuery">
+                    <Columns>
+                        <DataTableColumn TData="CrudGridRow<TItem>"
+                                         TValue="TKey"
+                                         Property="@(row => GetItemId(row.Item))"
+                                         Header="ID"
+                                         Sortable="false"
+                                         Width="180px" />
+                        <DataTableColumn TData="CrudGridRow<TItem>"
+                                         TValue="string"
+                                         Property="@(_ => string.Empty)"
+                                         Header=""
+                                         Sortable="false">
+                            <CellTemplate Context="row">
+                                @if (TableRow != null)
+                                {
+                                    @TableRow(row.Item)
+                                }
+                                else if (TableCell != null)
+                                {
+                                    @TableCell(row.Item)
+                                }
+                                else
+                                {
+                                    <span>@GetDefaultLabel(row.Item)</span>
+                                }
+                            </CellTemplate>
+                        </DataTableColumn>
+                    </Columns>
+                    <FooterContent>
+                        <div class="flex w-full flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+                            <span class="text-sm text-muted-foreground">已选 @selectedKeys.Count 项</span>
+                            <div class="flex flex-wrap gap-2">
+                                <Button Variant="ButtonVariant.Outline" OnClick="ResetModalSelection">重置</Button>
+                                <Button Variant="ButtonVariant.Outline" OnClick="CloseModal">取消</Button>
+                                <Button Variant="ButtonVariant.Default"
+                                        Disabled="@(selectedKeys.Count == 0)"
+                                        OnClick="ConfirmSelection">
+                                    确认选择
+                                </Button>
+                            </div>
+                        </div>
+                    </FooterContent>
+                </CrudTable>
+            }
+        </div>
+    </DialogContent>
+</Dialog>
+
+@code {
+    private CrudTable<TItem>? tableRef;
+    private bool modalOpen;
+    private int pickerTableKey;
+    private HashSet<object> selectedKeys = new();
+    private string displayText = string.Empty;
+    private ColumnInfo? firstStringColumn;
+    private string primaryKeyColumnName = "Id";
+
+    [Parameter]
+    public TKey Value { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<TKey> ValueChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<TKey> OnValueChanged { get; set; }
+
+    [Parameter]
+    public TItem? Item { get; set; }
+
+    [Parameter]
+    public EventCallback<TItem?> ItemChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<TItem?> OnItemChanged { get; set; }
+
+    [Parameter]
+    public List<TItem>? Items { get; set; }
+
+    [Parameter]
+    public EventCallback<List<TItem>> ItemsChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<List<TItem>> OnItemsChanged { get; set; }
+
+    [Parameter]
+    public Func<TItem, string>? DisplayText { get; set; }
+
+    [Parameter]
+    public string ModalTitle { get; set; } = "选择..";
+
+    [Parameter]
+    public int PageSize { get; set; } = 20;
+
+    [Parameter]
+    public bool IsSearchText { get; set; } = true;
+
+    [Parameter]
+    public string? SearchPlaceholder { get; set; }
+
+    [Parameter]
+    public string DialogClassName { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool IsCustomUI { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public RenderFragment? TableHeader { get; set; }
+
+    [Parameter]
+    public RenderFragment<TItem>? TableRow { get; set; }
+
+    [Parameter]
+    public RenderFragment<TItem>? TableCell { get; set; }
+
+    [Parameter]
+    public EventCallback<CrudQueryEventArgs<TItem>> OnQuery { get; set; }
+
+    private bool IsSingleSelectMode => ItemChanged.HasDelegate || ValueChanged.HasDelegate;
+    private bool IsMultiSelectMode => ItemsChanged.HasDelegate;
+    private bool HasSelection => !string.IsNullOrWhiteSpace(displayText);
+
+    protected override void OnInitialized()
+    {
+        NeoEntitySelectHelper.EnsureSinglePrimaryKey<TItem, TKey>(FreeSql);
+        TableInfo meta = NeoEntitySelectHelper.GetTableInfo(FreeSql, typeof(TItem));
+        primaryKeyColumnName = meta.Primarys[0].CsName;
+        firstStringColumn = NeoEntitySelectHelper.GetFirstStringColumn(FreeSql, typeof(TItem));
+        RefreshDisplayText();
+        SeedSelectedKeys();
+    }
+
+    protected override void OnParametersSet()
+    {
+        RefreshDisplayText();
+        if (!modalOpen)
+        {
+            SeedSelectedKeys();
+        }
+    }
+
+    private void SeedSelectedKeys()
+    {
+        HashSet<object> keys = new();
+        if (Item != null)
+        {
+            keys.Add(GetSelectionKey(Item));
+        }
+
+        if (Items != null)
+        {
+            foreach (TItem entry in Items)
+            {
+                keys.Add(GetSelectionKey(entry));
+            }
+        }
+        else if (ValueChanged.HasDelegate && !EqualityComparer<TKey>.Default.Equals(Value, default!))
+        {
+            keys.Add(Value!);
+        }
+
+        selectedKeys = keys;
+    }
+
+    private void RefreshDisplayText()
+    {
+        if (Item != null && DisplayText != null)
+        {
+            displayText = DisplayText(Item);
+            return;
+        }
+
+        if (Items != null && DisplayText != null)
+        {
+            displayText = string.Join(", ", Items.Select(DisplayText));
+            return;
+        }
+
+        if (ValueChanged.HasDelegate)
+        {
+            displayText = Value?.ToString() ?? string.Empty;
+            return;
+        }
+
+        displayText = string.Empty;
+    }
+
+    private void OpenModal()
+    {
+        SeedSelectedKeys();
+        pickerTableKey++;
+        modalOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        modalOpen = false;
+        SeedSelectedKeys();
+    }
+
+    private void ResetModalSelection()
+    {
+        selectedKeys = new();
+        tableRef?.ClearSelection();
+    }
+
+    private Task HandleQuery(CrudQueryEventArgs<TItem> args) => OnQuery.InvokeAsync(args);
+
+    private Task HandleSelectedKeysChanged(HashSet<object> keys)
+    {
+        selectedKeys = keys;
+        return Task.CompletedTask;
+    }
+
+    private async Task ConfirmSelection()
+    {
+        List<TItem> chosen = await ResolveSelectedItemsAsync();
+
+        if (ItemChanged.HasDelegate)
+        {
+            Item = chosen.FirstOrDefault();
+            await ItemChanged.InvokeAsync(Item);
+            if (OnItemChanged.HasDelegate)
+            {
+                await OnItemChanged.InvokeAsync(Item);
+            }
+
+            TKey key = Item is null
+                ? default!
+                : NeoEntitySelectHelper.GetPrimaryKey<TItem, TKey>(FreeSql, Item);
+            await ValueChanged.InvokeAsync(key);
+            if (OnValueChanged.HasDelegate)
+            {
+                await OnValueChanged.InvokeAsync(key);
+            }
+        }
+        else if (ItemsChanged.HasDelegate)
+        {
+            Items = chosen;
+            await ItemsChanged.InvokeAsync(Items);
+            if (OnItemsChanged.HasDelegate)
+            {
+                await OnItemsChanged.InvokeAsync(Items);
+            }
+        }
+        else if (ValueChanged.HasDelegate)
+        {
+            TItem? selected = chosen.FirstOrDefault();
+            TKey key = selected is null
+                ? default!
+                : NeoEntitySelectHelper.GetPrimaryKey<TItem, TKey>(FreeSql, selected);
+            Value = key;
+            await ValueChanged.InvokeAsync(key);
+            if (OnValueChanged.HasDelegate)
+            {
+                await OnValueChanged.InvokeAsync(key);
+            }
+        }
+
+        RefreshDisplayText();
+        modalOpen = false;
+    }
+
+    private async Task ClearSelection()
+    {
+        selectedKeys = new();
+        Item = default;
+        Items = new List<TItem>();
+        Value = default!;
+        displayText = string.Empty;
+
+        if (ItemChanged.HasDelegate)
+        {
+            await ItemChanged.InvokeAsync(default);
+        }
+
+        if (ItemsChanged.HasDelegate)
+        {
+            await ItemsChanged.InvokeAsync(Items);
+        }
+
+        if (ValueChanged.HasDelegate)
+        {
+            await ValueChanged.InvokeAsync(Value);
+        }
+    }
+
+    private async Task<List<TItem>> ResolveSelectedItemsAsync()
+    {
+        if (selectedKeys.Count == 0)
+        {
+            return new List<TItem>();
+        }
+
+        List<TKey> keys = selectedKeys
+            .Select(ToTypedKey)
+            .ToList();
+
+        return await FreeSql.Select<TItem>()
+            .Where($"a.{primaryKeyColumnName} in @keys", new { keys })
+            .ToListAsync();
+    }
+
+    private TKey ToTypedKey(object key) =>
+        key is TKey typedKey
+            ? typedKey
+            : (TKey)Convert.ChangeType(key, typeof(TKey));
+
+    private object GetSelectionKey(TItem item) =>
+        NeoEntitySelectHelper.GetPrimaryKey<TItem, TKey>(FreeSql, item)!;
+
+    private TKey GetItemId(TItem item) =>
+        NeoEntitySelectHelper.GetPrimaryKey<TItem, TKey>(FreeSql, item);
+
+    private string GetDefaultLabel(TItem item)
+    {
+        if (DisplayText != null)
+        {
+            return DisplayText(item);
+        }
+
+        if (firstStringColumn != null)
+        {
+            return firstStringColumn.GetValue(item)?.ToString() ?? string.Empty;
+        }
+
+        return GetSelectionKey(item).ToString() ?? string.Empty;
+    }
+}

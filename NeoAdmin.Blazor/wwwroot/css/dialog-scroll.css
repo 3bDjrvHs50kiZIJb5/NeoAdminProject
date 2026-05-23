@@ -1,0 +1,14 @@
+/**
+ * dialog-scroll.css
+ *
+ * 弹窗内可滚动区域的最大高度（NeoUI components.css 未包含 vh 系 max-height）。
+ * 与 overflow-y-auto 配合：内容超出时出现纵向滚动条。
+ */
+
+.max-h-50vh {
+  max-height: 50vh;
+}
+
+.max-h-55vh {
+  max-height: 55vh;
+}

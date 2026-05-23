@@ -1,0 +1,481 @@
+@page "/neo-demo/ui/navigation"
+@layout LayoutAdmin
+@using NeoUI.Blazor.Primitives
+
+<PageTitle>导航组件演示</PageTitle>
+
+<div class="flex flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">导航组件</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                Breadcrumb、Command、Menubar、Navigation Menu、Pagination、Responsive Nav、Sidebar — 层级导航、命令面板与响应式布局。
+                参考 <a class="text-primary underline-offset-4 hover:underline"
+                       href="https://demos.neoui.io/components"
+                       target="_blank"
+                       rel="noopener noreferrer">NeoUI Components</a>。
+            </p>
+        </div>
+
+        <div class="p-4">
+            <Tabs DefaultValue="breadcrumb" Class="w-full">
+                <div class="overflow-x-auto pb-1">
+                    <TabsList Class="inline-flex h-auto w-max min-w-full flex-wrap gap-1">
+                        <TabsTrigger Value="breadcrumb">Breadcrumb</TabsTrigger>
+                        <TabsTrigger Value="command">Command</TabsTrigger>
+                        <TabsTrigger Value="menubar">Menubar</TabsTrigger>
+                        <TabsTrigger Value="navigation-menu">Navigation Menu</TabsTrigger>
+                        <TabsTrigger Value="pagination">Pagination</TabsTrigger>
+                        <TabsTrigger Value="responsive-nav">Responsive Nav</TabsTrigger>
+                        <TabsTrigger Value="sidebar">Sidebar</TabsTrigger>
+                    </TabsList>
+                </div>
+
+                <TabsContent Value="breadcrumb" Class="mt-4">
+                    <DemoSection Title="Breadcrumb"
+                                 Description="Hierarchical navigation with customizable separators"
+                                 Code="@NavigationDemoSnippets.Breadcrumb">
+                        <div class="space-y-6">
+                            <div class="space-y-2">
+                                <p class="text-xs font-medium text-muted-foreground">Chevron 分隔符</p>
+                                <Breadcrumb>
+                                    <BreadcrumbList>
+                                        <BreadcrumbItem>
+                                            <BreadcrumbLink Href="/">首页</BreadcrumbLink>
+                                        </BreadcrumbItem>
+                                        <BreadcrumbSeparator>
+                                            <LucideIcon Name="chevron-right" Size="14" Class="text-muted-foreground" />
+                                        </BreadcrumbSeparator>
+                                        <BreadcrumbItem>
+                                            <BreadcrumbLink Href="/neo-demo/ui/form-inputs">演示</BreadcrumbLink>
+                                        </BreadcrumbItem>
+                                        <BreadcrumbSeparator>
+                                            <LucideIcon Name="chevron-right" Size="14" Class="text-muted-foreground" />
+                                        </BreadcrumbSeparator>
+                                        <BreadcrumbItem>
+                                            <BreadcrumbPage>导航组件</BreadcrumbPage>
+                                        </BreadcrumbItem>
+                                    </BreadcrumbList>
+                                </Breadcrumb>
+                            </div>
+                            <div class="space-y-2">
+                                <p class="text-xs font-medium text-muted-foreground">斜杠分隔符</p>
+                                <Breadcrumb>
+                                    <BreadcrumbList>
+                                        <BreadcrumbItem>
+                                            <BreadcrumbLink Href="/">首页</BreadcrumbLink>
+                                        </BreadcrumbItem>
+                                        <BreadcrumbSeparator>/</BreadcrumbSeparator>
+                                        <BreadcrumbItem>
+                                            <BreadcrumbLink Href="#">设置</BreadcrumbLink>
+                                        </BreadcrumbItem>
+                                        <BreadcrumbSeparator>/</BreadcrumbSeparator>
+                                        <BreadcrumbItem>
+                                            <BreadcrumbPage>账户</BreadcrumbPage>
+                                        </BreadcrumbItem>
+                                    </BreadcrumbList>
+                                </Breadcrumb>
+                            </div>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="command" Class="mt-4">
+                    <DemoSection Title="Command"
+                                 Description="Command palette for quick actions and navigation"
+                                 Code="@NavigationDemoSnippets.Command">
+                        <div class="space-y-3">
+                            <Dialog @bind-Open="commandDialogOpen">
+                                <Button Variant="ButtonVariant.Outline" OnClick="OpenCommandDialog">
+                                    <LucideIcon Name="search" Size="16" Class="mr-2" />
+                                    打开命令面板
+                                </Button>
+                                <DialogContent Class="overflow-hidden p-0 sm:max-w-lg">
+                                    <CommandContent Class="rounded-lg border-0 shadow-none">
+                                        <CommandInput Placeholder="搜索命令或页面…" />
+                                        <CommandList>
+                                            <CommandEmpty>未找到匹配项。</CommandEmpty>
+                                            <CommandGroup Heading="导航">
+                                                <CommandItem Value="home" OnSelect="@(() => RunCommand("首页"))">
+                                                    <LucideIcon Name="home" Size="16" Class="mr-2 opacity-60" />
+                                                    首页
+                                                </CommandItem>
+                                                <CommandItem Value="settings" OnSelect="@(() => RunCommand("站点设置"))">
+                                                    <LucideIcon Name="settings" Size="16" Class="mr-2 opacity-60" />
+                                                    站点设置
+                                                </CommandItem>
+                                            </CommandGroup>
+                                            <CommandSeparator />
+                                            <CommandGroup Heading="操作">
+                                                <CommandItem Value="new" OnSelect="@(() => RunCommand("新建文档"))">
+                                                    <LucideIcon Name="file-plus" Size="16" Class="mr-2 opacity-60" />
+                                                    新建文档
+                                                    <CommandShortcut>⌘N</CommandShortcut>
+                                                </CommandItem>
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </CommandContent>
+                                </DialogContent>
+                            </Dialog>
+                            @if (!string.IsNullOrWhiteSpace(commandResult))
+                            {
+                                <p class="text-sm text-muted-foreground">上次执行：@commandResult</p>
+                            }
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="menubar" Class="mt-4">
+                    <DemoSection Title="Menubar"
+                                 Description="Desktop application-style horizontal menu bar"
+                                 Code="@NavigationDemoSnippets.Menubar">
+                        <div class="space-y-3">
+                            <Menubar>
+                                <MenubarMenu>
+                                    <MenubarTrigger>文件</MenubarTrigger>
+                                    <MenubarContent>
+                                        <MenubarItem OnClick="@(() => SetMenubarStatus("新建文件"))">新建</MenubarItem>
+                                        <MenubarItem OnClick="@(() => SetMenubarStatus("打开"))">打开…</MenubarItem>
+                                        <MenubarSeparator />
+                                        <MenubarSub>
+                                            <MenubarSubTrigger>导出</MenubarSubTrigger>
+                                            <MenubarSubContent>
+                                                <MenubarItem OnClick="@(() => SetMenubarStatus("导出 PDF"))">PDF</MenubarItem>
+                                                <MenubarItem OnClick="@(() => SetMenubarStatus("导出 CSV"))">CSV</MenubarItem>
+                                            </MenubarSubContent>
+                                        </MenubarSub>
+                                    </MenubarContent>
+                                </MenubarMenu>
+                                <MenubarMenu>
+                                    <MenubarTrigger>编辑</MenubarTrigger>
+                                    <MenubarContent>
+                                        <MenubarItem OnClick="@(() => SetMenubarStatus("撤销"))">
+                                            撤销
+                                            <MenubarShortcut>⌘Z</MenubarShortcut>
+                                        </MenubarItem>
+                                        <MenubarItem OnClick="@(() => SetMenubarStatus("重做"))">
+                                            重做
+                                            <MenubarShortcut>⇧⌘Z</MenubarShortcut>
+                                        </MenubarItem>
+                                    </MenubarContent>
+                                </MenubarMenu>
+                                <MenubarMenu>
+                                    <MenubarTrigger>视图</MenubarTrigger>
+                                    <MenubarContent>
+                                        <MenubarCheckboxItem @bind-Checked="menubarShowSidebar">
+                                            显示侧栏
+                                        </MenubarCheckboxItem>
+                                    </MenubarContent>
+                                </MenubarMenu>
+                            </Menubar>
+                            <p class="text-sm text-muted-foreground">
+                                状态：@menubarStatus · 侧栏：@(menubarShowSidebar ? "显示" : "隐藏")
+                            </p>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="navigation-menu" Class="mt-4">
+                    <DemoSection Title="Navigation Menu"
+                                 Description="Horizontal navigation with dropdown panels"
+                                 Code="@NavigationDemoSnippets.NavigationMenu">
+                        <NavigationMenu @bind-Value="navMenuValue" Class="max-w-full">
+                            <NavigationMenuList>
+                                <NavigationMenuItem Value="getting-started">
+                                    <NavigationMenuTrigger>入门</NavigationMenuTrigger>
+                                    <NavigationMenuContent>
+                                        <ul class="grid gap-2 p-4 md:w-[360px]">
+                                            <li>
+                                                <NavigationMenuLink Href="#" Class="block rounded-md p-3 hover:bg-accent">
+                                                    <div class="font-medium">简介</div>
+                                                    <p class="text-sm text-muted-foreground">了解 NeoUI 组件库</p>
+                                                </NavigationMenuLink>
+                                            </li>
+                                            <li>
+                                                <NavigationMenuLink Href="#" Class="block rounded-md p-3 hover:bg-accent">
+                                                    <div class="font-medium">安装</div>
+                                                    <p class="text-sm text-muted-foreground">快速集成到项目</p>
+                                                </NavigationMenuLink>
+                                            </li>
+                                        </ul>
+                                    </NavigationMenuContent>
+                                </NavigationMenuItem>
+                                <NavigationMenuItem Value="components">
+                                    <NavigationMenuTrigger>组件</NavigationMenuTrigger>
+                                    <NavigationMenuContent>
+                                        <ul class="grid gap-2 p-4 sm:grid-cols-2 md:w-[480px]">
+                                            <li>
+                                                <NavigationMenuLink Href="#">@("表单")</NavigationMenuLink>
+                                            </li>
+                                            <li>
+                                                <NavigationMenuLink Href="#">@("导航")</NavigationMenuLink>
+                                            </li>
+                                            <li>
+                                                <NavigationMenuLink Href="#">@("数据展示")</NavigationMenuLink>
+                                            </li>
+                                            <li>
+                                                <NavigationMenuLink Href="#">@("反馈")</NavigationMenuLink>
+                                            </li>
+                                        </ul>
+                                    </NavigationMenuContent>
+                                </NavigationMenuItem>
+                                <NavigationMenuItem>
+                                    <NavigationMenuLink Href="#">文档</NavigationMenuLink>
+                                </NavigationMenuItem>
+                            </NavigationMenuList>
+                            <NavigationMenuViewport />
+                        </NavigationMenu>
+                        <p class="mt-3 text-sm text-muted-foreground">当前面板：@(string.IsNullOrWhiteSpace(navMenuValue) ? "无" : navMenuValue)</p>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="pagination" Class="mt-4">
+                    <DemoSection Title="Pagination"
+                                 Description="Page navigation with Previous/Next/Ellipsis"
+                                 Code="@NavigationDemoSnippets.Pagination">
+                        <div class="space-y-4">
+                            <Pagination State="@paginationState" OnPageChanged="HandlePageChanged">
+                                <PaginationContent>
+                                    <PaginationItem>
+                                        <PaginationPrevious Text="上一页" />
+                                    </PaginationItem>
+                                    @foreach (PaginationPageEntry entry in paginationPages)
+                                    {
+                                        @if (entry.IsEllipsis)
+                                        {
+                                            <PaginationItem>
+                                                <PaginationEllipsis />
+                                            </PaginationItem>
+                                        }
+                                        else
+                                        {
+                                            <PaginationItem>
+                                                <PaginationLink IsActive="@(entry.Page == paginationState.CurrentPage)"
+                                                                OnClick="@(() => GoToPage(entry.Page))">
+                                                    @entry.Page
+                                                </PaginationLink>
+                                            </PaginationItem>
+                                        }
+                                    }
+                                    <PaginationItem>
+                                        <PaginationNext Text="下一页" />
+                                    </PaginationItem>
+                                </PaginationContent>
+                            </Pagination>
+                            <p class="text-sm text-muted-foreground">
+                                第 @paginationState.CurrentPage / @paginationState.TotalPages 页
+                                （共 @paginationState.TotalItems 条，每页 @paginationState.PageSize 条）
+                            </p>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="responsive-nav" Class="mt-4">
+                    <DemoSection Title="Responsive Nav"
+                                 Description="Responsive wrapper: hamburger on mobile, full nav on desktop"
+                                 Code="@NavigationDemoSnippets.ResponsiveNav">
+                        <p class="mb-3 text-sm text-muted-foreground">缩小下方容器宽度可看到移动端汉堡菜单。</p>
+                        <div class="max-w-md overflow-hidden rounded-lg border bg-background">
+                            <ResponsiveNavProvider>
+                                <div class="flex items-center justify-between gap-2 border-b px-3 py-2">
+                                    <span class="font-semibold">NeoAdmin</span>
+                                    <NavigationMenu Class="hidden flex-1 justify-center sm:flex">
+                                        <NavigationMenuList>
+                                            <NavigationMenuItem>
+                                                <NavigationMenuLink Href="#">首页</NavigationMenuLink>
+                                            </NavigationMenuItem>
+                                            <NavigationMenuItem>
+                                                <NavigationMenuLink Href="#">演示</NavigationMenuLink>
+                                            </NavigationMenuItem>
+                                            <NavigationMenuItem>
+                                                <NavigationMenuLink Href="#">关于</NavigationMenuLink>
+                                            </NavigationMenuItem>
+                                        </NavigationMenuList>
+                                    </NavigationMenu>
+                                    <ResponsiveNavTrigger Class="sm:hidden" />
+                                </div>
+                                <ResponsiveNavContent>
+                                    <ChildContent>
+                                        <p class="border-b px-4 py-2 text-sm font-medium">导航菜单</p>
+                                        <nav class="flex flex-col gap-1 p-2">
+                                            <NavigationMenuLink Href="#" Class="rounded-md px-3 py-2 hover:bg-accent">首页</NavigationMenuLink>
+                                            <NavigationMenuLink Href="#" Class="rounded-md px-3 py-2 hover:bg-accent">演示</NavigationMenuLink>
+                                            <NavigationMenuLink Href="#" Class="rounded-md px-3 py-2 hover:bg-accent">关于</NavigationMenuLink>
+                                        </nav>
+                                    </ChildContent>
+                                </ResponsiveNavContent>
+                            </ResponsiveNavProvider>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="sidebar" Class="mt-4">
+                    <DemoSection Title="Sidebar"
+                                 Description="Responsive navigation sidebar with collapsible menus"
+                                 Code="@NavigationDemoSnippets.Sidebar">
+                        <p class="mb-3 text-sm text-muted-foreground">独立演示容器，非完整后台布局。</p>
+                        <div class="h-72 w-full max-w-2xl overflow-hidden rounded-lg border">
+                            <SidebarProvider CookieKey="sidebar:nav-demo"
+                                             HeightClass="h-full"
+                                             StaticRendering="true"
+                                             Variant="SidebarVariant.Sidebar">
+                                <div class="flex h-full min-h-0">
+                                    <Sidebar Collapsible="true">
+                                        <SidebarHeader class="border-b px-2 py-2">
+                                            <SidebarMenu>
+                                                <SidebarMenuItem>
+                                                    <SidebarMenuButton>
+                                                        <LucideIcon Name="layout-dashboard" Size="18" />
+                                                        <span>演示应用</span>
+                                                    </SidebarMenuButton>
+                                                </SidebarMenuItem>
+                                            </SidebarMenu>
+                                        </SidebarHeader>
+                                        <SidebarContent>
+                                            <SidebarMenu>
+                                                <SidebarMenuItem>
+                                                    <SidebarMenuButton IsActive="true">
+                                                        <LucideIcon Name="home" Size="18" />
+                                                        <span>概览</span>
+                                                    </SidebarMenuButton>
+                                                </SidebarMenuItem>
+                                                <SidebarMenuItem>
+                                                    <SidebarCollapsibleGroup StateKey="nav-demo-content" DefaultOpen="true">
+                                                        <SidebarMenuButton>
+                                                            <LucideIcon Name="folder" Size="18" />
+                                                            <span>内容</span>
+                                                            <SidebarMenuChevron>
+                                                                <LucideIcon Name="chevron-right" Size="14" />
+                                                            </SidebarMenuChevron>
+                                                        </SidebarMenuButton>
+                                                        <CollapsibleContent>
+                                                            <SidebarMenuSub>
+                                                                <SidebarMenuSubItem>
+                                                                    <SidebarMenuSubButton>文章</SidebarMenuSubButton>
+                                                                </SidebarMenuSubItem>
+                                                                <SidebarMenuSubItem>
+                                                                    <SidebarMenuSubButton>分类</SidebarMenuSubButton>
+                                                                </SidebarMenuSubItem>
+                                                            </SidebarMenuSub>
+                                                        </CollapsibleContent>
+                                                    </SidebarCollapsibleGroup>
+                                                </SidebarMenuItem>
+                                                <SidebarMenuItem>
+                                                    <SidebarMenuButton>
+                                                        <LucideIcon Name="settings" Size="18" />
+                                                        <span>设置</span>
+                                                    </SidebarMenuButton>
+                                                </SidebarMenuItem>
+                                            </SidebarMenu>
+                                        </SidebarContent>
+                                        <SidebarRail />
+                                    </Sidebar>
+                                    <div class="flex min-w-0 flex-1 flex-col">
+                                        <header class="flex h-10 shrink-0 items-center gap-2 border-b px-2">
+                                            <SidebarTrigger />
+                                            <span class="text-sm font-medium">主内容</span>
+                                        </header>
+                                        <main class="flex flex-1 items-center justify-center p-4 text-sm text-muted-foreground">
+                                            页面内容区域
+                                        </main>
+                                    </div>
+                                </div>
+                            </SidebarProvider>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+            </Tabs>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool commandDialogOpen;
+    private string commandResult = string.Empty;
+
+    private string menubarStatus = "就绪";
+    private bool menubarShowSidebar = true;
+
+    private string navMenuValue = string.Empty;
+
+    private readonly PaginationState paginationState = new()
+    {
+        CurrentPage = 1,
+        PageSize = 10,
+        TotalItems = 95
+    };
+
+    private IReadOnlyList<PaginationPageEntry> paginationPages = Array.Empty<PaginationPageEntry>();
+
+    protected override void OnInitialized()
+    {
+        RefreshPaginationPages();
+    }
+
+    private void OpenCommandDialog() => commandDialogOpen = true;
+
+    private void RunCommand(string label)
+    {
+        commandResult = label;
+        commandDialogOpen = false;
+    }
+
+    private void SetMenubarStatus(string status) => menubarStatus = status;
+
+    private Task HandlePageChanged(int page)
+    {
+        paginationState.GoToPage(page);
+        RefreshPaginationPages();
+        return Task.CompletedTask;
+    }
+
+    private void GoToPage(int page)
+    {
+        paginationState.GoToPage(page);
+        RefreshPaginationPages();
+    }
+
+    private void RefreshPaginationPages()
+    {
+        paginationPages = BuildPaginationPages(paginationState.CurrentPage, paginationState.TotalPages);
+    }
+
+    private static IReadOnlyList<PaginationPageEntry> BuildPaginationPages(int current, int total)
+    {
+        if (total <= 1)
+        {
+            return total == 1
+                ? new[] { new PaginationPageEntry(1, false) }
+                : Array.Empty<PaginationPageEntry>();
+        }
+
+        var pages = new List<int> { 1 };
+
+        if (current > 3)
+        {
+            pages.Add(-1);
+        }
+
+        for (int page = Math.Max(2, current - 1); page <= Math.Min(total - 1, current + 1); page++)
+        {
+            pages.Add(page);
+        }
+
+        if (current < total - 2)
+        {
+            pages.Add(-1);
+        }
+
+        if (total > 1)
+        {
+            pages.Add(total);
+        }
+
+        return pages
+            .Distinct()
+            .Select(page => new PaginationPageEntry(page, page < 0))
+            .ToList();
+    }
+
+    private sealed record PaginationPageEntry(int Page, bool IsEllipsis);
+}

@@ -1,0 +1,89 @@
+@page "/Blog/Collection"
+@using LinCms.Entities.Blog
+@inject Microsoft.Extensions.Logging.ILogger<_Collection> Logger
+
+<PageTitle>收藏集</PageTitle>
+
+<NovaAdminTable TItem="Collection" Context="item" PageSize="50"  Title="收藏集"TableTd99Width="230"
+    OnQuery="OnQuery" InitQuery="InitQuery" OnEdit="OnEdit">
+
+    <TableHeader>
+        <th>名称</th>
+        <th>描述</th>
+        <th>收藏数量</th>
+        <th>类型</th>
+        <th>创建时间</th>
+    </TableHeader>
+    <TableRow>
+        <td>@item.Name</td>
+        <td>@item.Remark</td>
+        <td>@item.Quantity</td>
+        <td>@item.PrivacyType</td>
+        <td>@item?.CreatedTime?.ToString("yyyy-MM-dd HH:mm:ss")</td>
+    </TableRow>
+    <TableTd99>
+        <button @onclick="e => BeginAllocArticles(item)" type="button" class="mr-2 btn btn-light btn-xs"><i class="fa fa-user-secret"></i>分配随笔</button>
+    </TableTd99>
+    <EditTemplate>
+        <div class="row form-inline form-inline-end">
+            <div class="form-group col-12">
+                <label class="form-label">名称</label>
+                <input @bind="item.Name" type="text" class="form-control" placeholder="" maxlength="50">
+            </div>
+            <div class="form-group col-12">
+                <label class="form-label">描述</label>
+                <textarea @bind="item.Remark" class="form-control" placeholder="" maxlength="500"></textarea>
+            </div>
+            <div class="form-group col-12">
+                <label class="form-label">收藏数量</label>
+                <input @bind="item.Quantity" type="number" class="form-control" placeholder="">
+            </div>
+            <div class="form-group col-12">
+                <label class="form-label">类型</label>
+                <NovaSelectEnum TEnum="PrivacyType" @bind-Value="item.PrivacyType" />
+            </div>
+        </div>
+    </EditTemplate> 
+</NovaAdminTable>
+
+<NovaAllocTable TItem="Collection" TChild="Article" @bind-Item="@allocItemArticles" ChildProperty="Articles" Title="@($"【分配随笔】{allocItemArticles?.Name}")">
+    <TableHeader>
+        <th>随笔标题</th>
+    </TableHeader>
+    <TableRow>
+        <td>@context.Title</td>
+    </TableRow>
+</NovaAllocTable>
+
+@code {
+
+    [Inject] IAggregateRootRepository<Collection> repo { get; set; }
+
+    async Task InitQuery(NovaAdminQueryInfo e)
+    {
+        Logger.LogInformation("Blog collection page query initialized.");
+        e.Filters = new NovaAdminFilterInfo[]
+        {
+            new NovaAdminFilterInfo("类型", "PrivacyType", "公开可见,仅自己可见", "0,1"),
+        };
+        await Task.Yield();
+    }
+    void OnQuery(NovaAdminQueryEventArgs<Collection> e)
+    {
+        e.Select.WhereIf(e.Filters[0].HasValue, a => a.PrivacyType == e.Filters[0].Value<PrivacyType>())
+            .WhereIf(!e.SearchText.IsNull(), a => a.Name.Contains(e.SearchText));
+    }
+
+    async Task OnEdit(Collection item)
+    {
+        await Task.Yield();
+    }
+
+    Collection allocItemArticles;
+    [NovaButton("alloc_articles")]
+    void BeginAllocArticles(Collection item)
+    {
+        Logger.LogInformation("Opening article allocation for collection. CollectionId={CollectionId}, Name={CollectionName}", item.Id, item.Name);
+        allocItemArticles = item;
+    }
+}

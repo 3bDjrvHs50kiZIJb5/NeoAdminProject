@@ -1,0 +1,54 @@
+# Build
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]uild/
+msbuild.log
+msbuild.err
+msbuild.wrn
+
+# .NET
+*.user
+*.userosscache
+*.suo
+*.cache
+*.dll
+!**/wwwroot/**/*.dll
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.nupkg
+*.snupkg
+
+# IDE
+.vs/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local data & uploads
+*.db
+*.db-shm
+*.db-wal
+uploads/
+
+# Secrets (keep templates only)
+appsettings.Development.json
+appsettings.*.local.json
+.env
+.env.*
+
+# Cursor / local AI
+.claude/

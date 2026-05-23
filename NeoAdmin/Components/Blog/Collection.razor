@@ -1,0 +1,152 @@
+@page "/Blog/Collection"
+@namespace NeoAdmin.Components.Blog
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Components
+@inject IFreeSql FreeSql
+
+<PageTitle>收藏集</PageTitle>
+
+<div class="flex flex-col flex-1 min-h-0">
+    <CrudTable @ref="table"
+               TItem="BlogCollection"
+               Title="收藏集"
+               PageSize="50"
+               SearchPlaceholder="名称.."
+               InitQuery="InitQuery"
+               OnQuery="HandleQuery"
+               DialogContentSize="CrudDialogContentSize.Lg">
+        <Columns>
+            <DataTableColumn TData="CrudGridRow<BlogCollection>"
+                             TValue="long"
+                             Property="@(row => row.Item.Id)"
+                             Header="ID"
+                             Sortable="false"
+                             Width="180px" />
+            <DataTableColumn TData="CrudGridRow<BlogCollection>"
+                             TValue="string"
+                             Property="@(row => row.Item.Name)"
+                             Header="名称"
+                             Sortable="false" />
+            <DataTableColumn TData="CrudGridRow<BlogCollection>"
+                             TValue="string"
+                             Property="@(row => row.Item.Remark)"
+                             Header="描述"
+                             Sortable="false">
+                <CellTemplate Context="row">
+                    <span class="block truncate" title="@row.Item.Remark">@row.Item.Remark</span>
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<BlogCollection>"
+                             TValue="int"
+                             Property="@(row => row.Item.Quantity)"
+                             Header="收藏数量"
+                             Sortable="false"
+                             Width="96px" />
+            <DataTableColumn TData="CrudGridRow<BlogCollection>"
+                             TValue="PrivacyType"
+                             Property="@(row => row.Item.PrivacyType)"
+                             Header="类型"
+                             Sortable="false"
+                             Width="120px" />
+            <DataTableColumn TData="CrudGridRow<BlogCollection>"
+                             TValue="string"
+                             Property="@(_ => string.Empty)"
+                             Header="创建时间"
+                             Sortable="false"
+                             Width="160px">
+                <CellTemplate Context="row">
+                    @(row.Item.CreatedTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")
+                </CellTemplate>
+            </DataTableColumn>
+        </Columns>
+        <RowActionsContent Context="row">
+            <Button Variant="ButtonVariant.Ghost"
+                    Size="ButtonSize.Small"
+                    Title="分配随笔"
+                    OnClick="@(() => allocCollection = row.Item)">
+                <LucideIcon Name="file-text" Size="16" />
+                <span class="sr-only">分配随笔</span>
+            </Button>
+        </RowActionsContent>
+        <EditTemplate Context="item">
+            <div class="space-y-2">
+                <Label For="collection-name">名称</Label>
+                <Input id="collection-name" Class="w-full" MaxLength="50" @bind-Value="item.Name" />
+            </div>
+            <div class="space-y-2">
+                <Label For="collection-remark">描述</Label>
+                <Textarea id="collection-remark" Class="min-h-24 w-full" MaxLength="500" @bind-Value="item.Remark" />
+            </div>
+            <div class="space-y-2">
+                <Label For="collection-qty">收藏数量</Label>
+                <Input id="collection-qty"
+                       Type="InputType.Number"
+                       Class="w-full"
+                       Value="@item.Quantity.ToString()"
+                       ValueChanged="@(v => item.Quantity = int.TryParse(v, out var n) ? n : 0)" />
+            </div>
+            <div class="space-y-2">
+                <Label For="collection-privacy">类型</Label>
+                <NeoSelectEnum TEnum="PrivacyType" @bind-Value="item.PrivacyType" />
+            </div>
+        </EditTemplate>
+    </CrudTable>
+</div>
+
+<NeoAllocTable TItem="BlogCollection"
+               TChild="BlogArticle"
+               TKey="long"
+               @bind-Item="allocCollection"
+               Title="@($"分配随笔 — {allocCollection?.Name}")"
+               SearchPlaceholder="标题.."
+               KeySelector="a => a.Id"
+               DisplayText="a => a.Title"
+               LoadSelectedKeysAsync="LoadCollectionArticleKeysAsync"
+               OnSaveAsync="SaveCollectionArticlesAsync"
+               OnQuery="FilterArticleAllocQuery"
+               DialogContentSize="CrudDialogContentSize.X3l">
+    <RowTemplate Context="article">@article.Title</RowTemplate>
+</NeoAllocTable>
+
+@code {
+    private CrudTable<BlogCollection> table = default!;
+    private BlogCollection? allocCollection;
+
+    private Task InitQuery(CrudQueryInfo e)
+    {
+        e.Filters =
+        [
+            new CrudFilterInfo("类型", "PrivacyType", typeof(PrivacyType), false, 6)
+        ];
+        return Task.CompletedTask;
+    }
+
+    private void HandleQuery(CrudQueryEventArgs<BlogCollection> e)
+    {
+        CrudFilterInfo privacyFilter = e.Filters[0];
+        e.Select!
+            .WhereIf(privacyFilter.HasValue, a => a.PrivacyType == privacyFilter.Value<PrivacyType>())
+            .WhereIf(!string.IsNullOrWhiteSpace(e.SearchText), a => a.Name.Contains(e.SearchText!))
+            .OrderByDescending(a => a.Id);
+    }
+
+    private Task<IReadOnlyCollection<long>> LoadCollectionArticleKeysAsync(BlogCollection collection) =>
+        BlogRelationService.GetCollectionArticleIdsAsync(FreeSql, collection.Id);
+
+    private async Task<bool> SaveCollectionArticlesAsync(BlogCollection collection, IReadOnlyCollection<long> articleIds)
+    {
+        await BlogRelationService.SaveCollectionArticlesAsync(
+            FreeSql, collection.Id, articleIds, null, string.Empty);
+        return true;
+    }
+
+    private Task FilterArticleAllocQuery(CrudQueryEventArgs<BlogArticle> args)
+    {
+        args.Select!
+            .WhereIf(!string.IsNullOrWhiteSpace(args.SearchText),
+                a => a.Title.Contains(args.SearchText!)
+                     || a.Keywords.Contains(args.SearchText!))
+            .OrderByDescending(a => a.Id);
+        return Task.CompletedTask;
+    }
+}

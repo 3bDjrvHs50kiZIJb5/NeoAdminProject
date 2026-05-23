@@ -1,0 +1,86 @@
+@page "/Blog/AuditDemo"
+@using LinCms.Entities.Blog
+@inject Microsoft.Extensions.Logging.ILogger<_AuditDemo> Logger
+
+<PageTitle>审计演示</PageTitle>
+
+<NovaAdminTable TItem="AuditDemo" Context="item" PageSize="50" Title="审计演示" DialogClassName="modal-lg" IsAudit="true"
+    OnQuery="OnQuery" InitQuery="InitQuery" OnEdit="OnEdit">
+    <TableHeader>
+        <th>标题</th>
+        <th>业务编号</th>
+        <th>说明</th>
+        <th>是否启用</th>
+        <th>审核状态</th>
+        <th>审核步骤</th>
+        <th>审核版本</th>
+        <th>创建时间</th>
+    </TableHeader>
+    <TableRow>
+        <td>@item.Title</td>
+        <td>@item.BusinessNo</td>
+        <td>@item.Remark</td>
+        <td>@item.IsEnabled</td>
+        <td>@item.AuditStatus</td>
+        <td>@item.AuditStep</td>
+        <td>@item.AuditVersion</td>
+        <td>@item?.CreatedTime?.ToString("yyyy-MM-dd HH:mm:ss")</td>
+    </TableRow>
+    <EditTemplate>
+        <div class="row form-inline form-inline-end">
+            <div class="form-group col-6">
+                <label class="form-label">标题</label>
+                <input @bind="item.Title" type="text" class="form-control" placeholder="" maxlength="100">
+            </div>
+            <div class="form-group col-6">
+                <label class="form-label">业务编号</label>
+                <input @bind="item.BusinessNo" type="text" class="form-control" placeholder="" maxlength="50">
+            </div>
+            <div class="form-group col-12">
+                <label class="form-label">说明</label>
+                <textarea @bind="item.Remark" class="form-control" placeholder="" maxlength="500"></textarea>
+            </div>
+            <div class="form-group col-4">
+                <label class="form-label">是否启用</label>
+                <Switch @bind-Value="item.IsEnabled" OnColor="Color.Success" />
+            </div>
+            <div class="form-group col-4">
+                <label class="form-label">当前审核状态</label>
+                <input value="@item.AuditStatus" type="text" class="form-control" readonly>
+            </div>
+            <div class="form-group col-4">
+                <label class="form-label">当前审核步骤</label>
+                <input value="@item.AuditStep" type="text" class="form-control" readonly>
+            </div>
+            <div class="form-group col-4">
+                <label class="form-label">审核版本</label>
+                <input value="@item.AuditVersion" type="text" class="form-control" readonly>
+            </div>
+        </div>
+    </EditTemplate>
+</NovaAdminTable>
+
+@code {
+    async Task InitQuery(NovaAdminQueryInfo e)
+    {
+        Logger.LogInformation("Blog audit demo page query initialized.");
+        e.Filters = new NovaAdminFilterInfo[]
+        {
+        };
+        await Task.Yield();
+    }
+
+    void OnQuery(NovaAdminQueryEventArgs<AuditDemo> e)
+    {
+        e.Select.WhereIf(!e.SearchText.IsNull(), a =>
+            a.Title.Contains(e.SearchText) ||
+            a.BusinessNo.Contains(e.SearchText) ||
+            a.Remark.Contains(e.SearchText));
+    }
+
+    async Task OnEdit(AuditDemo item)
+    {
+        Logger.LogInformation("Editing audit demo item. Id={AuditDemoId}, Title={Title}", item.Id, item.Title);
+        await Task.Yield();
+    }
+}

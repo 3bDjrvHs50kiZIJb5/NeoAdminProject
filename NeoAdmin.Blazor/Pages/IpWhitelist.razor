@@ -1,0 +1,216 @@
+@page "/admin/ip-whitelist"
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Components
+@using NeoAdmin.Blazor.Data.Entities
+@using NeoAdmin.Blazor.Utils
+@using Microsoft.AspNetCore.Http
+@inject IFreeSql FreeSql
+@inject IHttpContextAccessor HttpContextAccessor
+
+<PageTitle>IP 白名单</PageTitle>
+
+<div class="flex flex-col flex-1 min-h-0">
+    <CrudTable @ref="table"
+               TItem="SysIpWhitelist"
+               Title="IP 白名单"
+               PageSize="50"
+               SearchPlaceholder="IP / 备注.."
+               InitQuery="InitQuery"
+               OnQuery="HandleQuery"
+               OnEdit="HandleEdit"
+               OnSaving="HandleSaving"
+               DialogContentSize="CrudDialogContentSize.Lg">
+        <Columns>
+            <DataTableColumn TData="CrudGridRow<SysIpWhitelist>"
+                             TValue="long"
+                             Property="@(row => row.Item.Id)"
+                             Header="ID"
+                             Sortable="false"
+                             Width="180px" />
+            <DataTableColumn TData="CrudGridRow<SysIpWhitelist>"
+                             TValue="string"
+                             Property="@(row => row.Item.IpAddress)"
+                             Header="IP"
+                             Sortable="false"
+                             Width="160px">
+                <CellTemplate Context="row">
+                    <span class="block truncate font-medium" title="@row.Item.IpAddress">@row.Item.IpAddress</span>
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<SysIpWhitelist>"
+                             TValue="string"
+                             Property="@(row => row.Item.Description)"
+                             Header="备注"
+                             Sortable="false">
+                <CellTemplate Context="row">
+                    <span class="block truncate" title="@row.Item.Description">@row.Item.Description</span>
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<SysIpWhitelist>"
+                             TValue="bool"
+                             Property="@(row => row.Item.IsEnabled)"
+                             Header="启用"
+                             Sortable="false"
+                             Width="72px">
+                <CellTemplate Context="row">
+                    @if (row.Item.IsEnabled)
+                    {
+                        <span class="text-emerald-600">是</span>
+                    }
+                    else
+                    {
+                        <span class="text-red-500">否</span>
+                    }
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<SysIpWhitelist>"
+                             TValue="string"
+                             Property="@(row => row.Item.LastAccessTime.HasValue ? row.Item.LastAccessTime.Value.ToString("yyyy-MM-dd HH:mm:ss") : string.Empty)"
+                             Header="最后访问"
+                             Sortable="false"
+                             Width="160px">
+                <CellTemplate Context="row">
+                    @(row.Item.LastAccessTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<SysIpWhitelist>"
+                             TValue="int"
+                             Property="@(row => row.Item.AccessCount)"
+                             Header="访问次数"
+                             Sortable="false"
+                             Width="96px" />
+            <DataTableColumn TData="CrudGridRow<SysIpWhitelist>"
+                             TValue="string"
+                             Property="@(_ => string.Empty)"
+                             Header="创建时间"
+                             Sortable="false"
+                             Width="160px">
+                <CellTemplate Context="row">
+                    @row.Item.CreatedTime.ToString("yyyy-MM-dd HH:mm:ss")
+                </CellTemplate>
+            </DataTableColumn>
+        </Columns>
+        <EditTemplate Context="item">
+            <div class="space-y-2">
+                <Label For="ip-address">IP 地址</Label>
+                <Input id="ip-address"
+                       Class="w-full"
+                       MaxLength="300"
+                       Placeholder="如 192.168.1.1"
+                       @bind-Value="item.IpAddress" />
+            </div>
+            <div class="space-y-2">
+                <Label For="ip-description">备注</Label>
+                <Textarea id="ip-description"
+                          Class="min-h-24 w-full"
+                          MaxLength="500"
+                          @bind-Value="item.Description" />
+            </div>
+            <div class="flex items-center gap-2">
+                <Checkbox @bind-Checked="item.IsEnabled" Id="ip-enabled" />
+                <Label for="ip-enabled">启用</Label>
+            </div>
+            @if (item.Id > 0)
+            {
+                <div class="grid gap-3 sm:grid-cols-2 rounded-md border border-border bg-muted/30 p-3 text-sm">
+                    <div>
+                        <span class="text-muted-foreground">最后访问时间</span>
+                        <p class="mt-1 font-medium">
+                            @(item.LastAccessTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "尚未访问")
+                        </p>
+                    </div>
+                    <div>
+                        <span class="text-muted-foreground">访问次数</span>
+                        <p class="mt-1 font-medium">@item.AccessCount</p>
+                    </div>
+                </div>
+            }
+        </EditTemplate>
+    </CrudTable>
+</div>
+
+@code {
+    private CrudTable<SysIpWhitelist> table = default!;
+
+    private Task InitQuery(CrudQueryInfo e)
+    {
+        e.Filters =
+        [
+            new CrudFilterInfo("启用", "IsEnabled", false, 4, "是,否", "true,false")
+        ];
+        return Task.CompletedTask;
+    }
+
+    private void HandleQuery(CrudQueryEventArgs<SysIpWhitelist> e)
+    {
+        CrudFilterInfo enabledFilter = e.Filters[0];
+
+        e.Select!
+            .WhereIf(!string.IsNullOrWhiteSpace(e.SearchText),
+                a => a.IpAddress.Contains(e.SearchText!)
+                     || a.Description.Contains(e.SearchText!))
+            .WhereIf(enabledFilter.HasValue, a => a.IsEnabled == enabledFilter.Value<bool>())
+            .OrderByDescending(a => a.Id);
+    }
+
+    private async Task HandleEdit(SysIpWhitelist item)
+    {
+        if (item.Id != 0)
+        {
+            return;
+        }
+
+        item.IsEnabled = true;
+        item.AccessCount = 0;
+
+        if (!string.IsNullOrWhiteSpace(item.IpAddress))
+        {
+            return;
+        }
+
+        HttpContext? httpContext = HttpContextAccessor.HttpContext;
+        if (httpContext is null)
+        {
+            return;
+        }
+
+        string clientIp = IpHelper.GetClientIpAddress(httpContext);
+        if (!string.IsNullOrWhiteSpace(clientIp)
+            && !string.Equals(clientIp, "unknown", StringComparison.OrdinalIgnoreCase))
+        {
+            item.IpAddress = clientIp;
+        }
+
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleSaving(CrudConfirmEventArgs<SysIpWhitelist> e)
+    {
+        SysIpWhitelist item = e.Item;
+        item.IpAddress = IpHelper.NormalizeIp(item.IpAddress?.Trim());
+        item.Description = item.Description?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(item.IpAddress) || item.IpAddress == "unknown")
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        bool ipExists = await FreeSql.Select<SysIpWhitelist>()
+            .Where(a => a.IpAddress == item.IpAddress && a.Id != item.Id)
+            .AnyAsync();
+
+        if (ipExists)
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        if (item.Id == 0)
+        {
+            item.CreatedTime = DateTime.Now;
+            item.AccessCount = 0;
+            item.LastAccessTime = null;
+        }
+    }
+}

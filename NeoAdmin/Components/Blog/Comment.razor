@@ -1,0 +1,129 @@
+@page "/Blog/Comment"
+@namespace NeoAdmin.Components.Blog
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Components
+@inject IFreeSql FreeSql
+
+<PageTitle>评论</PageTitle>
+
+<div class="flex flex-col flex-1 min-h-0">
+    <CrudTable @ref="table"
+               TItem="BlogComment"
+               Title="评论"
+               PageSize="50"
+               SearchPlaceholder="评论内容.."
+               InitQuery="InitQuery"
+               OnQuery="HandleQuery"
+               DialogContentSize="CrudDialogContentSize.Xl">
+        <Columns>
+            <DataTableColumn TData="CrudGridRow<BlogComment>"
+                             TValue="long"
+                             Property="@(row => row.Item.Id)"
+                             Header="ID"
+                             Sortable="false"
+                             Width="180px" />
+            <DataTableColumn TData="CrudGridRow<BlogComment>"
+                             TValue="string"
+                             Property="@(row => row.Item.Article != null ? row.Item.Article.Title : string.Empty)"
+                             Header="关联随笔"
+                             Sortable="false">
+                <CellTemplate Context="row">
+                    [@row.Item.ArticleId]@(row.Item.Article?.Title ?? "-")
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<BlogComment>"
+                             TValue="string"
+                             Property="@(row => row.Item.Text)"
+                             Header="内容"
+                             Sortable="false">
+                <CellTemplate Context="row">
+                    <span class="block truncate" title="@row.Item.Text">@row.Item.Text</span>
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<BlogComment>"
+                             TValue="int"
+                             Property="@(row => row.Item.LikesQuantity)"
+                             Header="点赞量"
+                             Sortable="false"
+                             Width="80px" />
+            <DataTableColumn TData="CrudGridRow<BlogComment>"
+                             TValue="bool"
+                             Property="@(row => row.Item.IsAudit)"
+                             Header="已审核"
+                             Sortable="false"
+                             Width="80px">
+                <CellTemplate Context="row">@(row.Item.IsAudit ? "是" : "否")</CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<BlogComment>"
+                             TValue="string"
+                             Property="@(_ => string.Empty)"
+                             Header="创建时间"
+                             Sortable="false"
+                             Width="160px">
+                <CellTemplate Context="row">
+                    @(row.Item.CreatedTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")
+                </CellTemplate>
+            </DataTableColumn>
+        </Columns>
+        <EditTemplate Context="item">
+            <div class="space-y-2">
+                <Label>关联随笔</Label>
+                <NeoInputTable TItem="BlogArticle"
+                               TKey="long"
+                               @bind-Value="item.ArticleId"
+                               @bind-Item="item.Article"
+                               DisplayText="@FormatArticleLabel"
+                               PageSize="5"
+                               OnQuery="FilterArticlePickQuery">
+                    <TableCell Context="article">@article.Title</TableCell>
+                </NeoInputTable>
+            </div>
+            <div class="space-y-2">
+                <Label For="comment-text">内容</Label>
+                <Textarea id="comment-text" Class="min-h-28 w-full" MaxLength="500" @bind-Value="item.Text" />
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div class="space-y-2">
+                    <Label For="comment-likes">点赞量</Label>
+                    <Input id="comment-likes"
+                           Type="InputType.Number"
+                           Class="w-full"
+                           Value="@item.LikesQuantity.ToString()"
+                           ValueChanged="@(v => item.LikesQuantity = int.TryParse(v, out var n) ? n : 0)" />
+                </div>
+                <div class="flex items-center gap-2 pt-6">
+                    <Checkbox @bind-Checked="item.IsAudit" Id="comment-audit" />
+                    <Label for="comment-audit">是否已审核</Label>
+                </div>
+            </div>
+        </EditTemplate>
+    </CrudTable>
+</div>
+
+@code {
+    private CrudTable<BlogComment> table = default!;
+
+    private Task InitQuery(CrudQueryInfo e)
+    {
+        e.Filters = [];
+        return Task.CompletedTask;
+    }
+
+    private void HandleQuery(CrudQueryEventArgs<BlogComment> e)
+    {
+        e.Select!
+            .Include(a => a.Article)
+            .WhereIf(!string.IsNullOrWhiteSpace(e.SearchText), a => a.Text.Contains(e.SearchText!))
+            .OrderByDescending(a => a.Id);
+    }
+
+    private static string FormatArticleLabel(BlogArticle article) => $"[{article.Id}]{article.Title}";
+
+    private Task FilterArticlePickQuery(CrudQueryEventArgs<BlogArticle> args)
+    {
+        args.Select!
+            .WhereIf(!string.IsNullOrWhiteSpace(args.SearchText), a => a.Title.Contains(args.SearchText!))
+            .OrderByDescending(a => a.Id);
+        return Task.CompletedTask;
+    }
+}

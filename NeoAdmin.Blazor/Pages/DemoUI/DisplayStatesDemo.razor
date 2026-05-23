@@ -1,0 +1,194 @@
+@page "/neo-demo/ui/display-states"
+@layout LayoutAdmin
+
+<PageTitle>状态与列表演示</PageTitle>
+
+<div class="flex flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">状态与列表</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                Empty、Skeleton、Item、Kbd、Scroll Area — 空状态、加载占位、列表项与滚动容器。
+                参考 <a class="text-primary underline-offset-4 hover:underline"
+                       href="https://demos.neoui.io/components"
+                       target="_blank"
+                       rel="noopener noreferrer">NeoUI Components</a>。
+            </p>
+        </div>
+
+        <div class="p-4">
+            <Tabs DefaultValue="empty" Class="w-full">
+                <TabsList Class="flex flex-wrap gap-1">
+                    <TabsTrigger Value="empty">Empty</TabsTrigger>
+                    <TabsTrigger Value="skeleton">Skeleton</TabsTrigger>
+                    <TabsTrigger Value="item">Item</TabsTrigger>
+                    <TabsTrigger Value="kbd">Kbd</TabsTrigger>
+                    <TabsTrigger Value="scroll-area">Scroll Area</TabsTrigger>
+                </TabsList>
+
+                <TabsContent Value="empty" Class="mt-4">
+                    <DemoSection Title="Empty"
+                                 Description="Use to display an empty state when there is no data to show"
+                                 Code="@DisplayStatesDemoSnippets.Empty">
+                        <div class="grid gap-8 md:grid-cols-2">
+                            <Empty>
+                                <EmptyIcon>
+                                    <LucideIcon Name="inbox" Size="40" Class="text-muted-foreground" />
+                                </EmptyIcon>
+                                <EmptyTitle>暂无数据</EmptyTitle>
+                                <EmptyDescription>当前列表为空，可点击下方按钮添加记录。</EmptyDescription>
+                                <EmptyActions>
+                                    <Button Size="ButtonSize.Small" OnClick="OnEmptyActionClick">新建</Button>
+                                </EmptyActions>
+                            </Empty>
+                            @if (showCompactEmpty)
+                            {
+                                <Empty Class="rounded-lg border py-8">
+                                    <EmptyIcon>
+                                        <LucideIcon Name="search-x" Size="32" Class="text-muted-foreground" />
+                                    </EmptyIcon>
+                                    <EmptyTitle>未找到结果</EmptyTitle>
+                                    <EmptyDescription>请尝试调整筛选条件。</EmptyDescription>
+                                </Empty>
+                            }
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(emptyActionMessage))
+                        {
+                            <p class="mt-3 text-sm text-muted-foreground">@emptyActionMessage</p>
+                        }
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="skeleton" Class="mt-4">
+                    <DemoSection Title="Skeleton"
+                                 Description="Use to show a placeholder while content is loading"
+                                 Code="@DisplayStatesDemoSnippets.Skeleton">
+                        <div class="space-y-6">
+                            <div class="flex items-center gap-4">
+                                <Skeleton Shape="SkeletonShape.Circular" Class="h-12 w-12" />
+                                <div class="space-y-2">
+                                    <Skeleton Class="h-4 w-[200px]" />
+                                    <Skeleton Class="h-4 w-[160px]" />
+                                </div>
+                            </div>
+                            <Skeleton Class="h-24 w-full max-w-md rounded-lg" />
+                            <Button Variant="ButtonVariant.Outline"
+                                    Size="ButtonSize.Small"
+                                    OnClick="ToggleSkeletonLoading">
+                                @(showSkeletonContent ? "显示骨架屏" : "显示内容")
+                            </Button>
+                            @if (showSkeletonContent)
+                            {
+                                <p class="text-sm">数据已加载：NeoAdmin 演示内容。</p>
+                            }
+                            else
+                            {
+                                <div class="grid max-w-md gap-2 sm:grid-cols-3">
+                                    <Skeleton Class="h-20 rounded-lg" />
+                                    <Skeleton Class="h-20 rounded-lg" />
+                                    <Skeleton Class="h-20 rounded-lg" />
+                                </div>
+                            }
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="item" Class="mt-4">
+                    <DemoSection Title="Item"
+                                 Description="A versatile component for building list items with media, content, and actions"
+                                 Code="@DisplayStatesDemoSnippets.Item">
+                        <ItemGroup Class="max-w-lg rounded-lg border">
+                            <Item>
+                                <ItemMedia Variant="ItemMediaVariant.Icon">
+                                    <LucideIcon Name="mail" Size="18" />
+                                </ItemMedia>
+                                <ItemContent>
+                                    <ItemTitle>新消息</ItemTitle>
+                                    <ItemDescription>你有一条来自系统的通知</ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <Badge Variant="BadgeVariant.Secondary">未读</Badge>
+                                </ItemActions>
+                            </Item>
+                            <ItemSeparator />
+                            <Item>
+                                <ItemMedia Variant="ItemMediaVariant.Icon">
+                                    <LucideIcon Name="calendar" Size="18" />
+                                </ItemMedia>
+                                <ItemContent>
+                                    <ItemTitle>会议提醒</ItemTitle>
+                                    <ItemDescription>明天 10:00 — 产品评审</ItemDescription>
+                                </ItemContent>
+                            </Item>
+                            <ItemSeparator />
+                            <Item Variant="ItemVariant.Muted">
+                                <ItemContent>
+                                    <ItemTitle>已完成任务</ItemTitle>
+                                    <ItemDescription>昨天 14:30</ItemDescription>
+                                </ItemContent>
+                            </Item>
+                        </ItemGroup>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="kbd" Class="mt-4">
+                    <DemoSection Title="Kbd"
+                                 Description="Displays keyboard input or shortcut keys"
+                                 Code="@DisplayStatesDemoSnippets.Kbd">
+                        <div class="space-y-4">
+                            <p class="text-sm text-muted-foreground">
+                                保存 <Kbd>Ctrl</Kbd> + <Kbd>S</Kbd>
+                            </p>
+                            <p class="text-sm text-muted-foreground">
+                                命令面板 <Kbd>⌘</Kbd> <Kbd>K</Kbd>
+                            </p>
+                            <p class="text-sm text-muted-foreground">
+                                搜索 <Kbd>/</Kbd> · 关闭 <Kbd>Esc</Kbd>
+                            </p>
+                            <div class="flex flex-wrap gap-2">
+                                <Kbd>↑</Kbd>
+                                <Kbd>↓</Kbd>
+                                <Kbd>←</Kbd>
+                                <Kbd>→</Kbd>
+                                <Kbd>Enter</Kbd>
+                            </div>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="scroll-area" Class="mt-4">
+                    <DemoSection Title="Scroll Area"
+                                 Description="Augments native scroll functionality for custom, cross-browser styling"
+                                 Code="@DisplayStatesDemoSnippets.ScrollArea">
+                        <ScrollArea Class="h-48 w-full max-w-md rounded-md border">
+                            <div class="space-y-2 p-4">
+                                @foreach (int line in scrollLines)
+                                {
+                                    <p class="text-sm">滚动内容行 @line — NeoUI Scroll Area 演示</p>
+                                }
+                            </div>
+                        </ScrollArea>
+                    </DemoSection>
+                </TabsContent>
+            </Tabs>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool showCompactEmpty = true;
+    private bool showSkeletonContent;
+    private string emptyActionMessage = string.Empty;
+
+    private readonly int[] scrollLines = Enumerable.Range(1, 20).ToArray();
+
+    private void OnEmptyActionClick()
+    {
+        emptyActionMessage = "已点击「新建」按钮（演示，无实际提交）。";
+    }
+
+    private void ToggleSkeletonLoading()
+    {
+        showSkeletonContent = !showSkeletonContent;
+    }
+}

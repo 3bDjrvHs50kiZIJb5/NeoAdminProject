@@ -1,0 +1,330 @@
+@page "/admin/role"
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Auth
+@using NeoAdmin.Blazor.Components
+@using NeoAdmin.Blazor.Data.Entities
+@using NeoAdmin.Blazor.Menus
+@using NeoAdmin.Blazor.Services
+@using NeoAdmin.Blazor.Utils
+@using Microsoft.AspNetCore.Http
+@inject RoleService RoleService
+@inject MenuService MenuService
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IToastService ToastService
+
+<PageTitle>角色管理</PageTitle>
+
+<div class="flex flex-col flex-1 min-h-0">
+    @if (!string.IsNullOrWhiteSpace(message))
+    {
+        <Alert Variant="@messageVariant" AccentBorder="true" Class="mb-3 shrink-0">
+            <Icon>
+                <LucideIcon Name="@GetMessageIcon()" Class="h-4 w-4" />
+            </Icon>
+            <ChildContent>
+                <AlertTitle>@GetMessageTitle()</AlertTitle>
+                <AlertDescription>@message</AlertDescription>
+            </ChildContent>
+        </Alert>
+    }
+
+    <CrudTable @ref="table"
+               TItem="SysRole"
+               Title="角色管理"
+               PageSize="30"
+               SearchPlaceholder="名称/备注.."
+               OnQuery="HandleQuery"
+               OnSaveAsync="HandleSaveAsync"
+               OnDeleteAsync="HandleDeleteAsync"
+               OnBatchRemoving="HandleBatchRemoving"
+               DialogContentSize="CrudDialogContentSize.Lg">
+        <Columns>
+            <DataTableColumn TData="CrudGridRow<SysRole>"
+                             TValue="long"
+                             Property="@(row => row.Item.Id)"
+                             Header="ID"
+                             Sortable="false"
+                             Width="180px" />
+            <DataTableColumn TData="CrudGridRow<SysRole>"
+                             TValue="string"
+                             Property="@(row => row.Item.Name)"
+                             Header="名称"
+                             Sortable="false">
+                <CellTemplate Context="row">
+                    <span class="block truncate font-medium" title="@row.Item.Name">@row.Item.Name</span>
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<SysRole>"
+                             TValue="string"
+                             Property="@(row => row.Item.Description)"
+                             Header="备注"
+                             Sortable="false">
+                <CellTemplate Context="row">
+                    <span class="block truncate" title="@row.Item.Description">@row.Item.Description</span>
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<SysRole>"
+                             TValue="bool"
+                             Property="@(row => row.Item.IsAdministrator)"
+                             Header="管理员"
+                             Sortable="false"
+                             Width="100px">
+                <CellTemplate Context="row">
+                    @if (row.Item.IsAdministrator)
+                    {
+                        <span class="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700">是</span>
+                    }
+                    else
+                    {
+                        <span class="rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-xs text-red-600">否</span>
+                    }
+                </CellTemplate>
+            </DataTableColumn>
+        </Columns>
+        <RowActionsContent Context="row">
+            <Button Variant="ButtonVariant.Ghost"
+                    Size="ButtonSize.Small"
+                    Title="分配用户"
+                    OnClick="@(() => OpenUserAlloc(row.Item))">
+                <LucideIcon Name="user-cog" Size="16" />
+                <span class="sr-only">分配用户</span>
+            </Button>
+            <Button Variant="ButtonVariant.Ghost"
+                    Size="ButtonSize.Small"
+                    Title="分配菜单"
+                    Disabled="@row.Item.IsAdministrator"
+                    OnClick="@(async () => await OpenMenuAlloc(row.Item))">
+                <LucideIcon Name="list-tree" Size="16" />
+                <span class="sr-only">分配菜单</span>
+            </Button>
+        </RowActionsContent>
+        <EditTemplate Context="item">
+            <div class="space-y-2">
+                <Label For="role-name">名称</Label>
+                <Input id="role-name" Class="w-full" MaxLength="50" @bind-Value="item.Name" />
+            </div>
+            <div class="space-y-2">
+                <Label For="role-description">备注</Label>
+                <Textarea id="role-description"
+                          Class="min-h-20 w-full"
+                          MaxLength="500"
+                          @bind-Value="item.Description" />
+            </div>
+            <div class="space-y-2">
+                <Label For="role-ip">
+                    IP 白名单
+                    <span class="text-xs font-normal text-muted-foreground">（登录后台时使用，多个用分号或换行分隔）</span>
+                </Label>
+                <Textarea id="role-ip"
+                          Class="min-h-20 w-full"
+                          MaxLength="500"
+                          @bind-Value="item.IpWhiteList" />
+                <p class="text-xs text-muted-foreground">当前 IP：@clientIp</p>
+            </div>
+        </EditTemplate>
+    </CrudTable>
+</div>
+
+<NeoAllocTable TItem="SysRole"
+               TChild="SysUser"
+               TKey="long"
+               @bind-Item="allocUserRole"
+               Title="@($"分配用户 — {allocUserRole?.Name}")"
+               SearchPlaceholder="搜索用户名/昵称.."
+               KeySelector="u => u.Id"
+               DisplayText="u => u.Username"
+               LoadSelectedKeysAsync="LoadRoleUserKeysAsync"
+               OnSaveAsync="SaveRoleUsersAsync"
+               OnQuery="FilterUserAllocQuery"
+               DialogContentSize="CrudDialogContentSize.Sm">
+    <RowTemplate Context="user">
+        @user.Username
+        @if (!string.IsNullOrWhiteSpace(user.Nickname))
+        {
+            <span class="text-muted-foreground">（@user.Nickname）</span>
+        }
+    </RowTemplate>
+</NeoAllocTable>
+
+<NeoAllocTable TItem="SysRole"
+               TChild="SysMenu"
+               TKey="long"
+               @bind-Item="allocMenuRole"
+               Title="@($"分配菜单 — {allocMenuRole?.Name}")"
+               IsSearchText="false"
+               KeySelector="m => m.Id"
+               DisplayText="m => m.Label"
+               LevelSelector="GetMenuLevel"
+               LoadSelectedKeysAsync="LoadRoleMenuKeysAsync"
+               LoadChoicesFunc="LoadMenuChoicesAsync"
+               OnSaveAsync="SaveRoleMenusAsync"
+               DialogContentSize="CrudDialogContentSize.Sm">
+    <RowTemplate Context="menu">
+        @menu.Label
+        <span class="text-xs text-muted-foreground">(@menu.Type)</span>
+    </RowTemplate>
+</NeoAllocTable>
+
+@code {
+    private CrudTable<SysRole> table = default!;
+    private string? message;
+    private AlertVariant messageVariant = AlertVariant.Default;
+    private string clientIp = "-";
+
+    private SysRole? allocUserRole;
+    private SysRole? allocMenuRole;
+    private Dictionary<long, int> menuLevels = new();
+
+    protected override void OnInitialized()
+    {
+        clientIp = HttpContextAccessor.HttpContext is { } httpContext
+            ? IpHelper.ToIpv4Display(IpHelper.GetClientIpAddress(httpContext))
+            : "-";
+    }
+
+    private void HandleQuery(CrudQueryEventArgs<SysRole> e)
+    {
+        e.Select!
+            .WhereIf(!string.IsNullOrWhiteSpace(e.SearchText),
+                a => a.Name.Contains(e.SearchText!) || a.Description.Contains(e.SearchText!))
+            .OrderBy(a => a.Id);
+    }
+
+    private async Task<bool> HandleSaveAsync(SysRole item, bool isNewItem)
+    {
+        ApiResult<SysRole> result = await RoleService.SaveAsync(item);
+        if (!result.Succeeded)
+        {
+            ShowError(result.Message);
+            return false;
+        }
+
+        ShowSuccess(result.Message);
+        if (result.Data is not null)
+        {
+            item.Id = result.Data.Id;
+        }
+
+        return true;
+    }
+
+    private async Task<bool> HandleDeleteAsync(SysRole item)
+    {
+        ApiResult result = await RoleService.DeleteAsync(item.Id);
+        if (!result.Succeeded)
+        {
+            ShowError(result.Message);
+            return false;
+        }
+
+        ShowSuccess(result.Message);
+        return true;
+    }
+
+    private async Task HandleBatchRemoving(CrudBatchConfirmEventArgs<SysRole> e)
+    {
+        if (e.Items.Any(a => a.IsAdministrator))
+        {
+            e.Cancel = true;
+            ShowError("不能删除系统角色");
+            return;
+        }
+    }
+
+    private void OpenUserAlloc(SysRole role) => allocUserRole = role;
+
+    private async Task OpenMenuAlloc(SysRole role)
+    {
+        List<SysMenu> allMenus = await MenuService.GetAllAsync();
+        menuLevels = BuildMenuLevels(MenuService.BuildTree(allMenus));
+        allocMenuRole = role;
+    }
+
+    private async Task<IReadOnlyCollection<long>> LoadRoleUserKeysAsync(SysRole role) =>
+        await RoleService.GetUserIdsAsync(role.Id);
+
+    private async Task<IReadOnlyCollection<long>> LoadRoleMenuKeysAsync(SysRole role) =>
+        await RoleService.GetMenuIdsAsync(role.Id);
+
+    private Task FilterUserAllocQuery(CrudQueryEventArgs<SysUser> args)
+    {
+        args.Select!
+            .WhereIf(!string.IsNullOrWhiteSpace(args.SearchText),
+                u => u.Username.Contains(args.SearchText!) || u.Nickname.Contains(args.SearchText!))
+            .OrderBy(u => u.Username);
+        return Task.CompletedTask;
+    }
+
+    private async Task<List<SysMenu>> LoadMenuChoicesAsync(string? searchText)
+    {
+        List<SysMenu> menus = await RoleService.GetMenusForAllocAsync();
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            return menus;
+        }
+
+        return menus
+            .Where(m => m.Label.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    private int GetMenuLevel(SysMenu menu) => menuLevels.GetValueOrDefault(menu.Id);
+
+    private async Task<bool> SaveRoleUsersAsync(SysRole role, IReadOnlyCollection<long> userIds)
+    {
+        ApiResult result = await RoleService.SetUsersAsync(role.Id, userIds);
+        if (!result.Succeeded)
+        {
+            ToastService.Error("分配用户", result.Message);
+            return false;
+        }
+
+        return true;
+    }
+
+    private async Task<bool> SaveRoleMenusAsync(SysRole role, IReadOnlyCollection<long> menuIds)
+    {
+        ApiResult result = await RoleService.SetMenusAsync(role.Id, menuIds);
+        if (!result.Succeeded)
+        {
+            ToastService.Error("分配菜单", result.Message);
+            return false;
+        }
+
+        return true;
+    }
+
+    private static Dictionary<long, int> BuildMenuLevels(IEnumerable<SysMenu> menus)
+    {
+        Dictionary<long, int> result = new();
+        void Walk(IEnumerable<SysMenu> items, int level)
+        {
+            foreach (SysMenu item in items)
+            {
+                result[item.Id] = level;
+                Walk(item.Children, level + 1);
+            }
+        }
+
+        Walk(menus, 0);
+        return result;
+    }
+
+    private void ShowSuccess(string value)
+    {
+        message = value;
+        messageVariant = AlertVariant.Success;
+    }
+
+    private void ShowError(string value)
+    {
+        message = value;
+        messageVariant = AlertVariant.Destructive;
+    }
+
+    private string GetMessageTitle() =>
+        messageVariant == AlertVariant.Success ? "操作成功" : "操作失败";
+
+    private string GetMessageIcon() =>
+        messageVariant == AlertVariant.Success ? "circle-check" : "circle-x";
+}

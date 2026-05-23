@@ -1,0 +1,70 @@
+/**
+ * layout-shell.css
+ *
+ * 管理后台全屏骨架与内容区高度布局。
+ *
+ * 目标：
+ * - 页面占满视口，避免 html/body 出现双层滚动条。
+ * - 侧栏 + 主内容（LayoutAdmin）在 flex 链路上可向下传递高度，表格区域才能 height: 100% 撑满。
+ *
+ * 相关组件：
+ * - LayoutAdmin.razor：SidebarProvider HeightClass="neo-admin-shell"
+ * - LayoutAdmin.razor：SidebarInset Class="neo-admin-inset"
+ * - 列表页可在表格外层包一层 class="neo-admin-table-container" 做内部滚动
+ *
+ * 层级说明：
+ * 1. html, body     — 视口 100% 高，overflow 隐藏（滚动交给内层）
+ * 2. #app / [data-neo-app] — Blazor 根节点同样占满
+ * 3. .neo-admin-shell      — 侧栏+主区外壳，100dvh flex
+ * 4. main / .neo-admin-inset — 主内容区继承高度
+ * 5. .neo-admin-table-container — 可选，表格局部滚动
+ *
+ * 加载顺序（App.razor）：
+ *   app.css（:root 变量）→ 本文件 → dialog-max-width.css
+ */
+
+/* -------------------------------------------------------------------------- */
+/* 文档根与 Blazor 宿主                                                         */
+/* -------------------------------------------------------------------------- */
+
+html,
+body {
+  height: 100%;
+  /* 防止根节点出现页面级滚动条，滚动由 App 内层容器处理 */
+  overflow: hidden;
+}
+
+#app,
+[data-neo-app] {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 后台外壳：侧栏 + 主内容（见 LayoutAdmin）                                     */
+/* -------------------------------------------------------------------------- */
+
+.neo-admin-shell {
+  display: flex;
+  width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* dashboard-02：侧栏导航主色高亮（Large 菜单项） */
+.neo-admin-sidebar-menu [data-active="true"] {
+  background-color: hsl(var(--primary) / 0.12);
+  color: hsl(var(--primary));
+}
+
+/* 主内容区：与 SidebarInset 的 neo-admin-inset 配合 */
+.neo-admin-shell > main,
+.neo-admin-inset {
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+

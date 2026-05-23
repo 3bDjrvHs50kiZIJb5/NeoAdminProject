@@ -1,0 +1,216 @@
+@page "/Blog/Tag2"
+@namespace NeoAdmin.Components.Blog
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Components
+@inject IFreeSql FreeSql
+
+<PageTitle>标签</PageTitle>
+
+<div class="flex flex-col flex-1 min-h-0">
+    <CrudTable @ref="table"
+               TItem="BlogTag2"
+               Title="标签"
+               PageSize="50"
+               SearchPlaceholder="标签名 / 别名.."
+               InitQuery="InitQuery"
+               OnQuery="HandleQuery"
+               OnEdit="HandleEdit"
+               OnSaveAsync="HandleSaveAsync"
+               DialogContentSize="CrudDialogContentSize.Lg">
+        <Columns>
+            <DataTableColumn TData="CrudGridRow<BlogTag2>"
+                             TValue="long"
+                             Property="@(row => row.Item.Id)"
+                             Header="ID"
+                             Sortable="false"
+                             Width="180px" />
+            <DataTableColumn TData="CrudGridRow<BlogTag2>"
+                             TValue="string"
+                             Property="@(row => row.Item.TagName)"
+                             Header="标签名"
+                             Sortable="false" />
+            <DataTableColumn TData="CrudGridRow<BlogTag2>"
+                             TValue="string"
+                             Property="@(row => row.Item.Alias)"
+                             Header="别名"
+                             Sortable="false" />
+            <DataTableColumn TData="CrudGridRow<BlogTag2>"
+                             TValue="string"
+                             Property="@(row => row.Item.Thumbnail)"
+                             Header="封面图"
+                             Sortable="false">
+                <CellTemplate Context="row">
+                    <span class="block truncate" title="@row.Item.Thumbnail">@row.Item.Thumbnail</span>
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<BlogTag2>"
+                             TValue="bool"
+                             Property="@(row => row.Item.Status)"
+                             Header="状态"
+                             Sortable="false"
+                             Width="72px">
+                <CellTemplate Context="row">@(row.Item.Status ? "启用" : "停用")</CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<BlogTag2>"
+                             TValue="int"
+                             Property="@(row => row.Item.ArticleCount)"
+                             Header="随笔数量"
+                             Sortable="false"
+                             Width="96px" />
+            <DataTableColumn TData="CrudGridRow<BlogTag2>"
+                             TValue="int"
+                             Property="@(row => row.Item.ViewHits)"
+                             Header="浏览次数"
+                             Sortable="false"
+                             Width="96px" />
+            <DataTableColumn TData="CrudGridRow<BlogTag2>"
+                             TValue="string"
+                             Property="@(row => row.Item.Remark)"
+                             Header="备注"
+                             Sortable="false">
+                <CellTemplate Context="row">
+                    <span class="block truncate" title="@row.Item.Remark">@row.Item.Remark</span>
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<BlogTag2>"
+                             TValue="string"
+                             Property="@(_ => string.Empty)"
+                             Header="创建时间"
+                             Sortable="false"
+                             Width="160px">
+                <CellTemplate Context="row">
+                    @(row.Item.CreatedTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")
+                </CellTemplate>
+            </DataTableColumn>
+        </Columns>
+        <EditTemplate Context="item">
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div class="space-y-2">
+                    <Label For="tag-name">标签名</Label>
+                    <Input id="tag-name" Class="w-full" MaxLength="50" @bind-Value="item.TagName" />
+                </div>
+                <div class="space-y-2">
+                    <Label For="tag-alias">别名</Label>
+                    <Input id="tag-alias" Class="w-full" MaxLength="200" @bind-Value="item.Alias" />
+                </div>
+            </div>
+            <div class="space-y-2">
+                <Label For="tag-thumb">封面图</Label>
+                <Input id="tag-thumb" Class="w-full" MaxLength="100" @bind-Value="item.Thumbnail" />
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div class="flex items-center gap-2 pt-6">
+                    <Checkbox @bind-Checked="item.Status" Id="tag-status" />
+                    <Label for="tag-status">标签状态</Label>
+                </div>
+                <div class="space-y-2">
+                    <Label For="tag-count">随笔数量</Label>
+                    <Input id="tag-count"
+                           Type="InputType.Number"
+                           Class="w-full"
+                           Value="@item.ArticleCount.ToString()"
+                           ValueChanged="@(v => item.ArticleCount = int.TryParse(v, out var n) ? n : 0)" />
+                </div>
+                <div class="space-y-2">
+                    <Label For="tag-hits">浏览次数</Label>
+                    <Input id="tag-hits"
+                           Type="InputType.Number"
+                           Class="w-full"
+                           Value="@item.ViewHits.ToString()"
+                           ValueChanged="@(v => item.ViewHits = int.TryParse(v, out var n) ? n : 0)" />
+                </div>
+            </div>
+            <div class="space-y-2">
+                <Label For="tag-remark">备注</Label>
+                <Textarea id="tag-remark" Class="min-h-24 w-full" MaxLength="500" @bind-Value="item.Remark" />
+            </div>
+            <div class="space-y-2">
+                <Label>技术频道</Label>
+                <NeoSelectTable TItem="BlogChannel"
+                                TKey="long"
+                                Items="item.Channels"
+                                ItemsChanged="channels => OnChannelsChanged(item, channels)"
+                                IsSearchText="false"
+                                PageSize="-1"
+                                OnQuery="FilterChannelSelectQuery">
+                    <RowTemplate Context="channel">@channel.ChannelName</RowTemplate>
+                </NeoSelectTable>
+            </div>
+        </EditTemplate>
+    </CrudTable>
+</div>
+
+@code {
+    private CrudTable<BlogTag2> table = default!;
+
+    private async Task InitQuery(CrudQueryInfo e)
+    {
+        List<BlogChannel> channels = await FreeSql.Select<BlogChannel>().ToListAsync();
+        e.Filters =
+        [
+            new CrudFilterInfo(
+                "技术频道",
+                "Channels",
+                multiple: true,
+                col: 12,
+                string.Join(",", channels.Select(a => a.ChannelName)),
+                string.Join(",", channels.Select(a => a.Id)))
+        ];
+    }
+
+    private void HandleQuery(CrudQueryEventArgs<BlogTag2> e)
+    {
+        CrudFilterInfo channelFilter = e.Filters[0];
+        e.Select!
+            .WhereIf(channelFilter.HasValue,
+                a => FreeSql.Select<BlogTag2.ChannelTag2>()
+                    .Where(j => j.TagId == a.Id && channelFilter.Values<long>().Contains(j.ChannelId))
+                    .Any())
+            .WhereIf(!string.IsNullOrWhiteSpace(e.SearchText),
+                a => a.TagName.Contains(e.SearchText!) || a.Alias.Contains(e.SearchText!))
+            .OrderByDescending(a => a.Id);
+    }
+
+    private async Task HandleEdit(BlogTag2 item)
+    {
+        if (item.Id == 0)
+        {
+            item.Channels = [];
+            return;
+        }
+
+        IReadOnlyCollection<long> channelIds = await BlogRelationService.GetTagChannelIdsAsync(FreeSql, item.Id);
+        item.Channels = await BlogRelationService.LoadChannelsByIdsAsync(FreeSql, channelIds);
+    }
+
+    private Task OnChannelsChanged(BlogTag2 item, List<BlogChannel> channels)
+    {
+        item.Channels = channels;
+        return Task.CompletedTask;
+    }
+
+    private async Task<bool> HandleSaveAsync(BlogTag2 item, bool isNewItem)
+    {
+        List<BlogChannel> channels = item.Channels ?? [];
+        item.Channels = [];
+
+        if (isNewItem)
+        {
+            await FreeSql.Insert(item).ExecuteAffrowsAsync();
+        }
+        else
+        {
+            await FreeSql.Update<BlogTag2>().SetSource(item).ExecuteAffrowsAsync();
+        }
+
+        await BlogRelationService.SaveTagChannelsAsync(
+            FreeSql, item.Id, channels.Select(c => c.Id).ToList());
+        return true;
+    }
+
+    private Task FilterChannelSelectQuery(CrudQueryEventArgs<BlogChannel> args)
+    {
+        args.Select!.OrderBy(c => c.ChannelName);
+        return Task.CompletedTask;
+    }
+}

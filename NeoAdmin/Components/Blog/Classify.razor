@@ -1,0 +1,116 @@
+@page "/Blog/Classify"
+@namespace NeoAdmin.Components.Blog
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Components
+@inject IFreeSql FreeSql
+
+<PageTitle>随笔专栏</PageTitle>
+
+<div class="flex flex-col flex-1 min-h-0">
+    <CrudTable @ref="table"
+               TItem="BlogClassify"
+               Title="随笔专栏"
+               PageSize="50"
+               IsMultiSelect="false"
+               IsSingleSelect="false"
+               SearchPlaceholder="专栏名称 / 创建者.."
+               InitQuery="InitQuery"
+               OnQuery="HandleQuery"
+               DialogContentSize="CrudDialogContentSize.Lg">
+        <Columns>
+            <DataTableColumn TData="CrudGridRow<BlogClassify>"
+                             TValue="long"
+                             Property="@(row => row.Item.Id)"
+                             Header="ID"
+                             Sortable="false"
+                             Width="180px" />
+            <DataTableColumn TData="CrudGridRow<BlogClassify>"
+                             TValue="string"
+                             Property="@(row => row.Item.ClassifyName)"
+                             Header="分类专栏名称"
+                             Sortable="false" />
+            <DataTableColumn TData="CrudGridRow<BlogClassify>"
+                             TValue="int"
+                             Property="@(row => row.Item.SortCode)"
+                             Header="排序"
+                             Sortable="false"
+                             Width="80px" />
+            <DataTableColumn TData="CrudGridRow<BlogClassify>"
+                             TValue="int"
+                             Property="@(row => row.Item.ArticleCount)"
+                             Header="随笔数量"
+                             Sortable="false"
+                             Width="96px" />
+            <DataTableColumn TData="CrudGridRow<BlogClassify>"
+                             TValue="string"
+                             Property="@(row => row.Item.Thumbnail)"
+                             Header="封面图"
+                             Sortable="false">
+                <CellTemplate Context="row">
+                    <span class="block truncate" title="@row.Item.Thumbnail">@row.Item.Thumbnail</span>
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<BlogClassify>"
+                             TValue="string"
+                             Property="@(row => row.Item.CreatedUserName)"
+                             Header="创建者"
+                             Sortable="false"
+                             Width="120px" />
+            <DataTableColumn TData="CrudGridRow<BlogClassify>"
+                             TValue="string"
+                             Property="@(_ => string.Empty)"
+                             Header="创建时间"
+                             Sortable="false"
+                             Width="160px">
+                <CellTemplate Context="row">
+                    @(row.Item.CreatedTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")
+                </CellTemplate>
+            </DataTableColumn>
+        </Columns>
+        <EditTemplate Context="item">
+            <div class="space-y-2">
+                <Label For="classify-name">分类专栏名称</Label>
+                <Input id="classify-name" Class="w-full" MaxLength="50" @bind-Value="item.ClassifyName" />
+            </div>
+            <div class="space-y-2">
+                <Label For="classify-sort">排序</Label>
+                <Input id="classify-sort"
+                       Type="InputType.Number"
+                       Class="w-full"
+                       Value="@item.SortCode.ToString()"
+                       ValueChanged="@(v => item.SortCode = int.TryParse(v, out var n) ? n : 0)" />
+            </div>
+            <div class="space-y-2">
+                <Label For="classify-count">随笔数量</Label>
+                <Input id="classify-count"
+                       Type="InputType.Number"
+                       Class="w-full"
+                       Value="@item.ArticleCount.ToString()"
+                       ValueChanged="@(v => item.ArticleCount = int.TryParse(v, out var n) ? n : 0)" />
+            </div>
+            <div class="space-y-2">
+                <Label For="classify-thumb">封面图</Label>
+                <Input id="classify-thumb" Class="w-full" MaxLength="100" @bind-Value="item.Thumbnail" />
+            </div>
+        </EditTemplate>
+    </CrudTable>
+</div>
+
+@code {
+    private CrudTable<BlogClassify> table = default!;
+
+    private Task InitQuery(CrudQueryInfo e)
+    {
+        e.Filters = [];
+        return Task.CompletedTask;
+    }
+
+    private void HandleQuery(CrudQueryEventArgs<BlogClassify> e)
+    {
+        e.Select!
+            .WhereIf(!string.IsNullOrWhiteSpace(e.SearchText),
+                a => a.ClassifyName.Contains(e.SearchText!)
+                     || a.CreatedUserName.Contains(e.SearchText!))
+            .OrderByDescending(a => a.Id);
+    }
+}

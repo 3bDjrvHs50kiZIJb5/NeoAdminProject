@@ -1,0 +1,107 @@
+@page "/Blog/UserLike"
+@namespace NeoAdmin.Components.Blog
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Components
+@inject IFreeSql FreeSql
+
+<PageTitle>用户点赞</PageTitle>
+
+<div class="flex flex-col flex-1 min-h-0">
+    <CrudTable @ref="table" TItem="BlogUserLike" Title="用户点赞" PageSize="50" IsSearchText="false" InitQuery="InitQuery"
+        OnQuery="HandleQuery" DialogContentSize="CrudDialogContentSize.Lg">
+        <Columns>
+            <DataTableColumn TData="CrudGridRow<BlogUserLike>" TValue="long" Property="@(row => row.Item.Id)"
+                Header="ID" Sortable="false" Width="180px" />
+            <DataTableColumn TData="CrudGridRow<BlogUserLike>" TValue="string" Property="@(_ => string.Empty)"
+                Header="点赞对象" Sortable="false">
+                <CellTemplate Context="row">
+                    @if (row.Item.SubjectType == UserLikeSubjectType.点赞随笔)
+                    {
+                        <span>[@row.Item.SubjectId]@(row.Item.Article?.Title ?? "-")</span>
+                    }
+                    else
+                    {
+                        <span>[@row.Item.SubjectId]@(row.Item.Comment?.Text ?? "-")</span>
+                    }
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<BlogUserLike>" TValue="UserLikeSubjectType"
+                Property="@(row => row.Item.SubjectType)" Header="点赞类型" Sortable="false" Width="120px" />
+            <DataTableColumn TData="CrudGridRow<BlogUserLike>" TValue="string" Property="@(_ => string.Empty)"
+                Header="创建时间" Sortable="false" Width="160px">
+                <CellTemplate Context="row">
+                    @(row.Item.CreatedTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")
+                </CellTemplate>
+            </DataTableColumn>
+        </Columns>
+        <EditTemplate Context="item">
+            <div class="space-y-2">
+                <Label For="like-type">类型</Label>
+                <NeoSelectEnum TEnum="UserLikeSubjectType" @bind-Value="item.SubjectType" />
+            </div>
+            @if (item.SubjectType == UserLikeSubjectType.点赞随笔)
+            {
+                <div class="space-y-2">
+                    <Label>随笔</Label>
+                    <NeoInputTable TItem="BlogArticle" TKey="long" @bind-Value="item.SubjectId" @bind-Item="item.Article"
+                        DisplayText="@FormatArticleLabel" OnQuery="FilterArticlePickQuery">
+                        <TableCell Context="article">@article.Title</TableCell>
+                    </NeoInputTable>
+                </div>
+            }
+            else
+            {
+                <div class="space-y-2">
+                    <Label>评论</Label>
+                    <NeoInputTable TItem="BlogComment" TKey="long" @bind-Value="item.SubjectId" @bind-Item="item.Comment"
+                        DisplayText="@FormatCommentLabel" PageSize="5" OnQuery="FilterCommentPickQuery">
+                        <TableCell Context="comment">
+                            <span class="block truncate" title="@comment.Text">@comment.Text</span>
+                        </TableCell>
+                    </NeoInputTable>
+                </div>
+            }
+        </EditTemplate>
+    </CrudTable>
+</div>
+
+@code {
+    private CrudTable<BlogUserLike> table = default!;
+
+    private Task InitQuery(CrudQueryInfo e)
+    {
+        e.Filters =
+        [
+        new CrudFilterInfo("点赞类型", "SubjectType", typeof(UserLikeSubjectType), false, 6)
+        ];
+        return Task.CompletedTask;
+    }
+
+    private void HandleQuery(CrudQueryEventArgs<BlogUserLike> e)
+    {
+        CrudFilterInfo typeFilter = e.Filters[0];
+        e.Select!
+        .Include(a => a.Article)
+        .Include(a => a.Comment)
+        .WhereIf(typeFilter.HasValue, a => a.SubjectType == typeFilter.Value<UserLikeSubjectType>())
+        .OrderByDescending(a => a.Id);
+    }
+
+    private static string FormatArticleLabel(BlogArticle article) => $"[{article.Id}]{article.Title}";
+
+    private static string FormatCommentLabel(BlogComment comment) => $"[{comment.Id}]{comment.Text}";
+
+    private Task FilterArticlePickQuery(CrudQueryEventArgs<BlogArticle> args)
+    {
+        args.Select!.OrderByDescending(a => a.Id);
+        return Task.CompletedTask;
+    }
+
+    private Task FilterCommentPickQuery(CrudQueryEventArgs<BlogComment> args)
+    {
+        args.Select!
+        .WhereIf(!string.IsNullOrWhiteSpace(args.SearchText), a => a.Text.Contains(args.SearchText!))
+        .OrderByDescending(a => a.Id);
+        return Task.CompletedTask;
+    }
+}

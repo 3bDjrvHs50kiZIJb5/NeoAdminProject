@@ -1,0 +1,166 @@
+@page "/neo-demo/ui/form-inputs"
+@layout LayoutAdmin
+
+<PageTitle>表单输入演示</PageTitle>
+
+<div class="flex flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">表单输入</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                Field、Input、Label、Textarea、Numeric Input — 表单字段布局与文本/数字录入。
+                参考 <a class="text-primary underline-offset-4 hover:underline"
+                       href="https://demos.neoui.io/components"
+                       target="_blank"
+                       rel="noopener noreferrer">NeoUI Components</a>。
+            </p>
+        </div>
+
+        <div class="p-4">
+            <Tabs DefaultValue="field" Class="w-full">
+                <TabsList Class="flex flex-wrap gap-1">
+                    <TabsTrigger Value="field">Field</TabsTrigger>
+                    <TabsTrigger Value="input">Input</TabsTrigger>
+                    <TabsTrigger Value="label">Label</TabsTrigger>
+                    <TabsTrigger Value="textarea">Textarea</TabsTrigger>
+                    <TabsTrigger Value="numeric-input">Numeric Input</TabsTrigger>
+                </TabsList>
+
+                <TabsContent Value="field" Class="mt-4">
+                    <DemoSection Title="Field"
+                                 Description="Combine labels, controls, and help text for accessible forms"
+                                 Code="@FormInputsDemoSnippets.Field">
+                        <div class="grid max-w-xl gap-6">
+                            <Field Orientation="FieldOrientation.Vertical">
+                                <FieldLabel For="field-email">邮箱</FieldLabel>
+                                <FieldContent>
+                                    <Input Id="field-email"
+                                           Type="InputType.Email"
+                                           Placeholder="name@example.com"
+                                           @bind-Value="fieldEmail" />
+                                    <FieldDescription>我们不会分享你的邮箱地址。</FieldDescription>
+                                </FieldContent>
+                            </Field>
+
+                            <Field Orientation="FieldOrientation.Horizontal" Class="items-center">
+                                <FieldLabel For="field-username" Class="min-w-24">用户名</FieldLabel>
+                                <FieldContent>
+                                    <Input Id="field-username"
+                                           Placeholder="请输入用户名"
+                                           @bind-Value="fieldUsername" />
+                                </FieldContent>
+                            </Field>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="input" Class="mt-4">
+                    <DemoSection Title="Input"
+                                 Description="Text input fields with multiple types and sizes"
+                                 Code="@FormInputsDemoSnippets.Input">
+                        <div class="grid max-w-xl gap-4 sm:grid-cols-2">
+                            <div class="space-y-2">
+                                <Label For="input-text">文本</Label>
+                                <Input Id="input-text" Placeholder="请输入文本" @bind-Value="inputText" />
+                            </div>
+                            <div class="space-y-2">
+                                <Label For="input-email">邮箱</Label>
+                                <Input Id="input-email" Type="InputType.Email" Placeholder="name@example.com" @bind-Value="inputEmail" />
+                            </div>
+                            <div class="space-y-2">
+                                <Label For="input-password">密码</Label>
+                                <Input Id="input-password" Type="InputType.Password" Placeholder="••••••••" @bind-Value="inputPassword" />
+                            </div>
+                            <div class="space-y-2">
+                                <Label For="input-search">搜索</Label>
+                                <Input Id="input-search" Type="InputType.Search" Placeholder="搜索…" @bind-Value="inputSearch" />
+                            </div>
+                        </div>
+                        <p class="mt-3 text-sm text-muted-foreground">文本值：@(string.IsNullOrWhiteSpace(inputText) ? "（空）" : inputText)</p>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="label" Class="mt-4">
+                    <DemoSection Title="Label"
+                                 Description="Accessible labels for form controls"
+                                 Code="@FormInputsDemoSnippets.Label">
+                        <div class="max-w-md space-y-4">
+                            <div class="space-y-2">
+                                <Label For="label-name">姓名</Label>
+                                <Input Id="label-name" @bind-Value="labelName" Placeholder="请输入姓名" />
+                            </div>
+                            <div class="space-y-2">
+                                <Label For="label-bio" Class="text-muted-foreground">个人简介（辅助说明样式）</Label>
+                                <Textarea Id="label-bio" Class="min-h-20" @bind-Value="labelBio" Placeholder="简短介绍自己" />
+                            </div>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="textarea" Class="mt-4">
+                    <DemoSection Title="Textarea"
+                                 Description="Multi-line text input with automatic content sizing"
+                                 Code="@FormInputsDemoSnippets.Textarea">
+                        <div class="max-w-lg space-y-2">
+                            <Label For="textarea-notes">备注</Label>
+                            <Textarea Id="textarea-notes"
+                                      Class="min-h-28 w-full"
+                                      Placeholder="输入多行文本…"
+                                      @bind-Value="textareaNotes" />
+                            <p class="text-sm text-muted-foreground">字数：@textareaNotes.Length</p>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="numeric-input" Class="mt-4">
+                    <DemoSection Title="Numeric Input"
+                                 Description="Number input with increment/decrement buttons and formatting"
+                                 Code="@FormInputsDemoSnippets.NumericInput">
+                        <div class="grid max-w-xl gap-4 sm:grid-cols-2">
+                            <div class="space-y-2">
+                                <Label For="numeric-qty">数量</Label>
+                                <NumericInput TValue="int"
+                                              Id="numeric-qty"
+                                              Class="w-full"
+                                              Min="1"
+                                              Max="99"
+                                              Step="1"
+                                              @bind-Value="numericQuantity" />
+                                <p class="text-sm text-muted-foreground">当前：@numericQuantity</p>
+                            </div>
+                            <div class="space-y-2">
+                                <Label For="numeric-price">价格</Label>
+                                <NumericInput TValue="decimal"
+                                              Id="numeric-price"
+                                              Class="w-full"
+                                              Min="0"
+                                              Max="9999"
+                                              Step="0.01m"
+                                              @bind-Value="numericPrice" />
+                                <p class="text-sm text-muted-foreground">当前：@numericPrice.ToString("C2")</p>
+                            </div>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+            </Tabs>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string fieldEmail = string.Empty;
+    private string fieldUsername = string.Empty;
+
+    private string inputText = string.Empty;
+    private string inputEmail = string.Empty;
+    private string inputPassword = string.Empty;
+    private string inputSearch = string.Empty;
+
+    private string labelName = string.Empty;
+    private string labelBio = string.Empty;
+
+    private string textareaNotes = string.Empty;
+
+    private int numericQuantity = 10;
+    private decimal numericPrice = 29.99m;
+}

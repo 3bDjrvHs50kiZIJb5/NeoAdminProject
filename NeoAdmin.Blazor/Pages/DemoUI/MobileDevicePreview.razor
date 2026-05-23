@@ -1,0 +1,311 @@
+@* 在管理后台内模拟常见手机视口（默认 375×667，iPhone SE / 8 逻辑分辨率） *@
+<div class="@GetRootClass()">
+    <p class="mb-3 text-center text-xs text-muted-foreground">
+        @Width × @Height 逻辑像素 · @DeviceLabel
+    </p>
+
+    <div class="neo-mobile-preview__device" style="@GetShellStyle()">
+        <span class="neo-mobile-preview__btn neo-mobile-preview__btn--silent" aria-hidden="true" />
+        <span class="neo-mobile-preview__btn neo-mobile-preview__btn--volume-up" aria-hidden="true" />
+        <span class="neo-mobile-preview__btn neo-mobile-preview__btn--volume-down" aria-hidden="true" />
+        <span class="neo-mobile-preview__btn neo-mobile-preview__btn--power" aria-hidden="true" />
+
+        <div class="neo-mobile-preview__bezel">
+            <div class="neo-mobile-preview__shell light">
+                @if (ShowNotch)
+                {
+                    <div class="neo-mobile-preview__notch" aria-hidden="true" />
+                }
+
+                @if (ShowStatusBar)
+                {
+                    <div class="neo-mobile-preview__status-bar @GetStatusBarClass()" aria-hidden="true">
+                        <span class="neo-mobile-preview__time">9:41</span>
+                        <span class="neo-mobile-preview__status-icons">
+                            <span class="neo-mobile-preview__signal" />
+                            <span class="neo-mobile-preview__wifi" />
+                            <span class="neo-mobile-preview__battery" />
+                        </span>
+                    </div>
+                }
+
+                <div class="neo-mobile-preview__screen @ScreenClass">
+                    @ChildContent
+                </div>
+
+                @if (ShowHomeIndicator)
+                {
+                    <div class="neo-mobile-preview__home-bar" aria-hidden="true">
+                        <span class="neo-mobile-preview__home-indicator" />
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    /// <summary>逻辑宽度（px），常见值 375（iPhone SE/8）、390（iPhone 14）。</summary>
+    [Parameter] public int Width { get; set; } = 375;
+
+    /// <summary>逻辑高度（px），常见值 667（SE/8）、812（X 及以上）。</summary>
+    [Parameter] public int Height { get; set; } = 667;
+
+    [Parameter] public string DeviceLabel { get; set; } = "手机预览";
+
+    [Parameter] public bool ShowStatusBar { get; set; } = true;
+
+    [Parameter] public bool ShowHomeIndicator { get; set; } = true;
+
+    /// <summary>顶部刘海（全面屏机型）。</summary>
+    [Parameter] public bool ShowNotch { get; set; } = true;
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter] public string? ScreenClass { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string GetRootClass()
+    {
+        var parts = new List<string> { "neo-mobile-preview", "flex", "flex-col", "items-center" };
+        if (!string.IsNullOrWhiteSpace(Class))
+            parts.Add(Class);
+        return string.Join(" ", parts);
+    }
+
+    private string GetShellStyle() =>
+        $"--neo-mobile-width: {Width}px; --neo-mobile-height: {Height}px;";
+
+    private string GetStatusBarClass() =>
+        ShowNotch && ShowStatusBar ? "neo-mobile-preview__status-bar--notch" : string.Empty;
+}
+
+<style>
+    .neo-mobile-preview__device {
+        position: relative;
+        padding: 14px 10px;
+        border-radius: 2.75rem;
+        background: linear-gradient(
+            165deg,
+            #f5f5f7 0%,
+            #e8e8ed 42%,
+            #d2d2d7 100%
+        );
+        border: 1px solid #c7c7cc;
+        box-shadow:
+            inset 0 1px 0 hsl(0 0% 100% / 0.9),
+            inset 0 -1px 0 hsl(0 0% 0% / 0.06),
+            0 0 0 1px hsl(0 0% 100% / 0.6),
+            0 20px 50px -16px hsl(0 0% 0% / 0.18),
+            0 8px 20px -8px hsl(0 0% 0% / 0.1);
+    }
+
+    .neo-mobile-preview__bezel {
+        padding: 3px;
+        border-radius: 2.35rem;
+        background: linear-gradient(180deg, #ececf0 0%, #d8d8de 100%);
+        box-shadow: inset 0 0 0 1px hsl(0 0% 100% / 0.75);
+    }
+
+    .neo-mobile-preview__shell {
+        position: relative;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        width: var(--neo-mobile-width);
+        height: var(--neo-mobile-height);
+        overflow: hidden;
+        border-radius: 2.1rem;
+        border: 2px solid #1c1c1e;
+        background: #fff;
+        box-shadow: inset 0 0 0 1px hsl(0 0% 0% / 0.06);
+        color-scheme: light;
+    }
+
+    .neo-mobile-preview__notch {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        z-index: 2;
+        width: 126px;
+        height: 28px;
+        transform: translateX(-50%);
+        border-radius: 0 0 1rem 1rem;
+        background: #1c1c1e;
+        box-shadow: 0 0 0 1px hsl(0 0% 0% / 0.2);
+    }
+
+    .neo-mobile-preview__notch::before {
+        content: "";
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        width: 8px;
+        height: 8px;
+        transform: translateX(-50%);
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%, #2a3a5c, #0a0a0c 70%);
+        box-shadow: inset 0 0 2px hsl(220 40% 30% / 0.4);
+    }
+
+    .neo-mobile-preview__btn {
+        position: absolute;
+        border-radius: 2px;
+        background: linear-gradient(90deg, #e3e3e8, #c8c8ce 50%, #b0b0b8);
+        box-shadow:
+            inset 0 1px 0 hsl(0 0% 100% / 0.85),
+            0 0 0 1px hsl(0 0% 0% / 0.12);
+    }
+
+    .neo-mobile-preview__btn--silent {
+        left: -3px;
+        top: 108px;
+        width: 3px;
+        height: 28px;
+        border-radius: 2px 0 0 2px;
+    }
+
+    .neo-mobile-preview__btn--volume-up {
+        left: -3px;
+        top: 152px;
+        width: 3px;
+        height: 44px;
+        border-radius: 2px 0 0 2px;
+    }
+
+    .neo-mobile-preview__btn--volume-down {
+        left: -3px;
+        top: 206px;
+        width: 3px;
+        height: 44px;
+        border-radius: 2px 0 0 2px;
+    }
+
+    .neo-mobile-preview__btn--power {
+        right: -3px;
+        top: 168px;
+        width: 3px;
+        height: 56px;
+        border-radius: 0 2px 2px 0;
+    }
+
+    .neo-mobile-preview__status-bar {
+        position: relative;
+        z-index: 1;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 44px;
+        padding: 0 24px;
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        color: hsl(var(--foreground));
+        background: hsl(var(--background));
+    }
+
+    .neo-mobile-preview__status-bar--notch {
+        height: 54px;
+        padding-top: 10px;
+        box-sizing: border-box;
+    }
+
+    .neo-mobile-preview__status-icons {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .neo-mobile-preview__signal,
+    .neo-mobile-preview__wifi,
+    .neo-mobile-preview__battery {
+        display: inline-block;
+        background: currentColor;
+        opacity: 0.85;
+    }
+
+    .neo-mobile-preview__signal {
+        width: 16px;
+        height: 10px;
+        clip-path: polygon(0 100%, 25% 60%, 50% 80%, 75% 40%, 100% 100%);
+    }
+
+    .neo-mobile-preview__wifi {
+        width: 14px;
+        height: 10px;
+        border-radius: 50% 50% 0 0;
+        border: 2px solid currentColor;
+        border-bottom: none;
+        box-sizing: border-box;
+    }
+
+    .neo-mobile-preview__battery {
+        width: 22px;
+        height: 10px;
+        border: 1.5px solid currentColor;
+        border-radius: 2px;
+        position: relative;
+    }
+
+    .neo-mobile-preview__battery::after {
+        content: "";
+        position: absolute;
+        right: -4px;
+        top: 2px;
+        width: 2px;
+        height: 4px;
+        background: currentColor;
+        border-radius: 0 1px 1px 0;
+    }
+
+    .neo-mobile-preview__screen {
+        flex: 1 1 auto;
+        min-height: 0;
+        box-sizing: border-box;
+        overflow-x: hidden;
+        overflow-y: auto;
+        background: hsl(var(--background));
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .neo-mobile-preview__home-bar {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 28px;
+        background: hsl(var(--background));
+    }
+
+    .neo-mobile-preview__home-indicator {
+        width: 120px;
+        height: 4px;
+        border-radius: 9999px;
+        background: hsl(0 0% 0% / 0.22);
+    }
+
+    /* 屏幕内固定浅色主题，不受管理后台暗色模式影响 */
+    .neo-mobile-preview__shell.light {
+        --background: oklch(1 0 0);
+        --foreground: oklch(0.145 0 0);
+        --card: oklch(1 0 0);
+        --card-foreground: oklch(0.145 0 0);
+        --popover: oklch(1 0 0);
+        --popover-foreground: oklch(0.145 0 0);
+        --primary: oklch(0.205 0 0);
+        --primary-foreground: oklch(0.985 0 0);
+        --secondary: oklch(0.97 0 0);
+        --secondary-foreground: oklch(0.205 0 0);
+        --muted: oklch(0.97 0 0);
+        --muted-foreground: oklch(0.556 0 0);
+        --accent: oklch(0.97 0 0);
+        --accent-foreground: oklch(0.205 0 0);
+        --destructive: oklch(0.577 0.245 27.325);
+        --destructive-foreground: oklch(0.985 0 0);
+        --border: oklch(0.922 0 0);
+        --input: oklch(0.922 0 0);
+        --ring: oklch(0.708 0 0);
+    }
+</style>

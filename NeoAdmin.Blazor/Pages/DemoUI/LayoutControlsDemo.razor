@@ -1,0 +1,218 @@
+@page "/neo-demo/ui/layout-controls"
+@layout LayoutAdmin
+
+<PageTitle>按钮与折叠演示</PageTitle>
+
+<div class="flex flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">按钮与折叠</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                Button、Button Group、Split Button、Tabs、Accordion、Collapsible — 操作按钮与可折叠内容组织。
+                参考 <a class="text-primary underline-offset-4 hover:underline"
+                       href="https://demos.neoui.io/components"
+                       target="_blank"
+                       rel="noopener noreferrer">NeoUI Components</a>。
+            </p>
+        </div>
+
+        <div class="p-4">
+            <Tabs DefaultValue="button" Class="w-full">
+                <div class="overflow-x-auto pb-1">
+                    <TabsList Class="inline-flex h-auto w-max min-w-full flex-wrap gap-1">
+                        <TabsTrigger Value="button">Button</TabsTrigger>
+                        <TabsTrigger Value="button-group">Button Group</TabsTrigger>
+                        <TabsTrigger Value="split-button">Split Button</TabsTrigger>
+                        <TabsTrigger Value="tabs">Tabs</TabsTrigger>
+                        <TabsTrigger Value="accordion">Accordion</TabsTrigger>
+                        <TabsTrigger Value="collapsible">Collapsible</TabsTrigger>
+                    </TabsList>
+                </div>
+
+                <TabsContent Value="button" Class="mt-4">
+                    <DemoSection Title="Button"
+                                 Description="Interactive buttons with multiple variants and sizes"
+                                 Code="@LayoutControlsDemoSnippets.Button">
+                        <div class="space-y-6">
+                            <div class="flex flex-wrap gap-2">
+                                <Button>Default</Button>
+                                <Button Variant="ButtonVariant.Destructive">Destructive</Button>
+                                <Button Variant="ButtonVariant.Outline">Outline</Button>
+                                <Button Variant="ButtonVariant.Secondary">Secondary</Button>
+                                <Button Variant="ButtonVariant.Ghost">Ghost</Button>
+                                <Button Variant="ButtonVariant.Link">Link</Button>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <Button Size="ButtonSize.Small">Small</Button>
+                                <Button>Default</Button>
+                                <Button Size="ButtonSize.Large">Large</Button>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <Button Variant="ButtonVariant.Outline" IconPosition="IconPosition.Start" OnClick="OnButtonClick">
+                                    <LucideIcon Name="search" Size="16" />
+                                    搜索
+                                </Button>
+                                <Button Variant="ButtonVariant.Outline" IconPosition="IconPosition.End" OnClick="OnButtonClick">
+                                    下一步
+                                    <LucideIcon Name="arrow-right" Size="16" />
+                                </Button>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(buttonClickMessage))
+                            {
+                                <p class="text-sm text-muted-foreground">@buttonClickMessage</p>
+                            }
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="button-group" Class="mt-4">
+                    <DemoSection Title="Button Group"
+                                 Description="Visually group related buttons"
+                                 Code="@LayoutControlsDemoSnippets.ButtonGroup">
+                        <div class="space-y-4">
+                            <ButtonGroup AriaLabel="文本格式">
+                                <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small">加粗</Button>
+                                <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small">斜体</Button>
+                                <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small">下划线</Button>
+                            </ButtonGroup>
+                            <ButtonGroup Orientation="ButtonGroupOrientation.Vertical" AriaLabel="对齐方式" Class="w-fit">
+                                <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small">左对齐</Button>
+                                <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small">居中</Button>
+                                <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small">右对齐</Button>
+                            </ButtonGroup>
+                        </div>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="split-button" Class="mt-4">
+                    <DemoSection Title="Split Button"
+                                 Description="Combined action button with dropdown"
+                                 Code="@LayoutControlsDemoSnippets.SplitButton">
+                        <SplitButton OnClick="OnSplitSave" Variant="ButtonVariant.Default">
+                            <ChildContent>保存</ChildContent>
+                            <DropdownContent>
+                                <SplitButtonItem OnClick="OnSplitSaveAs">另存为…</SplitButtonItem>
+                                <SplitButtonSeparator />
+                                <SplitButtonItem OnClick="OnSplitDiscard">放弃更改</SplitButtonItem>
+                            </DropdownContent>
+                        </SplitButton>
+                        @if (!string.IsNullOrWhiteSpace(splitButtonMessage))
+                        {
+                            <p class="mt-3 text-sm text-muted-foreground">@splitButtonMessage</p>
+                        }
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="tabs" Class="mt-4">
+                    <DemoSection Title="Tabs"
+                                 Description="Tabbed interface for organizing related content"
+                                 Code="@LayoutControlsDemoSnippets.Tabs">
+                        <Tabs @bind-Value="demoTabValue" Class="max-w-lg rounded-lg border p-4">
+                            <TabsList>
+                                <TabsTrigger Value="overview">概览</TabsTrigger>
+                                <TabsTrigger Value="analytics">分析</TabsTrigger>
+                                <TabsTrigger Value="settings">设置</TabsTrigger>
+                            </TabsList>
+                            <TabsContent Value="overview" Class="mt-3 text-sm text-muted-foreground">
+                                概览页：展示关键指标与摘要信息。
+                            </TabsContent>
+                            <TabsContent Value="analytics" Class="mt-3 text-sm text-muted-foreground">
+                                分析页：图表与趋势数据（演示占位）。
+                            </TabsContent>
+                            <TabsContent Value="settings" Class="mt-3 text-sm text-muted-foreground">
+                                设置页：偏好与账户相关选项。
+                            </TabsContent>
+                        </Tabs>
+                        <p class="mt-3 text-sm text-muted-foreground">当前标签：@demoTabValue</p>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="accordion" Class="mt-4">
+                    <DemoSection Title="Accordion"
+                                 Description="Collapsible content sections with smooth animations"
+                                 Code="@LayoutControlsDemoSnippets.Accordion">
+                        <Accordion Type="AccordionType.Single" Collapsible="true" Class="max-w-lg">
+                            <AccordionItem Value="faq-1">
+                                <AccordionTrigger>是否支持无障碍？</AccordionTrigger>
+                                <AccordionContent>
+                                    <p class="text-sm text-muted-foreground pb-2">
+                                        是的。Accordion 使用语义化结构与 ARIA 属性，支持键盘导航。
+                                    </p>
+                                </AccordionContent>
+                            </AccordionItem>
+                            <AccordionItem Value="faq-2">
+                                <AccordionTrigger>可以自定义样式吗？</AccordionTrigger>
+                                <AccordionContent>
+                                    <p class="text-sm text-muted-foreground pb-2">
+                                        可通过 Class 参数追加 Tailwind 类，与主题变量配合使用。
+                                    </p>
+                                </AccordionContent>
+                            </AccordionItem>
+                            <AccordionItem Value="faq-3">
+                                <AccordionTrigger>单选还是多选展开？</AccordionTrigger>
+                                <AccordionContent>
+                                    <p class="text-sm text-muted-foreground pb-2">
+                                        本示例为 <code>AccordionType.Single</code>；多选可使用 Multiple 类型。
+                                    </p>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="collapsible" Class="mt-4">
+                    <DemoSection Title="Collapsible"
+                                 Description="Expandable content area with trigger control"
+                                 Code="@LayoutControlsDemoSnippets.Collapsible">
+                        <Collapsible @bind-Open="collapsibleOpen" Class="max-w-lg rounded-lg border p-4">
+                            <div class="flex items-center justify-between gap-2">
+                                <div>
+                                    <p class="font-medium">订单详情</p>
+                                    <p class="text-sm text-muted-foreground">订单号 #NEO-2026-0423</p>
+                                </div>
+                                <CollapsibleTrigger>
+                                    <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small">
+                                        @(collapsibleOpen ? "收起" : "展开")
+                                        <LucideIcon Name="@(collapsibleOpen ? "chevron-up" : "chevron-down")" Size="16" />
+                                    </Button>
+                                </CollapsibleTrigger>
+                            </div>
+                            <CollapsibleContent>
+                                <Separator Class="my-3" />
+                                <dl class="grid gap-2 text-sm sm:grid-cols-2">
+                                    <div>
+                                        <dt class="text-muted-foreground">收货人</dt>
+                                        <dd>张三</dd>
+                                    </div>
+                                    <div>
+                                        <dt class="text-muted-foreground">金额</dt>
+                                        <dd>¥ 128.00</dd>
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <dt class="text-muted-foreground">地址</dt>
+                                        <dd>上海市浦东新区示例路 100 号</dd>
+                                    </div>
+                                </dl>
+                            </CollapsibleContent>
+                        </Collapsible>
+                    </DemoSection>
+                </TabsContent>
+            </Tabs>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string buttonClickMessage = string.Empty;
+    private string splitButtonMessage = string.Empty;
+    private string demoTabValue = "overview";
+    private bool collapsibleOpen;
+
+    private void OnButtonClick() => buttonClickMessage = $"按钮已点击 — {DateTime.Now:HH:mm:ss}";
+
+    private void OnSplitSave() => splitButtonMessage = "主操作：保存";
+
+    private void OnSplitSaveAs() => splitButtonMessage = "次要操作：另存为…";
+
+    private void OnSplitDiscard() => splitButtonMessage = "次要操作：放弃更改";
+}

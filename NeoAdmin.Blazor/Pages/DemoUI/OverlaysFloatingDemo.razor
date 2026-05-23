@@ -1,0 +1,194 @@
+@page "/neo-demo/ui/overlays-floating"
+@layout LayoutAdmin
+@using NeoUI.Blazor.Primitives.Services
+@inject IToastService ToastService
+
+<PageTitle>浮动与菜单演示</PageTitle>
+
+<div class="flex flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">浮动与菜单</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                Dropdown Menu、Context Menu、Popover、Tooltip、Hover Card — 下拉菜单、右键菜单与悬浮层。
+                参考 <a class="text-primary underline-offset-4 hover:underline"
+                       href="https://demos.neoui.io/components"
+                       target="_blank"
+                       rel="noopener noreferrer">NeoUI Components</a>。
+            </p>
+        </div>
+
+        <div class="p-4">
+            <Tabs DefaultValue="dropdown-menu" Class="w-full">
+                <TabsList Class="flex flex-wrap gap-1">
+                    <TabsTrigger Value="dropdown-menu">Dropdown Menu</TabsTrigger>
+                    <TabsTrigger Value="context-menu">Context Menu</TabsTrigger>
+                    <TabsTrigger Value="popover">Popover</TabsTrigger>
+                    <TabsTrigger Value="tooltip">Tooltip</TabsTrigger>
+                    <TabsTrigger Value="hover-card">Hover Card</TabsTrigger>
+                </TabsList>
+
+                <TabsContent Value="dropdown-menu" Class="mt-4">
+                    <DemoSection Title="Dropdown Menu"
+                                 Description="Context menus with items, separators, shortcuts"
+                                 Code="@OverlaysFloatingDemoSnippets.DropdownMenu">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger AsChild>
+                                <Button Variant="ButtonVariant.Outline">打开菜单</Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent Class="w-56">
+                                <DropdownMenuLabel>我的账户</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuGroup>
+                                    <DropdownMenuItem OnClick="OnDropdownProfile">个人资料</DropdownMenuItem>
+                                    <DropdownMenuItem OnClick="OnDropdownBilling">账单</DropdownMenuItem>
+                                    <DropdownMenuItem OnClick="OnDropdownSettings">设置</DropdownMenuItem>
+                                </DropdownMenuGroup>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem OnClick="OnDropdownLogout">
+                                    退出登录
+                                    <DropdownMenuShortcut>⌘Q</DropdownMenuShortcut>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        @if (!string.IsNullOrEmpty(dropdownMessage))
+                        {
+                            <p class="mt-3 text-sm text-muted-foreground">@dropdownMessage</p>
+                        }
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="context-menu" Class="mt-4">
+                    <DemoSection Title="Context Menu"
+                                 Description="Right-click menus"
+                                 Code="@OverlaysFloatingDemoSnippets.ContextMenu">
+                        <ContextMenu>
+                            <ContextMenuTrigger>
+                                <div class="flex h-32 w-full max-w-md select-none items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
+                                    在此区域右键
+                                </div>
+                            </ContextMenuTrigger>
+                            <ContextMenuContent Class="w-48">
+                                <ContextMenuItem OnClick="OnContextCopy">复制</ContextMenuItem>
+                                <ContextMenuItem OnClick="OnContextPaste">粘贴</ContextMenuItem>
+                                <ContextMenuSeparator />
+                                <ContextMenuItem OnClick="OnContextRefresh">刷新</ContextMenuItem>
+                            </ContextMenuContent>
+                        </ContextMenu>
+                        @if (!string.IsNullOrEmpty(contextMenuMessage))
+                        {
+                            <p class="mt-3 text-sm text-muted-foreground">@contextMenuMessage</p>
+                        }
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="popover" Class="mt-4">
+                    <DemoSection Title="Popover"
+                                 Description="Floating panels"
+                                 Code="@OverlaysFloatingDemoSnippets.Popover">
+                        <Popover @bind-Open="dimensionsPopoverOpen">
+                            <PopoverTrigger AsChild>
+                                <Button Variant="ButtonVariant.Outline">打开 Popover</Button>
+                            </PopoverTrigger>
+                            <PopoverContent Class="w-80">
+                                <div class="grid gap-4">
+                                    <div class="space-y-2">
+                                        <h4 class="font-medium leading-none">尺寸</h4>
+                                        <p class="text-sm text-muted-foreground">为当前行设置列宽。</p>
+                                    </div>
+                                    <div class="grid gap-2">
+                                        <Label For="popover-width">宽度</Label>
+                                        <Input Id="popover-width"
+                                               @bind-Value="popoverWidth"
+                                               Placeholder="100%" />
+                                    </div>
+                                    <Button Size="ButtonSize.Small" OnClick="ApplyPopoverSize">应用</Button>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="tooltip" Class="mt-4">
+                    <DemoSection Title="Tooltip"
+                                 Description="Brief informational popups"
+                                 Code="@OverlaysFloatingDemoSnippets.Tooltip">
+                        <TooltipProvider DelayDuration="300">
+                            <div class="flex flex-wrap items-center gap-4">
+                                <Tooltip>
+                                    <TooltipTrigger AsChild>
+                                        <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Icon">
+                                            <LucideIcon Name="info" Size="16" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>这是一条简短提示</p>
+                                    </TooltipContent>
+                                </Tooltip>
+
+                                <Tooltip>
+                                    <TooltipTrigger AsChild>
+                                        <Button Variant="ButtonVariant.Secondary">悬停查看说明</Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent Side="PopoverSide.Bottom">
+                                        <p>Tooltip 可配合按钮、图标等触发</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </div>
+                        </TooltipProvider>
+                    </DemoSection>
+                </TabsContent>
+
+                <TabsContent Value="hover-card" Class="mt-4">
+                    <DemoSection Title="Hover Card"
+                                 Description="Rich preview cards on hover"
+                                 Code="@OverlaysFloatingDemoSnippets.HoverCard">
+                        <HoverCard OpenDelay="400" CloseDelay="200">
+                            <HoverCardTrigger AsChild>
+                                <Button Variant="ButtonVariant.Link" Class="h-auto px-0">@hoverCardUser</Button>
+                            </HoverCardTrigger>
+                            <HoverCardContent Class="w-80">
+                                <div class="flex justify-between gap-4">
+                                    <Avatar>
+                                        <AvatarFallback>NA</AvatarFallback>
+                                    </Avatar>
+                                    <div class="flex-1 space-y-1">
+                                        <h4 class="text-sm font-semibold">@hoverCardUser</h4>
+                                        <p class="text-sm text-muted-foreground">NeoUI 组件库贡献者</p>
+                                        <div class="flex items-center gap-2 pt-1 text-xs text-muted-foreground">
+                                            <LucideIcon Name="calendar" Size="12" />
+                                            <span>加入于 2024 年 1 月</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </HoverCardContent>
+                        </HoverCard>
+                    </DemoSection>
+                </TabsContent>
+            </Tabs>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string dropdownMessage = string.Empty;
+    private string contextMenuMessage = string.Empty;
+    private bool dimensionsPopoverOpen;
+    private string popoverWidth = "100%";
+    private string hoverCardUser = "@neoadmin";
+
+    private void OnDropdownProfile() => dropdownMessage = "已选择：个人资料";
+    private void OnDropdownBilling() => dropdownMessage = "已选择：账单";
+    private void OnDropdownSettings() => dropdownMessage = "已选择：设置";
+    private void OnDropdownLogout() => dropdownMessage = "已选择：退出登录";
+
+    private void OnContextCopy() => contextMenuMessage = "已执行：复制";
+    private void OnContextPaste() => contextMenuMessage = "已执行：粘贴";
+    private void OnContextRefresh() => contextMenuMessage = "已执行：刷新";
+
+    private void ApplyPopoverSize()
+    {
+        dimensionsPopoverOpen = false;
+        ToastService.Info("Popover", $"列宽已设为 {popoverWidth}");
+    }
+}

@@ -1,0 +1,409 @@
+@page "/admin/dict"
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Components
+@using NeoAdmin.Blazor.Data.Entities
+@inject IFreeSql FreeSql
+
+<PageTitle>字典管理</PageTitle>
+
+<div class="flex flex-col flex-1 min-h-0">
+<SplitPane Basis="22%"
+           FirstPaneMinimumSize="330px"
+           ShowBarHandle="true"
+           Class="flex-1 min-h-0">
+    <FirstPaneTemplate>
+        <CrudTable @ref="leftTable"
+                   TItem="SysDict"
+                   Title="字典分类"
+                   PageSize="30"
+                   SearchPlaceholder="编码/备注"
+                   IsRefresh="false"
+                   IsRowNumber="false"
+                   IsView="false"
+                   OnQuery="HandleLeftQuery"
+                   OnQueried="HandleLeftQueried"
+                   OnEdit="HandleLeftEdit"
+                   OnSaving="HandleLeftSaving"
+                   OnDeleteAsync="HandleLeftDeleteAsync"
+                   OnRowClick="HandleLeftRowClick"
+                   IsRowHighlighted="IsLeftRowHighlighted"
+                   DialogContentSize="CrudDialogContentSize.Sm"
+                   IsMultiSelect="false"
+                   IsSingleSelect="false">
+            <Columns>
+                <DataTableColumn TData="CrudGridRow<SysDict>"
+                                 TValue="string"
+                                 Property="@(row => row.Item.Name)"
+                                 Header="编码"
+                                 Sortable="false"
+                                 Width="90px">
+                    <CellTemplate Context="row">
+                        <span class="block truncate font-medium" title="@row.Item.Name">@row.Item.Name</span>
+                    </CellTemplate>
+                </DataTableColumn>
+                <DataTableColumn TData="CrudGridRow<SysDict>"
+                                 TValue="string"
+                                 Property="@(row => row.Item.Description)"
+                                 Header="备注"
+                                 Sortable="false">
+                    <CellTemplate Context="row">
+                        <span class="block truncate" title="@row.Item.Description">@row.Item.Description</span>
+                    </CellTemplate>
+                </DataTableColumn>
+
+            </Columns>
+            <EditTemplate Context="item">
+                <div class="space-y-2">
+                    <Label>编码</Label>
+                    <Input @bind-Value="item.Name" />
+                </div>
+                <div class="space-y-2">
+                    <Label>备注</Label>
+                    <Textarea @bind-Value="item.Description" />
+                </div>
+            </EditTemplate>
+        </CrudTable>
+    </FirstPaneTemplate>
+    <SecondPaneTemplate>
+        <CrudTable @ref="rightTable"
+                   TItem="SysDict"
+                   Title="字典数据"
+                   PageSize="20"
+                   SearchPlaceholder="名称/备注.."
+                   IsRefresh="false"
+                   IsRowNumber="false"
+                   IsView="false"
+                   IsAdd="@HasSelectedCategory"
+                   IsEdit="@HasSelectedCategory"
+                   InitQuery="InitRightQuery"
+                   OnQuery="HandleRightQuery"
+                   OnEdit="HandleRightEdit"
+                   OnSaving="HandleRightSaving"
+                   ToolbarContent="RightToolbar">
+            <Columns>
+                <DataTableColumn TData="CrudGridRow<SysDict>"
+                                 TValue="long"
+                                 Property="@(row => row.Item.Id)"
+                                 Header="ID"
+                                 Sortable="false"
+                                 Width="180px" />
+                <DataTableColumn TData="CrudGridRow<SysDict>"
+                                 TValue="string"
+                                 Property="@(row => row.Item.Name)"
+                                 Header="名称"
+                                 Sortable="false"
+                                 Width="120px">
+                    <CellTemplate Context="row">
+                        <span class="block truncate" title="@row.Item.Name">@row.Item.Name</span>
+                    </CellTemplate>
+                </DataTableColumn>
+                <DataTableColumn TData="CrudGridRow<SysDict>"
+                                 TValue="string"
+                                 Property="@(row => row.Item.Value)"
+                                 Header="值1"
+                                 Sortable="false"
+                                 Width="100px">
+                    <CellTemplate Context="row">
+                        <span class="block truncate" title="@row.Item.Value">@row.Item.Value</span>
+                    </CellTemplate>
+                </DataTableColumn>
+                <DataTableColumn TData="CrudGridRow<SysDict>"
+                                 TValue="string"
+                                 Property="@(row => row.Item.Value2)"
+                                 Header="值2"
+                                 Sortable="false"
+                                 Width="100px">
+                    <CellTemplate Context="row">
+                        <span class="block truncate" title="@row.Item.Value2">@row.Item.Value2</span>
+                    </CellTemplate>
+                </DataTableColumn>
+                <DataTableColumn TData="CrudGridRow<SysDict>"
+                                 TValue="string"
+                                 Property="@(row => row.Item.Value3)"
+                                 Header="值3"
+                                 Sortable="false"
+                                 Width="100px">
+                    <CellTemplate Context="row">
+                        <span class="block truncate" title="@row.Item.Value3">@row.Item.Value3</span>
+                    </CellTemplate>
+                </DataTableColumn>
+                <DataTableColumn TData="CrudGridRow<SysDict>"
+                                 TValue="string"
+                                 Property="@(row => row.Item.Value4)"
+                                 Header="值4"
+                                 Sortable="false"
+                                 Width="100px">
+                    <CellTemplate Context="row">
+                        <span class="block truncate" title="@row.Item.Value4">@row.Item.Value4</span>
+                    </CellTemplate>
+                </DataTableColumn>
+                <DataTableColumn TData="CrudGridRow<SysDict>"
+                                 TValue="string"
+                                 Property="@(row => row.Item.Value5)"
+                                 Header="值5"
+                                 Sortable="false"
+                                 Width="100px">
+                    <CellTemplate Context="row">
+                        <span class="block truncate" title="@row.Item.Value5">@row.Item.Value5</span>
+                    </CellTemplate>
+                </DataTableColumn>
+                <DataTableColumn TData="CrudGridRow<SysDict>"
+                                 TValue="int"
+                                 Property="@(row => row.Item.Sort)"
+                                 Header="排序"
+                                 Sortable="false"
+                                 Width="80px" />
+                <DataTableColumn TData="CrudGridRow<SysDict>"
+                                 TValue="bool"
+                                 Property="@(row => row.Item.Enabled)"
+                                 Header="启用"
+                                 Sortable="false"
+                                 Width="80px">
+                    <CellTemplate Context="row">
+                        @if (row.Item.Enabled)
+                        {
+                            <span class="text-emerald-600">是</span>
+                        }
+                        else
+                        {
+                            <span class="text-red-500">否</span>
+                        }
+                    </CellTemplate>
+                </DataTableColumn>
+                <DataTableColumn TData="CrudGridRow<SysDict>"
+                                 TValue="string"
+                                 Property="@(_ => string.Empty)"
+                                 Header="创建时间"
+                                 Sortable="false"
+                                 Width="160px">
+                    <CellTemplate Context="row">
+                        @row.Item.CreatedTime.ToString("yyyy-MM-dd HH:mm:ss")
+                    </CellTemplate>
+                </DataTableColumn>
+            </Columns>
+            <EditTemplate Context="item">
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <div class="space-y-2">
+                        <Label>名称</Label>
+                        <Input @bind-Value="item.Name" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label>排序</Label>
+                        <input type="number"
+                               class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                               @bind="item.Sort" />
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <Checkbox @bind-Checked="item.Enabled" Id="dict-item-enabled" />
+                    <Label for="dict-item-enabled">启用</Label>
+                </div>
+                <div class="space-y-2">
+                    <Label>值1</Label>
+                    <Input @bind-Value="item.Value" />
+                </div>
+                <div class="space-y-2">
+                    <Label>值2</Label>
+                    <Input @bind-Value="item.Value2" />
+                </div>
+                <div class="space-y-2">
+                    <Label>值3</Label>
+                    <Input @bind-Value="item.Value3" />
+                </div>
+                <div class="space-y-2">
+                    <Label>值4</Label>
+                    <Input @bind-Value="item.Value4" />
+                </div>
+                <div class="space-y-2">
+                    <Label>值5</Label>
+                    <Input @bind-Value="item.Value5" />
+                </div>
+            </EditTemplate>
+        </CrudTable>
+    </SecondPaneTemplate>
+</SplitPane>
+</div>
+
+@code {
+    private CrudTable<SysDict> leftTable = default!;
+    private CrudTable<SysDict> rightTable = default!;
+    private CrudQueryInfo? rightQueryInfo;
+    private SysDict? selectedCategory;
+    private bool shouldReloadRightAfterLeftQuery;
+    private bool hasInitialSelection;
+
+    private bool HasSelectedCategory => selectedCategory != null;
+
+    private RenderFragment RightToolbar => builder =>
+    {
+        if (selectedCategory != null)
+        {
+            builder.OpenElement(0, "span");
+            builder.AddAttribute(1, "class", "text-sm text-muted-foreground");
+            builder.AddContent(2, $"选中: {selectedCategory.Name}");
+            builder.CloseElement();
+        }
+    };
+
+    private Task InitRightQuery(CrudQueryInfo info)
+    {
+        rightQueryInfo = info;
+        return Task.CompletedTask;
+    }
+
+    private void HandleLeftQuery(CrudQueryEventArgs<SysDict> e)
+    {
+        if (!string.IsNullOrWhiteSpace(e.SearchText))
+        {
+            selectedCategory = null;
+        }
+
+        shouldReloadRightAfterLeftQuery = true;
+
+        e.Select!
+            .Where(a => a.ParentId == 0)
+            .WhereIf(!string.IsNullOrWhiteSpace(e.SearchText),
+                a => a.Name.Contains(e.SearchText!) || a.Description.Contains(e.SearchText!))
+            .OrderBy(a => a.Sort)
+            .OrderBy(a => a.Id);
+    }
+
+    private async Task HandleLeftQueried(CrudQueriedEventArgs<SysDict> e)
+    {
+        if (selectedCategory != null)
+        {
+            selectedCategory = e.Items.FirstOrDefault(a => a.Id == selectedCategory.Id);
+        }
+
+        if (selectedCategory == null && !hasInitialSelection && e.Items.Count > 0)
+        {
+            hasInitialSelection = true;
+            selectedCategory = e.Items[0];
+        }
+
+        if (shouldReloadRightAfterLeftQuery)
+        {
+            shouldReloadRightAfterLeftQuery = false;
+            await ReloadRightAsync();
+        }
+    }
+
+    private async Task HandleLeftRowClick(SysDict item)
+    {
+        if (selectedCategory?.Id == item.Id)
+        {
+            return;
+        }
+
+        selectedCategory = item;
+        await ReloadRightAsync();
+    }
+
+    private bool IsLeftRowHighlighted(SysDict item) =>
+        selectedCategory?.Id == item.Id;
+
+    private Task HandleLeftEdit(SysDict item)
+    {
+        item.ParentId = 0;
+        item.Enabled = true;
+        return Task.CompletedTask;
+    }
+
+    private void HandleLeftSaving(CrudConfirmEventArgs<SysDict> e)
+    {
+        if (string.IsNullOrWhiteSpace(e.Item.Name))
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        e.Item.Name = e.Item.Name.Trim();
+        e.Item.Description = e.Item.Description?.Trim() ?? string.Empty;
+    }
+
+    private async Task<bool> HandleLeftDeleteAsync(SysDict item)
+    {
+        long deletedId = item.Id;
+        await FreeSql.Delete<SysDict>().Where(a => a.ParentId == deletedId).ExecuteAffrowsAsync();
+        await FreeSql.Delete<SysDict>(item).ExecuteAffrowsAsync();
+
+        if (selectedCategory?.Id == deletedId)
+        {
+            selectedCategory = await FreeSql.Select<SysDict>()
+                .Where(a => a.ParentId == 0)
+                .OrderBy(a => a.Sort)
+                .OrderBy(a => a.Id)
+                .FirstAsync();
+            await ReloadRightAsync();
+        }
+
+        return true;
+    }
+
+    private void HandleRightQuery(CrudQueryEventArgs<SysDict> e)
+    {
+        if (selectedCategory == null)
+        {
+            e.Select!.Where(a => false);
+            return;
+        }
+
+        e.Select!
+            .Where(a => a.ParentId == selectedCategory.Id)
+            .WhereIf(!string.IsNullOrWhiteSpace(e.SearchText),
+                a => a.Name.Contains(e.SearchText!) || a.Description.Contains(e.SearchText!))
+            .OrderBy(a => a.Sort)
+            .OrderBy(a => a.Id);
+    }
+
+    private async Task HandleRightEdit(SysDict item)
+    {
+        if (selectedCategory == null)
+        {
+            return;
+        }
+
+        item.ParentId = selectedCategory.Id;
+
+        if (item.Id == 0)
+        {
+            int? maxSort = await FreeSql.Select<SysDict>()
+                .Where(a => a.ParentId == item.ParentId)
+                .MaxAsync(a => (int?)a.Sort);
+            item.Sort = (maxSort ?? 0) + 1;
+            item.Enabled = true;
+        }
+    }
+
+    private void HandleRightSaving(CrudConfirmEventArgs<SysDict> e)
+    {
+        if (string.IsNullOrWhiteSpace(e.Item.Name))
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        e.Item.Name = e.Item.Name.Trim();
+        e.Item.Value = e.Item.Value?.Trim() ?? string.Empty;
+        e.Item.Value2 = e.Item.Value2?.Trim() ?? string.Empty;
+        e.Item.Value3 = e.Item.Value3?.Trim() ?? string.Empty;
+        e.Item.Value4 = e.Item.Value4?.Trim() ?? string.Empty;
+        e.Item.Value5 = e.Item.Value5?.Trim() ?? string.Empty;
+        e.Item.Description = e.Item.Description?.Trim() ?? string.Empty;
+    }
+
+    private Task ReloadRightAsync()
+    {
+        if (rightTable != null)
+        {
+            return rightTable.ReloadAsync();
+        }
+
+        if (rightQueryInfo?.InvokeQueryAsync is Func<Task> reload)
+        {
+            return reload();
+        }
+
+        return Task.CompletedTask;
+    }
+}
