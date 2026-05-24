@@ -52,3 +52,6 @@ appsettings.*.local.json
 
 # Cursor / local AI
 .claude/
+
+# 旧代码归档（仅本地保留，不上传）
+old/
