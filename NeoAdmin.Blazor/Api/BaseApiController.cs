@@ -3,7 +3,7 @@ using FreeSql;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NeoAdmin.Blazor.Auth;
-using NeoAdmin.Blazor.Data.Entities;
+using NeoAdmin.Blazor.Entities;
 
 namespace NeoAdmin.Blazor.Api;
 

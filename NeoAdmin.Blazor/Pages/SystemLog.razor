@@ -1,0 +1,302 @@
+@page "/admin/system-log"
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Models
+@using NeoAdmin.Blazor.Services
+@implements IDisposable
+@inject SerilogLogService SerilogLogService
+@inject IToastService ToastService
+
+<PageTitle>系统日志</PageTitle>
+
+<div class="flex flex-col flex-1 min-h-0 gap-4">
+    <div class="rounded-lg border bg-card p-4 shadow-sm">
+        <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-semibold">系统日志</h2>
+                <p class="text-sm text-muted-foreground">
+                    查看 Serilog 文件日志（目录：<code class="rounded bg-muted px-1 py-0.5 text-xs">@pageResult?.LogsDirectory</code>）
+                </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <label class="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Checkbox Checked="autoRefresh" CheckedChanged="OnAutoRefreshChanged" Id="system-log-auto-refresh" />
+                    <Label for="system-log-auto-refresh" Class="font-normal">自动刷新（10 秒）</Label>
+                </label>
+                <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small" OnClick="LoadAsync" Disabled="@isLoading">
+                    <LucideIcon Name="refresh-cw" Size="16" Class="@(isLoading ? "animate-spin" : string.Empty)" />
+                    刷新
+                </Button>
+            </div>
+        </div>
+
+        <div class="mb-4 grid gap-3 md:grid-cols-4">
+            <div class="space-y-2">
+                <Label for="system-log-file">日志文件</Label>
+                <select id="system-log-file"
+                        class="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                        @bind="selectedFile"
+                        @bind:after="HandleFilterChangedAsync">
+                    @if (pageResult?.Files is { Count: > 0 } files)
+                    {
+                        @foreach (SerilogLogFileInfo file in files)
+                        {
+                            <option value="@file.FileName">@file.FileName (@file.SizeText)</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="space-y-2">
+                <Label for="system-log-level">级别</Label>
+                <select id="system-log-level"
+                        class="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                        @bind="selectedLevel"
+                        @bind:after="HandleFilterChangedAsync">
+                    <option value="">全部</option>
+                    <option value="INF">信息</option>
+                    <option value="WRN">警告</option>
+                    <option value="ERR">错误</option>
+                    <option value="FTL">致命</option>
+                    <option value="DBG">调试</option>
+                </select>
+            </div>
+
+            <div class="space-y-2 md:col-span-2">
+                <Label for="system-log-search">搜索</Label>
+                <form class="flex gap-2" @onsubmit="HandleSearchSubmit" @onsubmit:preventDefault>
+                    <Input id="system-log-search"
+                           Type="InputType.Search"
+                           Class="flex-1"
+                           Placeholder="消息 / 异常关键字.."
+                           @bind-Value="searchText" />
+                    <Button Type="ButtonType.Submit" Variant="ButtonVariant.Outline">搜索</Button>
+                </form>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(pageResult?.ErrorMessage))
+        {
+            <Alert Variant="AlertVariant.Destructive" AccentBorder="true" Class="mb-4">
+                <AlertDescription>@pageResult.ErrorMessage</AlertDescription>
+            </Alert>
+        }
+
+        <div class="relative min-h-[320px] overflow-hidden rounded-md border">
+            @if (isLoading)
+            {
+                <div class="absolute inset-0 z-10 flex items-center justify-center bg-background/60">
+                    <LucideIcon Name="loader-circle" Size="24" Class="animate-spin text-primary" />
+                </div>
+            }
+
+            <div class="max-h-[min(70vh,720px)] overflow-auto">
+                <table class="w-full min-w-[960px] text-sm">
+                    <thead class="sticky top-0 z-[1] border-b bg-muted/90 backdrop-blur">
+                        <tr>
+                            <th class="w-12 px-2 py-2 text-left">#</th>
+                            <th class="w-44 px-2 py-2 text-left">时间</th>
+                            <th class="w-20 px-2 py-2 text-left">级别</th>
+                            <th class="px-2 py-2 text-left">内容</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (pageResult?.Items is not { Count: > 0 })
+                        {
+                            <tr>
+                                <td colspan="4" class="px-4 py-10 text-center text-muted-foreground">暂无匹配的日志</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (SerilogLogEntry entry in pageResult.Items)
+                            {
+                                <tr class="border-b align-top hover:bg-muted/30">
+                                    <td class="px-2 py-2 text-muted-foreground">@entry.Index</td>
+                                    <td class="px-2 py-2 whitespace-nowrap text-xs text-muted-foreground">
+                                        @(entry.Timestamp?.ToString("yyyy-MM-dd HH:mm:ss.fff") ?? "-")
+                                    </td>
+                                    <td class="px-2 py-2">
+                                        <span class="@GetLevelClass(entry.Level)">@entry.Level</span>
+                                    </td>
+                                    <td class="px-2 py-2">
+                                        <div class="break-all font-mono text-xs leading-5">@entry.Content</div>
+                                        @if (!string.IsNullOrWhiteSpace(entry.Exception))
+                                        {
+                                            <pre class="mt-2 overflow-x-auto rounded bg-muted/50 p-2 font-mono text-xs text-red-600">@entry.Exception</pre>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if (pageResult is not null && pageResult.Total > 0)
+        {
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+                <span class="text-sm text-muted-foreground">
+                    显示 @PageRangeStart-@PageRangeEnd，共 @pageResult.Total 条（最近读取 @MaxLinesHint 行）
+                </span>
+                <div class="flex flex-wrap items-center gap-2">
+                    <label class="flex items-center gap-2 text-sm text-muted-foreground">
+                        每页
+                        <select class="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                                @bind="pageSize"
+                                @bind:after="HandleFilterChangedAsync">
+                            @foreach (int size in PageSizes)
+                            {
+                                <option value="@size">@size</option>
+                            }
+                        </select>
+                    </label>
+                    <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small" Disabled="@(pageNumber <= 1)" OnClick="PrevPage">上一页</Button>
+                    <span class="text-sm">@pageNumber / @pageResult.MaxPageNumber</span>
+                    <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small" Disabled="@(pageNumber >= pageResult.MaxPageNumber)" OnClick="NextPage">下一页</Button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private const int MaxLinesHint = 8000;
+
+    private SerilogLogPageResult? pageResult;
+    private bool isLoading;
+    private bool autoRefresh;
+    private string? selectedFile;
+    private string selectedLevel = string.Empty;
+    private string? searchText;
+    private string? appliedSearchText;
+    private int pageNumber = 1;
+    private int pageSize = 50;
+    private readonly int[] PageSizes = [20, 50, 100, 200];
+    private PeriodicTimer? refreshTimer;
+    private CancellationTokenSource? refreshCts;
+
+    private long PageRangeStart => pageResult is null || pageResult.Total == 0
+        ? 0
+        : (pageNumber - 1L) * pageSize + 1;
+
+    private long PageRangeEnd => pageResult is null
+        ? 0
+        : Math.Min(pageNumber * (long)pageSize, pageResult.Total);
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    public void Dispose()
+    {
+        refreshCts?.Cancel();
+        refreshCts?.Dispose();
+        refreshTimer?.Dispose();
+    }
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            pageResult = await SerilogLogService.QueryAsync(new SerilogLogQuery
+            {
+                FileName = selectedFile,
+                Level = string.IsNullOrWhiteSpace(selectedLevel) ? null : selectedLevel,
+                SearchText = appliedSearchText,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            });
+
+            selectedFile = pageResult.SelectedFile;
+        }
+        catch (Exception ex)
+        {
+            ToastService.Error("系统日志", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleFilterChangedAsync()
+    {
+        pageNumber = 1;
+        await LoadAsync();
+    }
+
+    private async Task HandleSearchSubmit()
+    {
+        appliedSearchText = string.IsNullOrWhiteSpace(searchText) ? null : searchText.Trim();
+        pageNumber = 1;
+        await LoadAsync();
+    }
+
+    private async Task PrevPage()
+    {
+        if (pageNumber > 1)
+        {
+            pageNumber--;
+            await LoadAsync();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        if (pageResult is not null && pageNumber < pageResult.MaxPageNumber)
+        {
+            pageNumber++;
+            await LoadAsync();
+        }
+    }
+
+    private Task OnAutoRefreshChanged(bool value)
+    {
+        autoRefresh = value;
+        refreshCts?.Cancel();
+        refreshCts?.Dispose();
+        refreshTimer?.Dispose();
+        refreshCts = null;
+        refreshTimer = null;
+
+        if (!autoRefresh)
+        {
+            return Task.CompletedTask;
+        }
+
+        refreshCts = new CancellationTokenSource();
+        refreshTimer = new PeriodicTimer(TimeSpan.FromSeconds(10));
+        _ = RunAutoRefreshLoopAsync(refreshCts.Token);
+        return Task.CompletedTask;
+    }
+
+    private async Task RunAutoRefreshLoopAsync(CancellationToken token)
+    {
+        try
+        {
+            while (refreshTimer is not null && await refreshTimer.WaitForNextTickAsync(token))
+            {
+                if (!autoRefresh)
+                {
+                    break;
+                }
+
+                await InvokeAsync(LoadAsync);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private static string GetLevelClass(string level) => level.ToUpperInvariant() switch
+    {
+        "ERR" or "FTL" => "rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-xs font-medium text-red-700",
+        "WRN" => "rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-700",
+        "DBG" or "VRB" => "rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-xs font-medium text-slate-600",
+        _ => "rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700"
+    };
+}

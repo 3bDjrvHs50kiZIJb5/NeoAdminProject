@@ -1,5 +1,6 @@
 @page "/neo-demo/ui/advanced-datetime"
 @layout LayoutAdmin
+@inject ILogger<AdvancedDateTimeDemo> Logger
 
 <PageTitle>日期与时间演示</PageTitle>
 
@@ -160,6 +161,7 @@
 </div>
 
 @code {
+    protected override void OnInitialized() => DemoPageLog.Enter(Logger, "高级日期时间演示");
     private DateOnly? calendarDate = DateOnly.FromDateTime(DateTime.Today);
 
     private DateOnly? dateInputValue = DateOnly.FromDateTime(DateTime.Today);

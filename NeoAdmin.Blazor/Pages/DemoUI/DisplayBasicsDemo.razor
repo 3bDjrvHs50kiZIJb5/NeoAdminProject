@@ -1,5 +1,6 @@
 @page "/neo-demo/ui/display-basics"
 @layout LayoutAdmin
+@inject ILogger<DisplayBasicsDemo> Logger
 
 <PageTitle>内容与装饰演示</PageTitle>
 
@@ -143,3 +144,7 @@
         </div>
     </div>
 </div>
+
+@code {
+    protected override void OnInitialized() => DemoPageLog.Enter(Logger, "内容与装饰演示");
+}

@@ -1,5 +1,6 @@
 using FreeSql;
-using NeoAdmin.Blazor.Data.Entities;
+using NeoAdmin.Blazor.Audit;
+using NeoAdmin.Blazor.Entities;
 
 namespace NeoAdmin.Blazor.SeedData;
 
@@ -21,6 +22,8 @@ public static class MenuSeedData
 
     private static void RemoveObsolete(IFreeSql freeSql)
     {
+        RemoveMovedBusinessDemoMenus(freeSql);
+
         freeSql.Delete<SysMenu>()
             .Where(a => a.IsSystem
                         && a.Path.StartsWith("/neo-demo/")
@@ -60,6 +63,54 @@ public static class MenuSeedData
 
         freeSql.Delete<SysMenu>()
             .Where(a => deleteIds.Contains(a.Id) && a.IsSystem)
+            .ExecuteAffrows();
+    }
+
+    /// <summary>移除已迁移/改名的业务演示菜单，避免侧边栏重复。</summary>
+    private static void RemoveMovedBusinessDemoMenus(IFreeSql freeSql)
+    {
+        string[] movedPaths =
+        [
+            "/neo-demo/ui/nova-button",
+            "/neo-demo/ui/anti-concurrency",
+            "/neo-demo/ui/transactional"
+        ];
+
+        string[] obsoleteLabels = ["NovaButton", "AntiConcurrency", "Transactional"];
+
+        List<long> rootIds = new();
+
+        long? uiCompId = freeSql.Select<SysMenu>()
+            .Where(a => a.IsSystem && a.Label == "UI 组件")
+            .First(a => (long?)a.Id);
+
+        if (uiCompId is not null)
+        {
+            rootIds.AddRange(freeSql.Select<SysMenu>()
+                .Where(a => a.ParentId == uiCompId && a.IsSystem && movedPaths.Contains(a.Path))
+                .ToList(a => a.Id));
+        }
+
+        rootIds.AddRange(freeSql.Select<SysMenu>()
+            .Where(a => a.IsSystem && movedPaths.Contains(a.Path) && obsoleteLabels.Contains(a.Label))
+            .ToList(a => a.Id));
+
+        rootIds = rootIds.Distinct().ToList();
+        if (rootIds.Count == 0)
+        {
+            return;
+        }
+
+        List<SysMenu> all = freeSql.Select<SysMenu>().ToList();
+        List<long> deleteIds = new(rootIds);
+        for (int index = 0; index < deleteIds.Count; index++)
+        {
+            long parentId = deleteIds[index];
+            deleteIds.AddRange(all.Where(a => a.ParentId == parentId && a.IsSystem).Select(a => a.Id));
+        }
+
+        freeSql.Delete<SysMenu>()
+            .Where(a => deleteIds.Contains(a.Id))
             .ExecuteAffrows();
     }
 
@@ -124,14 +175,22 @@ public static class MenuSeedData
             Menu("站点设置", "globe", "/admin/site-settings", 942),
             Menu("IP 白名单", "shield-check", "/admin/ip-whitelist", 945, type: SysMenuType.增删改查),
             Menu("文件管理", "folder-open", "/admin/file", 950, type: SysMenuType.增删改查),
-            Menu("定时任务", "clock", "/admin/task-scheduler", 955, type: SysMenuType.增删改查)
+            Menu("定时任务", "clock", "/admin/task-scheduler", 955, type: SysMenuType.增删改查),
+            Menu("系统日志", "scroll-text", "/admin/system-log", 958)
         ]),
         Menu("NeoDemo", "flask-conical", string.Empty, 40, SysMenuSidebarStyle.展开,
         [
             Menu("业务组件", "blocks", string.Empty, 400, SysMenuSidebarStyle.收起,
             [
                 Page("实体选择组件", "/neo-demo/comp/select-components", 401, "list-checks"),
-                Page("字典和参数配置", "/neo-demo/comp/dict-param", 402, "sliders-horizontal")
+                Page("字典和参数配置", "/neo-demo/comp/dict-param", 402, "sliders-horizontal"),
+                Menu("按钮权限", "shield", "/neo-demo/ui/nova-button", 403, children:
+                [
+                    Button("允许演示", "check", "demo_allow", 301),
+                    Button("拦截演示", "ban", "demo_deny", 302)
+                ], type: SysMenuType.菜单),
+                Menu("防并发", "timer", "/neo-demo/ui/anti-concurrency", 404, type: SysMenuType.菜单),
+                Menu("事务", "database", "/neo-demo/ui/transactional", 405, type: SysMenuType.菜单)
             ]),
             Menu("UI 组件", "layout-grid", string.Empty, 500, SysMenuSidebarStyle.收起,
             [
@@ -151,7 +210,8 @@ public static class MenuSeedData
                 Page("按钮与折叠", "/neo-demo/ui/layout-controls", 531, "mouse-pointer-click"),
                 Page("布局与主题", "/neo-demo/ui/layout-tools", 532, "columns-3"),
                 Page("模态与侧板", "/neo-demo/ui/overlays-modal", 540, "panel-top"),
-                Page("浮动与菜单", "/neo-demo/ui/overlays-floating", 541, "layers")
+                Page("浮动与菜单", "/neo-demo/ui/overlays-floating", 541, "layers"),
+                Page("文件缓存", "/neo-demo/ui/file-cache", 542, "file-archive")
             ])
         ]),
         Menu("Api", "code", string.Empty, 0, SysMenuSidebarStyle.收起,
@@ -181,6 +241,10 @@ public static class MenuSeedData
 
     public static SysMenu Page(string label, string path, int sort, string icon) =>
         Menu(label, icon, path, sort, type: SysMenuType.增删改查);
+
+    /// <summary>增删改查 + 审批流按钮（提交/一审/拒绝/反审/历史版本）。</summary>
+    public static SysMenu PageWithAudit(string label, string path, int sort, string icon) =>
+        Menu(label, icon, path, sort, type: SysMenuType.增删改查, children: CreateCrudAndAuditButtons());
 
     private static SysMenu Button(string label, string icon, string path, int sort) =>
         Menu(label, icon, path, sort, type: SysMenuType.按钮);
@@ -226,5 +290,17 @@ public static class MenuSeedData
         }
 
         return menu;
+    }
+
+    private static List<SysMenu> CreateCrudAndAuditButtons()
+    {
+        List<SysMenu> buttons =
+        [
+            Button("添加", "plus", "add", 301),
+            Button("编辑", "pencil", "edit", 302),
+            Button("删除", "trash-2", "remove", 303)
+        ];
+        buttons.AddRange(AuditMenuDefinitions.CreateAuditButtons());
+        return buttons;
     }
 }

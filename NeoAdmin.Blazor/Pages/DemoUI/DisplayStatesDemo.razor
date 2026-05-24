@@ -1,5 +1,6 @@
 @page "/neo-demo/ui/display-states"
 @layout LayoutAdmin
+@inject ILogger<DisplayStatesDemo> Logger
 
 <PageTitle>状态与列表演示</PageTitle>
 
@@ -176,6 +177,7 @@
 </div>
 
 @code {
+    protected override void OnInitialized() => DemoPageLog.Enter(Logger, "状态展示演示");
     private bool showCompactEmpty = true;
     private bool showSkeletonContent;
     private string emptyActionMessage = string.Empty;
@@ -184,11 +186,13 @@
 
     private void OnEmptyActionClick()
     {
+        DemoPageLog.Action(Logger, "状态展示演示", "OnEmptyActionClick");
         emptyActionMessage = "已点击「新建」按钮（演示，无实际提交）。";
     }
 
     private void ToggleSkeletonLoading()
     {
+        DemoPageLog.Action(Logger, "状态展示演示", "ToggleSkeletonLoading");
         showSkeletonContent = !showSkeletonContent;
     }
 }

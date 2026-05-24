@@ -2,6 +2,7 @@
 @layout LayoutAdmin
 @using NeoUI.Blazor.Primitives.Services
 @inject ILocalizer Localizer
+@inject ILogger<LayoutToolsDemo> Logger
 
 <PageTitle>布局与主题演示</PageTitle>
 
@@ -162,6 +163,7 @@
 </div>
 
 @code {
+    protected override void OnInitialized() => DemoPageLog.Enter(Logger, "布局工具演示");
     private string? resizableLayoutSummary;
 
     private List<DemoSortItem> sortItems =
@@ -174,12 +176,14 @@
 
     private Task OnSortItemsReordered(IList<DemoSortItem> items)
     {
+        DemoPageLog.Action(Logger, "布局工具演示", "OnSortItemsReordered");
         sortItems = items.ToList();
         return Task.CompletedTask;
     }
 
     private void OnResizableLayoutChange(double[] sizes)
     {
+        DemoPageLog.Action(Logger, "布局工具演示", "OnResizableLayoutChange");
         resizableLayoutSummary = string.Join(" / ", sizes.Select(s => $"{s:F0}%"));
     }
 

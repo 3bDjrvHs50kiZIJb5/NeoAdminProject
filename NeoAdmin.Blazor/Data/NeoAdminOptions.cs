@@ -53,4 +53,14 @@ public sealed class NeoAdminOptions
     /// Swagger 文档中隐藏的路径片段（不区分大小写）。
     /// </summary>
     public string[] SwaggerHides { get; set; } = [];
+
+    /// <summary>
+    /// Serilog 文件日志目录（相对路径基于应用根目录）。
+    /// </summary>
+    public string LogDirectory { get; set; } = "Logs";
+
+    /// <summary>
+    /// Serilog 滚动日志文件名前缀，例如 admin- 对应 admin-20260524.log。
+    /// </summary>
+    public string LogFilePrefix { get; set; } = "admin-";
 }

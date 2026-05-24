@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using NeoAdmin.Blazor.Api;
 using NeoAdmin.Blazor.Api.Dto;
 using NeoAdmin.Blazor.Auth;
-using NeoAdmin.Blazor.Data.Entities;
+using NeoAdmin.Blazor.Entities;
 
 namespace NeoAdmin.Api;
 

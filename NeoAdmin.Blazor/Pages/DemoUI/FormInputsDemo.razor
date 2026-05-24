@@ -1,5 +1,6 @@
 @page "/neo-demo/ui/form-inputs"
 @layout LayoutAdmin
+@inject ILogger<FormInputsDemo> Logger
 
 <PageTitle>表单输入演示</PageTitle>
 
@@ -148,6 +149,7 @@
 </div>
 
 @code {
+    protected override void OnInitialized() => DemoPageLog.Enter(Logger, "表单输入演示");
     private string fieldEmail = string.Empty;
     private string fieldUsername = string.Empty;
 

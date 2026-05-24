@@ -1,0 +1,476 @@
+@namespace NeoAdmin.Blazor.Components
+@inherits LayoutComponentBase
+@using NeoUI.Blazor
+@using NeoUI.Blazor.Primitives
+@using NeoUI.Blazor.Primitives.Services
+@using NeoAdmin.Blazor.Auth
+@using NeoAdmin.Blazor.Extensions
+@inject NeoAdminAuthService AuthService
+@inject SiteSettingsService SiteSettingsService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@using NeoAdmin.Blazor.Entities
+@using NeoAdmin.Blazor.Menus
+@using NeoAdmin.Blazor.SeedData
+@using NeoAdmin.Blazor.Services
+@using Microsoft.AspNetCore.Components.Web
+@inject MenuService MenuService
+
+@implements IAsyncDisposable
+
+@* 布局参照 NeoUI Blocks dashboard-02：https://neoui.io/blocks/dashboard-02 *@
+<AppProvider>
+    @if (isAuthChecked)
+    {
+        <SidebarProvider CookieKey="sidebar:neoadmin"
+                         HeightClass="neo-admin-shell"
+                         Variant="SidebarVariant.Inset">
+            <div class="flex h-full min-h-0 w-full overflow-hidden">
+                <Sidebar Collapsible="true" AutoDetectActive="true">
+                    <SidebarHeader>
+                        <SidebarMenu>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton Size="SidebarMenuButtonSize.Large" Href="/Admin">
+                                    @if (!string.IsNullOrWhiteSpace(siteSettings?.Logo))
+                                    {
+                                        <img src="@NavigationManager.ToMediaUrl(siteSettings.Logo)"
+                                             alt=""
+                                             class="size-8 shrink-0 rounded-lg object-cover" />
+                                    }
+                                    else
+                                    {
+                                        <div class="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                                            <LucideIcon Name="command" Size="16" />
+                                        </div>
+                                    }
+                                    <SidebarHeaderInfo>
+                                        <span class="truncate font-semibold">@(siteSettings?.Title ?? "NeoAdmin")</span>
+                                        <span class="truncate text-xs text-muted-foreground">@(string.IsNullOrWhiteSpace(siteSettings?.Description) ? "Management" : siteSettings.Description.Trim())</span>
+                                    </SidebarHeaderInfo>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarHeader>
+                    <SidebarContent>
+                        <LayoutAdminSidebarMenu />
+                    </SidebarContent>
+                    @if (currentUser is not null)
+                    {
+                        <SidebarFooter>
+                            <SidebarMenu>
+                                <SidebarMenuItem>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger AsChild>
+                                            <SidebarMenuButton Size="SidebarMenuButtonSize.Large"
+                                                               Tooltip="账户菜单"
+                                                               Class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
+                                                <Avatar Class="size-8 rounded-lg">
+                                                    <AvatarFallback Class="rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                                                        <LucideIcon Name="shield-user" Size="32" />
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div class="grid min-w-0 flex-1 text-left text-sm leading-tight">
+                                                    <span class="truncate font-semibold">@GetDisplayName()</span>
+                                                    <span class="truncate text-xs text-muted-foreground">@currentUser.Username</span>
+                                                </div>
+                                                <LucideIcon Name="chevrons-up-down" Class="ml-auto size-4 shrink-0" />
+                                            </SidebarMenuButton>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent Side="PopoverSide.Right"
+                                                             Align="PopoverAlign.End"
+                                                             Strategy="PositioningStrategy.Fixed"
+                                                             MatchTriggerWidth="true"
+                                                             Offset="4"
+                                                             Class="min-w-56 rounded-lg">
+                                            <DropdownMenuLabel Class="p-0 font-normal">
+                                                <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                                                    <Avatar Class="size-8 rounded-lg">
+                                                        <AvatarFallback Class="rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                                                            <LucideIcon Name="shield-user" Size="32" />
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <div class="grid min-w-0 flex-1 leading-tight">
+                                                        <span class="truncate font-medium">@GetDisplayName()</span>
+                                                        <span class="truncate text-xs text-muted-foreground">@currentUser.Username</span>
+                                                    </div>
+                                                </div>
+                                            </DropdownMenuLabel>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuGroup>
+                                                <DropdownMenuItem CloseOnSelect="false" Class="focus:bg-transparent gap-2 items-center">
+                                                    <LucideIcon Name="badge-check" Size="16" Class="text-muted-foreground" />
+                                                    <span class="text-xs text-muted-foreground">用户 ID @currentUser.Id</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem CloseOnSelect="false" Class="focus:bg-transparent gap-2 items-center">
+                                                    <LucideIcon Name="clock" Size="16" Class="text-muted-foreground" />
+                                                    <span class="text-xs text-muted-foreground">登录 @currentUser.LoginTime.ToString("yyyy-MM-dd HH:mm")</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem CloseOnSelect="false" Class="focus:bg-transparent gap-2 items-center">
+                                                    <LucideIcon Name="shield" Size="16" Class="text-muted-foreground" />
+                                                    <span class="text-xs text-muted-foreground">账号状态 @(currentUser.IsEnabled ? "正常" : "已禁用")</span>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuGroup>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem OnClick="HandleLogoutAsync"
+                                                              Class="text-destructive focus:text-destructive">
+                                                <LucideIcon Name="log-out" Size="16" />
+                                                <span>退出登录</span>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </SidebarMenuItem>
+                            </SidebarMenu>
+                        </SidebarFooter>
+                    }
+                    <SidebarRail />
+                </Sidebar>
+                <SidebarInset Class="neo-admin-inset flex h-full min-h-0 flex-col overflow-hidden bg-background">
+                    <header class="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+                        <SidebarTrigger Class="-ml-1" />
+                        <Separator Orientation="SeparatorOrientation.Vertical" Class="mr-2 h-4" />
+                        <h1 class="truncate text-lg font-semibold">@pageTitle</h1>
+
+                        <div class="ml-auto flex items-center gap-2">
+                            <Dialog @bind-Open="pageSearchDialogOpen">
+                                <Button Variant="ButtonVariant.Outline"
+                                        Size="ButtonSize.Small"
+                                        OnClick="OpenPageSearchDialog"
+                                        Class="h-8 min-w-0 max-w-xs justify-start gap-2 px-2 font-normal text-muted-foreground sm:max-w-sm">
+                                    <LucideIcon Name="search" Size="16" Class="shrink-0" />
+                                    <span class="hidden truncate sm:inline">搜索页面或 Tab…</span>
+                                    <CommandShortcut Class="ml-auto hidden sm:inline-flex">⌘K</CommandShortcut>
+                                </Button>
+                                <DialogContent Class="overflow-hidden p-0 sm:max-w-lg">
+                                    <CommandContent Class="rounded-lg border-0 shadow-none">
+                                        <CommandInput Placeholder="搜索页面或 Tab…" />
+                                        <CommandList>
+                                            <CommandEmpty>未找到匹配页面或 Tab。</CommandEmpty>
+                                            @foreach (var group in pageSearchGroups)
+                                            {
+                                                <CommandGroup Heading="@group.Key">
+                                                    @foreach (PageSearchEntry item in group)
+                                                    {
+                                                        <CommandItem Value="@item.SearchValue"
+                                                                     OnSelect="@(() => NavigateToPage(item.Href))">
+                                                            <LucideIcon Name="@item.Icon" Size="16" Class="mr-2 opacity-60" />
+                                                            <span>@item.Label</span>
+                                                        </CommandItem>
+                                                    }
+                                                </CommandGroup>
+                                            }
+                                        </CommandList>
+                                    </CommandContent>
+                                </DialogContent>
+                            </Dialog>
+                            <a href="https://demos.neoui.io/"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border px-2 text-sm font-normal text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
+                                <LucideIcon Name="book-open" Size="16" Class="shrink-0" />
+                                <span class="whitespace-nowrap">NeoUI 组件文档</span>
+                            </a>
+                            <a href="https://github.com/dotnetcore/FreeSql/issues"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border px-2 text-sm font-normal text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
+                                <LucideIcon Name="github" Size="16" Class="shrink-0" />
+                                <span class="whitespace-nowrap">FreeSql Issues</span>
+                            </a>
+                            <a href="https://github.com/3bDjrvHs50kiZIJb5/NeoAdminProject"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border px-2 text-sm font-normal text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
+                                <LucideIcon Name="folder-git-2" Size="16" Class="shrink-0" />
+                                <span class="whitespace-nowrap">NeoAdmin 源码</span>
+                            </a>
+                            <ThemeSwitcher Strategy="PositioningStrategy.Fixed"
+                                           ShowStyles="true"
+                                           TriggerClass="size-8" />
+                        </div>
+                    </header>
+
+                    <section class="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-hidden p-4">
+                        @Body
+                    </section>
+                </SidebarInset>
+            </div>
+        </SidebarProvider>
+    }
+    else
+    {
+        <div class="flex h-full flex-col items-center justify-center gap-3">
+            <Spinner Size="SpinnerSize.Medium" />
+            <span class="text-sm text-muted-foreground">正在检查登录状态...</span>
+        </div>
+    }
+
+    <ToastViewport />
+    <DialogHost />
+    <NeoPickerOverlayHost />
+    <AlertDialog @bind-Open="logoutDialogOpen">
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>退出登录</AlertDialogTitle>
+                <AlertDialogDescription>确定要退出当前账号吗？</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <Button Variant="ButtonVariant.Outline" OnClick="CancelLogout">取消</Button>
+                <Button Variant="ButtonVariant.Destructive" OnClick="PerformLogoutAsync">退出</Button>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    <ContainerPortalHost />
+    <OverlayPortalHost />
+</AppProvider>
+
+@code {
+    private bool isAuthChecked;
+    private bool logoutDialogOpen;
+    private bool pageSearchDialogOpen;
+    private UserSummaryResponse? currentUser;
+    private SysSiteSettings? siteSettings;
+    private string pageTitle = "控制台";
+    private List<PageSearchEntry> pageSearchEntries = new();
+
+    private IEnumerable<IGrouping<string, PageSearchEntry>> pageSearchGroups =>
+        pageSearchEntries
+            .GroupBy(a => a.GroupHeading);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        string? token = await JSRuntime.InvokeAsync<string?>("neoAdminAuth.getToken");
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            string redirect = Uri.EscapeDataString(NavigationManager.Uri);
+            NavigationManager.NavigateTo($"/login?redirect={redirect}", true);
+            return;
+        }
+
+        ApiResult<UserSummaryResponse> result = await AuthService.CheckAsync(token);
+        if (!result.Succeeded || result.Data is null)
+        {
+            await JSRuntime.InvokeVoidAsync("neoAdminAuth.clearToken");
+            string redirect = Uri.EscapeDataString(NavigationManager.Uri);
+            NavigationManager.NavigateTo($"/login?redirect={redirect}", true);
+            return;
+        }
+
+        currentUser = result.Data;
+        siteSettings = await SiteSettingsService.GetAsync();
+        await LoadPageSearchEntriesAsync();
+        isAuthChecked = true;
+        UpdatePageTitle();
+        StateHasChanged();
+    }
+
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += OnLocationChanged;
+        SiteSettingsService.SettingsChanged += OnSiteSettingsChanged;
+        UpdatePageTitle();
+    }
+
+    private void OnSiteSettingsChanged()
+    {
+        _ = InvokeAsync(async () =>
+        {
+            siteSettings = await SiteSettingsService.GetAsync();
+            StateHasChanged();
+        });
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        UpdatePageTitle();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdatePageTitle()
+    {
+        string path = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Trim('/');
+        pageTitle = string.IsNullOrWhiteSpace(path) || path.Equals("Admin", StringComparison.OrdinalIgnoreCase)
+            ? "控制台"
+            : path.Split('/', StringSplitOptions.RemoveEmptyEntries).Last();
+    }
+
+    private string GetDisplayName()
+    {
+        if (currentUser is null)
+        {
+            return "未登录";
+        }
+
+        return string.IsNullOrWhiteSpace(currentUser.Nickname) ? currentUser.Username : currentUser.Nickname;
+    }
+
+    private void OpenPageSearchDialog() => pageSearchDialogOpen = true;
+
+    private void HandlePageSearchHotkey(KeyboardEventArgs e)
+    {
+        if (e.Key.Equals("k", StringComparison.OrdinalIgnoreCase) && (e.MetaKey || e.CtrlKey))
+        {
+            pageSearchDialogOpen = true;
+        }
+    }
+
+    private void NavigateToPage(string href)
+    {
+        pageSearchDialogOpen = false;
+
+        if (href.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            || href.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            NavigationManager.NavigateTo(href, forceLoad: true);
+            return;
+        }
+
+        NavigationManager.NavigateTo(href);
+    }
+
+    private async Task LoadPageSearchEntriesAsync()
+    {
+        List<SysMenu> menus = await MenuService.GetNavigationAsync();
+        List<SysMenu> roots = MenuService.BuildTree(menus);
+        List<PageSearchEntry> pageLookup = new();
+        int lookupSort = 0;
+
+        foreach (SysMenu root in roots)
+        {
+            CollectPageSearchEntries(root, null, pageLookup, ref lookupSort);
+        }
+
+        Dictionary<string, PageSearchEntry> pageByPath = pageLookup
+            .GroupBy(a => NormalizeSearchPath(a.Href))
+            .ToDictionary(a => a.Key, a => a.First(), StringComparer.OrdinalIgnoreCase);
+        HashSet<string> tabPagePaths = PageSearchTabSeedData.Entries
+            .Select(a => NormalizeSearchPath(a.PagePath))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        List<PageSearchEntry> entries = pageLookup
+            .Where(a => !tabPagePaths.Contains(NormalizeSearchPath(a.Href)))
+            .ToList();
+        AddPageSearchTabEntries(pageByPath, entries);
+        pageSearchEntries = entries
+            .OrderBy(a => NormalizeSearchPath(a.Href), StringComparer.OrdinalIgnoreCase)
+            .ThenBy(a => a.Href, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static void AddPageSearchTabEntries(
+        IReadOnlyDictionary<string, PageSearchEntry> pageByPath,
+        List<PageSearchEntry> entries)
+    {
+        foreach (PageSearchTabSeedData.Entry tab in PageSearchTabSeedData.Entries)
+        {
+            if (!pageByPath.TryGetValue(NormalizeSearchPath(tab.PagePath), out PageSearchEntry? page))
+            {
+                continue;
+            }
+
+            string href = $"{page.Href}?tab={Uri.EscapeDataString(tab.TabValue)}";
+            entries.Add(new PageSearchEntry(
+                $"{page.Label} / {tab.TabLabel}",
+                href,
+                page.Icon,
+                page.GroupHeading,
+                page.SortOrder,
+                $"{tab.TabLabel} {tab.TabValue} {page.Label} {page.GroupHeading} {href}"));
+        }
+    }
+
+    private void CollectPageSearchEntries(
+        SysMenu menu,
+        string? groupHeading,
+        List<PageSearchEntry> entries,
+        ref int sortOrder)
+    {
+        List<SysMenu> children = menu.Children
+            .Where(a => !a.IsHidden && !a.Type.IsPermissionNode())
+            .OrderBy(a => a.Sort)
+            .ThenBy(a => a.Id)
+            .ToList();
+
+        if (children.Count == 0)
+        {
+            string href = GetMenuHref(menu);
+            if (string.IsNullOrWhiteSpace(href))
+            {
+                return;
+            }
+
+            string heading = groupHeading ?? "导航";
+            entries.Add(new PageSearchEntry(
+                menu.Label,
+                href,
+                GetMenuIcon(menu),
+                heading,
+                sortOrder++,
+                $"{menu.Label} {heading} {href}"));
+            return;
+        }
+
+        string childGroup = groupHeading ?? menu.Label;
+        foreach (SysMenu child in children)
+        {
+            CollectPageSearchEntries(child, childGroup, entries, ref sortOrder);
+        }
+    }
+
+    private string GetMenuHref(SysMenu menu)
+    {
+        if (menu.Type == SysMenuType.外部连接)
+        {
+            return menu.Path;
+        }
+
+        return MenuService.NormalizePath(menu.Path);
+    }
+
+    private static string GetMenuIcon(SysMenu menu) =>
+        string.IsNullOrWhiteSpace(menu.Icon) ? "circle" : menu.Icon;
+
+    private static string NormalizeSearchPath(string href)
+    {
+        string path = href.Split('?', 2)[0].Trim();
+        return path.StartsWith('/') ? path : $"/{path}";
+    }
+
+    private sealed record PageSearchEntry(
+        string Label,
+        string Href,
+        string Icon,
+        string GroupHeading,
+        int SortOrder,
+        string SearchValue);
+
+    private void HandleLogoutAsync()
+    {
+        logoutDialogOpen = true;
+    }
+
+    private void CancelLogout()
+    {
+        logoutDialogOpen = false;
+    }
+
+    private async Task PerformLogoutAsync()
+    {
+        logoutDialogOpen = false;
+        await JSRuntime.InvokeVoidAsync("neoAdminAuth.clearToken");
+        isAuthChecked = false;
+        currentUser = null;
+        NavigationManager.NavigateTo("/login", true);
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+        SiteSettingsService.SettingsChanged -= OnSiteSettingsChanged;
+        return ValueTask.CompletedTask;
+    }
+}

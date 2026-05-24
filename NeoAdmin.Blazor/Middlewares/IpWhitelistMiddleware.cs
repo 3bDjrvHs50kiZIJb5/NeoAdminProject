@@ -4,7 +4,7 @@ using FreeSql;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using NeoAdmin.Blazor.Data.Entities;
+using NeoAdmin.Blazor.Entities;
 using NeoAdmin.Blazor.Utils;
 
 namespace NeoAdmin.Blazor.Middlewares;

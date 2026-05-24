@@ -1,5 +1,6 @@
 @page "/neo-demo/ui/data-display"
 @layout LayoutAdmin
+@inject ILogger<DataDisplayDemo> Logger
 
 <PageTitle>数据展示演示</PageTitle>
 
@@ -186,6 +187,7 @@
 </div>
 
 @code {
+    protected override void OnInitialized() => DemoPageLog.Enter(Logger, "数据展示演示");
     private DataViewLayout dataViewLayout = DataViewLayout.List;
     private string? selectedTreeId;
 
@@ -235,6 +237,7 @@
 
     private void OnDataViewLayoutChanged(DataViewLayout layout)
     {
+        DemoPageLog.Action(Logger, "数据展示演示", "OnDataViewLayoutChanged");
         dataViewLayout = layout;
     }
 

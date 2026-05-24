@@ -1,6 +1,7 @@
 @page "/neo-demo/ui/advanced-complex"
 @layout LayoutAdmin
 @using Microsoft.AspNetCore.Components.Forms
+@inject ILogger<AdvancedComplexDemo> Logger
 
 <PageTitle>编辑器与复杂组件演示</PageTitle>
 
@@ -256,11 +257,13 @@
 
     protected override void OnInitialized()
     {
+        DemoPageLog.Enter(Logger, "高级复合组件演示");
         filteredProducts = allProducts.ToList();
     }
 
     private Task OnContactSubmit(Dictionary<string, object?> values)
     {
+        DemoPageLog.Action(Logger, "高级复合组件演示", "OnContactSubmit");
         var name = values.GetValueOrDefault("name")?.ToString() ?? "";
         contactSubmitMessage = $"已提交：{name}（演示，未保存）";
         return Task.CompletedTask;
@@ -268,6 +271,7 @@
 
     private void ApplyProductFilter(FilterGroup filters)
     {
+        DemoPageLog.Action(Logger, "高级复合组件演示", "ApplyProductFilter");
         productFilters = filters;
         IEnumerable<DemoProduct> query = allProducts;
 

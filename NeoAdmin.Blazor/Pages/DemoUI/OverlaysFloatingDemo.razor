@@ -2,6 +2,7 @@
 @layout LayoutAdmin
 @using NeoUI.Blazor.Primitives.Services
 @inject IToastService ToastService
+@inject ILogger<OverlaysFloatingDemo> Logger
 
 <PageTitle>浮动与菜单演示</PageTitle>
 
@@ -171,23 +172,53 @@
 </div>
 
 @code {
+    protected override void OnInitialized() => DemoPageLog.Enter(Logger, "浮动与菜单演示");
     private string dropdownMessage = string.Empty;
     private string contextMenuMessage = string.Empty;
     private bool dimensionsPopoverOpen;
     private string popoverWidth = "100%";
     private string hoverCardUser = "@neoadmin";
 
-    private void OnDropdownProfile() => dropdownMessage = "已选择：个人资料";
-    private void OnDropdownBilling() => dropdownMessage = "已选择：账单";
-    private void OnDropdownSettings() => dropdownMessage = "已选择：设置";
-    private void OnDropdownLogout() => dropdownMessage = "已选择：退出登录";
+    private void OnDropdownProfile()
+    {
+        DemoPageLog.Action(Logger, "浮动与菜单演示", "OnDropdownProfile");
+        dropdownMessage = "已选择：个人资料";
+    }
+    private void OnDropdownBilling()
+    {
+        DemoPageLog.Action(Logger, "浮动与菜单演示", "OnDropdownBilling");
+        dropdownMessage = "已选择：账单";
+    }
+    private void OnDropdownSettings()
+    {
+        DemoPageLog.Action(Logger, "浮动与菜单演示", "OnDropdownSettings");
+        dropdownMessage = "已选择：设置";
+    }
+    private void OnDropdownLogout()
+    {
+        DemoPageLog.Action(Logger, "浮动与菜单演示", "OnDropdownLogout");
+        dropdownMessage = "已选择：退出登录";
+    }
 
-    private void OnContextCopy() => contextMenuMessage = "已执行：复制";
-    private void OnContextPaste() => contextMenuMessage = "已执行：粘贴";
-    private void OnContextRefresh() => contextMenuMessage = "已执行：刷新";
+    private void OnContextCopy()
+    {
+        DemoPageLog.Action(Logger, "浮动与菜单演示", "OnContextCopy");
+        contextMenuMessage = "已执行：复制";
+    }
+    private void OnContextPaste()
+    {
+        DemoPageLog.Action(Logger, "浮动与菜单演示", "OnContextPaste");
+        contextMenuMessage = "已执行：粘贴";
+    }
+    private void OnContextRefresh()
+    {
+        DemoPageLog.Action(Logger, "浮动与菜单演示", "OnContextRefresh");
+        contextMenuMessage = "已执行：刷新";
+    }
 
     private void ApplyPopoverSize()
     {
+        DemoPageLog.Action(Logger, "浮动与菜单演示", "ApplyPopoverSize");
         dimensionsPopoverOpen = false;
         ToastService.Info("Popover", $"列宽已设为 {popoverWidth}");
     }

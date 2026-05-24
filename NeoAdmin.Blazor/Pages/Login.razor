@@ -7,7 +7,8 @@
 @inject SiteSettingsService SiteSettingsService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
-@using NeoAdmin.Blazor.Data.Entities
+@inject ILogger<Login> Logger
+@using NeoAdmin.Blazor.Entities
 @using NeoAdmin.Blazor.Services
 
 @* auth-01: https://neoui.io/blocks/auth-01 — 有登录页配图时左右分栏展示。 *@
@@ -122,6 +123,7 @@
     private async Task HandleLoginAsync()
     {
         errorMessage = null;
+        Logger.LogInformation("用户提交登录：Username={Username}", loginModel.Username);
         ApiResult<LoginResponse> result = await AuthService.LoginAsync(new LoginRequest
         {
             Username = loginModel.Username,
@@ -131,8 +133,11 @@
         if (!result.Succeeded || result.Data is null)
         {
             errorMessage = result.Message;
+            Logger.LogWarning("登录页登录失败：Username={Username}，Message={Message}", loginModel.Username, result.Message);
             return;
         }
+
+        Logger.LogInformation("登录页登录成功，即将跳转：Username={Username}", loginModel.Username);
 
         await JSRuntime.InvokeVoidAsync("neoAdminAuth.setToken", result.Data.Token);
         NavigationManager.NavigateTo(GetRedirectUrl(), true);

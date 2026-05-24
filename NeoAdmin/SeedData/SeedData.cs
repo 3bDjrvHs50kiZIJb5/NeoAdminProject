@@ -1,6 +1,6 @@
 using FreeSql;
 using NeoAdmin.Blazor.Data;
-using NeoAdmin.Blazor.Data.Entities;
+using NeoAdmin.Blazor.Entities;
 using NeoAdmin.Entities.Blog;
 
 namespace NeoAdmin.SeedData;

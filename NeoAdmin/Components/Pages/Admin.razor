@@ -1,9 +1,191 @@
 @page "/admin"
 @layout LayoutAdmin
 
-<PageTitle>Admin</PageTitle>
+<PageTitle>基础设施监控</PageTitle>
 
-<div class="admin-placeholder">
-    <h1>Admin</h1>
-    <p>这个页面保留给宿主项目本身使用，根路由已交给 `NeoAdmin.Blazor`。</p>
+@* 布局参照 NeoUI Blocks dashboard-11：https://neoui.io/blocks/dashboard-11 *@
+<div class="flex min-h-0 flex-1 flex-col gap-4 overflow-auto pb-2">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="space-y-1">
+            <h2 class="text-2xl font-semibold tracking-tight">基础设施监控</h2>
+            <p class="text-sm text-muted-foreground">
+                @servers.Count 台服务器 · @OperationalSummary
+            </p>
+        </div>
+        <Badge Class="shrink-0 gap-1.5 px-3 py-1">
+            <BadgeIcon>
+                <LucideIcon Name="circle-check" Size="12" />
+            </BadgeIcon>
+            一切正常
+        </Badge>
+    </div>
+
+    <div class="grid gap-4 grid-cols-2 md:grid-cols-4">
+        @foreach (var metric in summaryMetrics)
+        {
+            <Card>
+                <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle class="text-sm font-medium">@metric.Label</CardTitle>
+                    <LucideIcon Name="@metric.Icon" Size="16" Class="text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div class="text-2xl font-bold tabular-nums">@metric.Value</div>
+                    @if (!string.IsNullOrWhiteSpace(metric.Hint))
+                    {
+                        <p class="mt-1 text-xs text-muted-foreground">@metric.Hint</p>
+                    }
+                </CardContent>
+            </Card>
+        }
+    </div>
+
+    <Card class="min-h-0 flex-1">
+        <CardHeader>
+            <CardTitle>服务器健康</CardTitle>
+            <CardDescription>各节点 CPU 与运行状态一览（演示数据）</CardDescription>
+        </CardHeader>
+        <CardContent class="min-h-0 p-2 px-4 sm:p-0">
+            <DataTable TData="ServerHealthRow"
+                       Data="@servers"
+                       ShowToolbar="false"
+                       ShowPagination="false"
+                       Class="border-0 shadow-none">
+                <Columns>
+                    <DataTableColumn TData="ServerHealthRow"
+                                     TValue="string"
+                                     Property="@(row => row.Name)"
+                                     Header="服务器"
+                                     Sortable="true" />
+                    <DataTableColumn TData="ServerHealthRow"
+                                     TValue="string"
+                                     Property="@(row => row.Region)"
+                                     Header="区域"
+                                     Sortable="true" />
+                    <DataTableColumn TData="ServerHealthRow"
+                                     TValue="string"
+                                     Property="@(row => row.Role)"
+                                     Header="角色"
+                                     Sortable="true"
+                                     Width="100px" />
+                    <DataTableColumn TData="ServerHealthRow"
+                                     TValue="string"
+                                     Property="@(row => row.IpAddress)"
+                                     Header="内网 IP"
+                                     Sortable="true"
+                                     Width="130px" />
+                    <DataTableColumn TData="ServerHealthRow"
+                                     TValue="int"
+                                     Property="@(row => row.CpuPercent)"
+                                     Header="CPU %"
+                                     Sortable="true"
+                                     Width="180px">
+                        <CellTemplate Context="row">
+                            <div class="flex min-w-[8rem] items-center gap-2">
+                                <Progress Value="@row.CpuPercent"
+                                          Max="100"
+                                          Class="@GetUsageProgressClass(row.CpuPercent)" />
+                                <span class="w-10 shrink-0 text-right text-sm tabular-nums">@row.CpuPercent%</span>
+                            </div>
+                        </CellTemplate>
+                    </DataTableColumn>
+                    <DataTableColumn TData="ServerHealthRow"
+                                     TValue="int"
+                                     Property="@(row => row.MemoryPercent)"
+                                     Header="内存 %"
+                                     Sortable="true"
+                                     Width="180px">
+                        <CellTemplate Context="row">
+                            <div class="flex min-w-[8rem] items-center gap-2">
+                                <Progress Value="@row.MemoryPercent"
+                                          Max="100"
+                                          Class="@GetUsageProgressClass(row.MemoryPercent)" />
+                                <span class="w-10 shrink-0 text-right text-sm tabular-nums">@row.MemoryPercent%</span>
+                            </div>
+                        </CellTemplate>
+                    </DataTableColumn>
+                    <DataTableColumn TData="ServerHealthRow"
+                                     TValue="int"
+                                     Property="@(row => row.DiskPercent)"
+                                     Header="磁盘 %"
+                                     Sortable="true"
+                                     Width="180px">
+                        <CellTemplate Context="row">
+                            <div class="flex min-w-[8rem] items-center gap-2">
+                                <Progress Value="@row.DiskPercent"
+                                          Max="100"
+                                          Class="@GetUsageProgressClass(row.DiskPercent)" />
+                                <span class="w-10 shrink-0 text-right text-sm tabular-nums">@row.DiskPercent%</span>
+                            </div>
+                        </CellTemplate>
+                    </DataTableColumn>
+                    <DataTableColumn TData="ServerHealthRow"
+                                     TValue="string"
+                                     Property="@(row => row.Uptime)"
+                                     Header="运行时长"
+                                     Sortable="true"
+                                     Width="110px" />
+                    <DataTableColumn TData="ServerHealthRow"
+                                     TValue="string"
+                                     Property="@(row => row.LastHeartbeat)"
+                                     Header="最后心跳"
+                                     Sortable="true"
+                                     Width="100px" />
+                    <DataTableColumn TData="ServerHealthRow"
+                                     TValue="string"
+                                     Property="@(row => row.Status)"
+                                     Header="状态"
+                                     Sortable="true"
+                                     Width="130px">
+                        <CellTemplate Context="row">
+                            <Badge Variant="@GetStatusBadgeVariant(row.Status)">
+                                @row.Status
+                            </Badge>
+                        </CellTemplate>
+                    </DataTableColumn>
+                </Columns>
+            </DataTable>
+        </CardContent>
+    </Card>
 </div>
+
+@code {
+    private const string OperationalSummary = "系统运行正常";
+
+    private readonly List<SummaryMetric> summaryMetrics =
+    [
+        new("平均 CPU", "34%", "cpu", "过去 15 分钟"),
+        new("平均内存", "62%", "memory-stick", "过去 15 分钟"),
+        new("磁盘 I/O", "18%", "hard-drive", "读写合并"),
+        new("可用率", "99.9%", "activity", "近 30 天"),
+    ];
+
+    private readonly List<ServerHealthRow> servers =
+    [
+        new("web-prod-01", "us-east-1", "Web", "10.0.1.11", 28, 58, 42, "128 天", "刚刚", "健康"),
+        new("web-prod-02", "us-east-1", "Web", "10.0.1.12", 31, 61, 44, "126 天", "刚刚", "健康"),
+        new("api-prod-01", "eu-west-1", "API", "10.0.2.21", 45, 67, 55, "95 天", "1 分钟前", "健康"),
+        new("api-prod-02", "ap-southeast-1", "API", "10.0.3.31", 52, 71, 48, "88 天", "2 分钟前", "健康"),
+        new("db-primary", "us-east-1", "数据库", "10.0.4.10", 72, 84, 76, "210 天", "刚刚", "高负载"),
+        new("db-replica", "eu-west-1", "数据库", "10.0.4.11", 38, 69, 62, "205 天", "刚刚", "健康"),
+        new("cache-prod-01", "us-east-1", "缓存", "10.0.5.15", 24, 52, 31, "72 天", "刚刚", "健康"),
+        new("worker-prod-01", "eu-west-1", "Worker", "10.0.6.20", 41, 63, 38, "54 天", "3 分钟前", "健康"),
+    ];
+
+    private static BadgeVariant GetStatusBadgeVariant(string status) =>
+        status switch
+        {
+            "高负载" => BadgeVariant.Destructive,
+            _ => BadgeVariant.Secondary,
+        };
+
+    private static string GetUsageProgressClass(int percent) =>
+        percent >= 70
+            ? "h-2 min-w-0 flex-1 [&>div]:bg-destructive"
+            : percent >= 50
+                ? "h-2 min-w-0 flex-1 [&>div]:bg-amber-500"
+                : "h-2 min-w-0 flex-1";
+
+    private sealed record SummaryMetric(string Label, string Value, string Icon, string Hint);
+
+    private sealed record ServerHealthRow(string Name, string Region, string Role, string IpAddress, int CpuPercent, int MemoryPercent, int DiskPercent, string Uptime, string LastHeartbeat, string Status);
+}

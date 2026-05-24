@@ -1,17 +1,21 @@
 using System.ComponentModel.DataAnnotations;
 using FreeSql;
+using Microsoft.Extensions.Logging;
 using NeoAdmin.Blazor.Auth;
-using NeoAdmin.Blazor.Data.Entities;
+using NeoAdmin.Blazor.Entities;
+using NeoAdmin.Blazor.Utils;
 
 namespace NeoAdmin.Blazor.Services;
 
 public sealed class OrgService
 {
     private readonly IFreeSql _freeSql;
+    private readonly ILogger<OrgService> _logger;
 
-    public OrgService(IFreeSql freeSql)
+    public OrgService(IFreeSql freeSql, ILogger<OrgService> logger)
     {
         _freeSql = freeSql;
+        _logger = logger;
     }
 
     public Task<List<SysOrg>> GetAllAsync() =>
@@ -25,6 +29,7 @@ public sealed class OrgService
         ApiResult? validationError = Validate(model);
         if (validationError is not null)
         {
+            _logger.LogWarning("保存组织失败：{Message}，{EntityDesc}", validationError.Message, EntityLogHelper.Describe(model));
             return ApiResult<SysOrg>.Error(validationError.Message, validationError.Code);
         }
 
@@ -52,6 +57,7 @@ public sealed class OrgService
                 .ExecuteAffrowsAsync();
         }
 
+        _logger.LogInformation("保存组织成功：{EntityDesc}", EntityLogHelper.Describe(model));
         return ApiResult<SysOrg>.Success(model, "保存成功");
     }
 
@@ -59,12 +65,14 @@ public sealed class OrgService
     {
         if (!await _freeSql.Select<SysOrg>().AnyAsync(a => a.Id == id))
         {
+            _logger.LogWarning("删除组织失败：组织不存在，Id={OrgId}", id);
             return ApiResult.Error("组织不存在");
         }
 
         List<SysOrg> all = await GetAllAsync();
         List<long> ids = CollectDescendantIds(all, id);
         await _freeSql.Delete<SysOrg>().Where(a => ids.Contains(a.Id)).ExecuteAffrowsAsync();
+        _logger.LogInformation("删除组织成功：Id={OrgId}，共删除 {Count} 个节点", id, ids.Count);
         return ApiResult.Success("删除成功");
     }
 

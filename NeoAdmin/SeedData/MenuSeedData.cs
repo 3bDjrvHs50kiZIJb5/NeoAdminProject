@@ -1,5 +1,5 @@
 using FreeSql;
-using NeoAdmin.Blazor.Data.Entities;
+using NeoAdmin.Blazor.Entities;
 using BlazorMenuSeedData = NeoAdmin.Blazor.SeedData.MenuSeedData;
 
 namespace NeoAdmin.SeedData;
@@ -20,7 +20,7 @@ public static class MenuSeedData
         [
             BlazorMenuSeedData.Page("分类", "/Blog/Classify", 451, "folder"),
             BlazorMenuSeedData.Page("频道", "/Blog/Channel", 452, "rss"),
-            BlazorMenuSeedData.Page("文章", "/Blog/Article", 453, "file-text"),
+            BlazorMenuSeedData.PageWithAudit("文章", "/Blog/Article", 453, "file-text"),
             BlazorMenuSeedData.Page("标签", "/Blog/Tag2", 454, "tags"),
             BlazorMenuSeedData.Page("评论", "/Blog/Comment", 455, "message-circle"),
             BlazorMenuSeedData.Page("用户点赞", "/Blog/UserLike", 456, "thumbs-up"),

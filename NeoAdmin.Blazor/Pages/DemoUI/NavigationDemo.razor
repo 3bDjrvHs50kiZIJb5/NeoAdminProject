@@ -1,6 +1,7 @@
 @page "/neo-demo/ui/navigation"
 @layout LayoutAdmin
 @using NeoUI.Blazor.Primitives
+@inject ILogger<NavigationDemo> Logger
 
 <PageTitle>导航组件演示</PageTitle>
 
@@ -409,21 +410,32 @@
 
     protected override void OnInitialized()
     {
+        DemoPageLog.Enter(Logger, "导航组件演示");
         RefreshPaginationPages();
     }
 
-    private void OpenCommandDialog() => commandDialogOpen = true;
+    private void OpenCommandDialog()
+    {
+        DemoPageLog.Action(Logger, "导航组件演示", "OpenCommandDialog");
+        commandDialogOpen = true;
+    }
 
     private void RunCommand(string label)
     {
+        DemoPageLog.Action(Logger, "导航组件演示", "RunCommand");
         commandResult = label;
         commandDialogOpen = false;
     }
 
-    private void SetMenubarStatus(string status) => menubarStatus = status;
+    private void SetMenubarStatus(string status)
+    {
+        DemoPageLog.Action(Logger, "导航组件演示", "SetMenubarStatus", status);
+        menubarStatus = status;
+    }
 
     private Task HandlePageChanged(int page)
     {
+        DemoPageLog.Action(Logger, "导航组件演示", "HandlePageChanged");
         paginationState.GoToPage(page);
         RefreshPaginationPages();
         return Task.CompletedTask;
@@ -431,6 +443,7 @@
 
     private void GoToPage(int page)
     {
+        DemoPageLog.Action(Logger, "导航组件演示", "GoToPage");
         paginationState.GoToPage(page);
         RefreshPaginationPages();
     }

@@ -2,6 +2,7 @@
 @layout LayoutAdmin
 @inject IToastService ToastService
 @implements IDisposable
+@inject ILogger<FeedbackDemo> Logger
 
 <PageTitle>反馈组件演示</PageTitle>
 
@@ -234,6 +235,7 @@
 </div>
 
 @code {
+    protected override void OnInitialized() => DemoPageLog.Enter(Logger, "反馈组件演示");
     private int progressValue;
     private bool isSimulating;
     private CancellationTokenSource? progressCts;
@@ -247,6 +249,7 @@
 
     private async Task SimulateProgressAsync()
     {
+        DemoPageLog.Action(Logger, "反馈组件演示", "SimulateProgressAsync");
         if (isSimulating)
         {
             return;
@@ -281,30 +284,51 @@
 
     private void ResetProgress()
     {
+        DemoPageLog.Action(Logger, "反馈组件演示", "ResetProgress");
         progressCts?.Cancel();
         progressValue = 0;
         isSimulating = false;
     }
 
-    private void ToggleSpinnerPanel() => showSpinnerPanel = !showSpinnerPanel;
+    private void ToggleSpinnerPanel()
+    {
+        DemoPageLog.Action(Logger, "反馈组件演示", "ToggleSpinnerPanel");
+        showSpinnerPanel = !showSpinnerPanel;
+    }
 
-    private void ShowSuccessToast() =>
+    private void ShowSuccessToast()
+    {
+        DemoPageLog.Action(Logger, "反馈组件演示", "ShowSuccessToast");
         ToastService.Success("操作成功", "您的更改已保存。");
+    }
 
-    private void ShowErrorToast() =>
+    private void ShowErrorToast()
+    {
+        DemoPageLog.Action(Logger, "反馈组件演示", "ShowErrorToast");
         ToastService.Error("操作失败", "请稍后重试或联系管理员。");
+    }
 
-    private void ShowWarningToast() =>
+    private void ShowWarningToast()
+    {
+        DemoPageLog.Action(Logger, "反馈组件演示", "ShowWarningToast");
         ToastService.Warning("注意", "此操作可能影响现有数据。");
+    }
 
-    private void ShowInfoToast() =>
+    private void ShowInfoToast()
+    {
+        DemoPageLog.Action(Logger, "反馈组件演示", "ShowInfoToast");
         ToastService.Info("提示", "新版本功能说明已更新。");
+    }
 
-    private void ShowDefaultToast() =>
+    private void ShowDefaultToast()
+    {
+        DemoPageLog.Action(Logger, "反馈组件演示", "ShowDefaultToast");
         ToastService.Show("通知", "这是一条默认样式的 Toast。", ToastVariant.Default);
+    }
 
     private void ShowActionToast()
     {
+        DemoPageLog.Action(Logger, "反馈组件演示", "ShowActionToast");
         toastActionMessage = string.Empty;
         ToastService.Show(new ToastOptions
         {

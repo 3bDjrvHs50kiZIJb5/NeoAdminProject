@@ -1,9 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 using FreeSql;
+using Microsoft.Extensions.Logging;
 using NeoAdmin.Blazor.Auth;
-using NeoAdmin.Blazor.Data.Entities;
+using NeoAdmin.Blazor.Entities;
 using NeoAdmin.Blazor.Menus;
+using NeoAdmin.Blazor.Utils;
 
 namespace NeoAdmin.Blazor.Services;
 
@@ -14,10 +16,12 @@ public sealed class RoleService
         RegexOptions.Compiled);
 
     private readonly IFreeSql _freeSql;
+    private readonly ILogger<RoleService> _logger;
 
-    public RoleService(IFreeSql freeSql)
+    public RoleService(IFreeSql freeSql, ILogger<RoleService> logger)
     {
         _freeSql = freeSql;
+        _logger = logger;
     }
 
     public Task<List<SysRole>> GetAllAsync() =>
@@ -30,6 +34,7 @@ public sealed class RoleService
         ApiResult? validationError = Validate(model);
         if (validationError is not null)
         {
+            _logger.LogWarning("保存角色失败：{Message}，{EntityDesc}", validationError.Message, EntityLogHelper.Describe(model));
             return ApiResult<SysRole>.Error(validationError.Message, validationError.Code);
         }
 
@@ -48,6 +53,7 @@ public sealed class RoleService
                 .FirstAsync();
             if (existing is null)
             {
+                _logger.LogWarning("保存角色失败：角色不存在，Id={RoleId}", model.Id);
                 return ApiResult<SysRole>.Error("角色不存在");
             }
 
@@ -57,6 +63,7 @@ public sealed class RoleService
                 .ExecuteAffrowsAsync();
         }
 
+        _logger.LogInformation("保存角色成功：{EntityDesc}", EntityLogHelper.Describe(model));
         return ApiResult<SysRole>.Success(model, "保存成功");
     }
 
@@ -65,17 +72,20 @@ public sealed class RoleService
         SysRole? role = await _freeSql.Select<SysRole>().Where(a => a.Id == id).FirstAsync();
         if (role is null)
         {
+            _logger.LogWarning("删除角色失败：角色不存在，Id={RoleId}", id);
             return ApiResult.Error("角色不存在");
         }
 
         if (role.IsAdministrator)
         {
+            _logger.LogWarning("删除角色失败：不能删除系统角色，{EntityDesc}", EntityLogHelper.Describe(role));
             return ApiResult.Error("不能删除系统角色");
         }
 
         await _freeSql.Delete<SysRoleUser>().Where(a => a.RoleId == id).ExecuteAffrowsAsync();
         await _freeSql.Delete<SysRoleMenu>().Where(a => a.RoleId == id).ExecuteAffrowsAsync();
         await _freeSql.Delete<SysRole>().Where(a => a.Id == id).ExecuteAffrowsAsync();
+        _logger.LogInformation("删除角色成功：{EntityDesc}", EntityLogHelper.Describe(role));
         return ApiResult.Success("删除成功");
     }
 
@@ -93,6 +103,7 @@ public sealed class RoleService
     {
         if (!await _freeSql.Select<SysRole>().AnyAsync(a => a.Id == roleId))
         {
+            _logger.LogWarning("分配角色用户失败：角色不存在，RoleId={RoleId}", roleId);
             return ApiResult.Error("角色不存在");
         }
 
@@ -106,6 +117,7 @@ public sealed class RoleService
             await _freeSql.Insert(rows).ExecuteAffrowsAsync();
         }
 
+        _logger.LogInformation("分配角色用户成功：RoleId={RoleId}，用户数={Count}", roleId, userIds.Count);
         return ApiResult.Success("用户分配已保存");
     }
 
@@ -114,11 +126,13 @@ public sealed class RoleService
         SysRole? role = await _freeSql.Select<SysRole>().Where(a => a.Id == roleId).FirstAsync();
         if (role is null)
         {
+            _logger.LogWarning("分配角色菜单失败：角色不存在，RoleId={RoleId}", roleId);
             return ApiResult.Error("角色不存在");
         }
 
         if (role.IsAdministrator)
         {
+            _logger.LogWarning("分配角色菜单失败：管理员角色无需分配，{EntityDesc}", EntityLogHelper.Describe(role));
             return ApiResult.Error("管理员角色拥有全部菜单，无需分配");
         }
 
@@ -132,6 +146,7 @@ public sealed class RoleService
             await _freeSql.Insert(rows).ExecuteAffrowsAsync();
         }
 
+        _logger.LogInformation("分配角色菜单成功：RoleId={RoleId}，菜单数={Count}", roleId, menuIds.Count);
         return ApiResult.Success("菜单分配已保存");
     }
 

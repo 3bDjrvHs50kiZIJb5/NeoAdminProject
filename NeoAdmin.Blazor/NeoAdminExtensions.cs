@@ -6,10 +6,11 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 using NeoAdmin.Blazor.Api;
+using NeoAdmin.Blazor.Attributes;
 using FreeSql;
 using NeoAdmin.Blazor.Auth;
 using NeoAdmin.Blazor.Data;
-using NeoAdmin.Blazor.Data.Entities;
+using NeoAdmin.Blazor.Entities;
 using NeoAdmin.Blazor.Menus;
 using NeoAdmin.Blazor.Middlewares;
 using NeoAdmin.Blazor.Scheduling;
@@ -76,12 +77,15 @@ public static class NeoAdminExtensions
                 freeSql.CodeFirst.SyncStructure<SysRoleUser>();
                 freeSql.CodeFirst.SyncStructure<SysRoleMenu>();
                 freeSql.CodeFirst.SyncStructure<SysSiteSettings>();
+                freeSql.CodeFirst.SyncStructure<SysAuditLog>();
+                freeSql.CodeFirst.SyncStructure<SysAuditEntityLog>();
             }
 
             EnsureSeedData(freeSql, options);
             return freeSql;
         });
 
+        services.AddScoped<UnitOfWorkManager>();
         services.AddScoped<NeoAdminAuthService>();
         services.AddScoped<MenuService>();
         services.AddScoped<FileService>();
@@ -89,6 +93,10 @@ public static class NeoAdminExtensions
         services.AddScoped<RoleService>();
         services.AddScoped<TaskSchedulerService>();
         services.AddScoped<SiteSettingsService>();
+        services.AddSingleton<SerilogLogService>();
+        services.AddScoped<MenuPermissionService>();
+        services.AddScoped<NeoAdminScopeState>();
+        services.AddScoped<AuditWorkflowService>();
         services.AddScoped<NeoPickerOverlayService>();
         services.AddNeoAdminScheduler();
         return services;
@@ -153,6 +161,16 @@ public static class NeoAdminExtensions
             });
             app.MapSwagger("{documentName}/api-docs");
         }
+
+        app.Use(async (context, next) =>
+        {
+            if (context.Request.Path.StartsWithSegments("/api"))
+            {
+                TransactionalAttribute.SetServiceProvider(context.RequestServices);
+            }
+
+            await next();
+        });
 
         app.MapControllers();
         return app;

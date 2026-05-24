@@ -2,6 +2,7 @@
 @layout LayoutAdmin
 @inject DialogService DialogService
 @inject IToastService ToastService
+@inject ILogger<OverlaysModalDemo> Logger
 
 <PageTitle>模态与侧板演示</PageTitle>
 
@@ -44,8 +45,12 @@
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                    <AlertDialogCancel>取消</AlertDialogCancel>
-                                    <AlertDialogAction OnClick="OnDeleteConfirmed">继续</AlertDialogAction>
+                                    <AlertDialogCancel>
+                                        <Button Variant="ButtonVariant.Ghost">取消</Button>
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction>
+                                        <Button OnClick="OnDeleteConfirmed">继续</Button>
+                                    </AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
@@ -110,7 +115,7 @@
                                  Code="@OverlaysModalDemoSnippets.Drawer">
                         <div class="flex flex-wrap gap-2">
                             <Drawer @bind-Open="drawerRightOpen" Direction="DrawerDirection.Right">
-                                <DrawerTrigger AsChild>
+                                <DrawerTrigger>
                                     <Button Variant="ButtonVariant.Outline">右侧抽屉</Button>
                                 </DrawerTrigger>
                                 <DrawerContent>
@@ -126,7 +131,7 @@
                                                Placeholder="输入关键词…" />
                                     </div>
                                     <DrawerFooter>
-                                        <DrawerClose AsChild>
+                                        <DrawerClose>
                                             <Button Variant="ButtonVariant.Outline">关闭</Button>
                                         </DrawerClose>
                                         <Button OnClick="ApplyDrawerFilter">应用</Button>
@@ -135,7 +140,7 @@
                             </Drawer>
 
                             <Drawer @bind-Open="drawerBottomOpen" Direction="DrawerDirection.Bottom">
-                                <DrawerTrigger AsChild>
+                                <DrawerTrigger>
                                     <Button Variant="ButtonVariant.Secondary">底部抽屉</Button>
                                 </DrawerTrigger>
                                 <DrawerContent SnapPoints="new[] { 0.4f, 0.85f }" @bind-SnapIndex="drawerSnapIndex">
@@ -214,6 +219,7 @@
 </div>
 
 @code {
+    protected override void OnInitialized() => DemoPageLog.Enter(Logger, "模态与侧板演示");
     private bool deleteAlertOpen;
     private string alertDialogMessage = string.Empty;
 
@@ -236,14 +242,20 @@
 
     private void OnDeleteConfirmed()
     {
+        DemoPageLog.Action(Logger, "模态与侧板演示", "OnDeleteConfirmed");
         deleteAlertOpen = false;
         alertDialogMessage = "已确认删除（演示，未实际执行）。";
     }
 
-    private void CloseEditDialog() => editDialogOpen = false;
+    private void CloseEditDialog()
+    {
+        DemoPageLog.Action(Logger, "模态与侧板演示", "CloseEditDialog");
+        editDialogOpen = false;
+    }
 
     private void SaveEditDialog()
     {
+        DemoPageLog.Action(Logger, "模态与侧板演示", "SaveEditDialog");
         savedDisplayName = displayName;
         editDialogOpen = false;
         ToastService.Success("Dialog", "资料已保存。");
@@ -251,6 +263,7 @@
 
     private async Task RunConfirmAsync()
     {
+        DemoPageLog.Action(Logger, "模态与侧板演示", "RunConfirmAsync");
         DialogResult result = await DialogService.ConfirmAsync(new DialogOptions
         {
             Title = "确认提交",
@@ -265,18 +278,21 @@
 
     private async Task RunAlertAsync()
     {
+        DemoPageLog.Action(Logger, "模态与侧板演示", "RunAlertAsync");
         await DialogService.AlertAsync("操作已完成。", "提示", "好的");
         dialogServiceMessage = "已关闭提示对话框。";
     }
 
     private async Task RunDeleteConfirmAsync()
     {
+        DemoPageLog.Action(Logger, "模态与侧板演示", "RunDeleteConfirmAsync");
         bool confirmed = await DialogService.ConfirmDeleteAsync("演示记录", "删除后无法恢复。");
         dialogServiceMessage = confirmed ? "用户确认删除。" : "用户取消删除。";
     }
 
     private void ApplyDrawerFilter()
     {
+        DemoPageLog.Action(Logger, "模态与侧板演示", "ApplyDrawerFilter");
         drawerRightOpen = false;
         drawerMessage = string.IsNullOrWhiteSpace(drawerKeyword)
             ? "已应用筛选（无关键词）。"
@@ -285,6 +301,7 @@
 
     private void SaveSheetSettings()
     {
+        DemoPageLog.Action(Logger, "模态与侧板演示", "SaveSheetSettings");
         sheetRightOpen = false;
         ToastService.Success("Sheet", $"邮件={sheetEmailNotify}，推送={sheetPushNotify}");
     }

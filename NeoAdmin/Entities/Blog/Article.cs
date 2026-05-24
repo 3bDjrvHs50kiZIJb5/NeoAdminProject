@@ -1,6 +1,6 @@
 using FreeSql.DataAnnotations;
 
-using NeoAdmin.Blazor.Data.Entities;
+using NeoAdmin.Blazor.Entities;
 
 namespace NeoAdmin.Entities.Blog;
 
@@ -31,7 +31,7 @@ partial class Article
 /// 随笔文章
 /// </summary>
 [Table(Name = "blog_article")]
-public partial class Article : EntityModified
+public partial class Article : EntityAudited
 {
     [Navigate(ManyToMany = typeof(Tag2.TagArticle))]
     public List<Tag2> Tags { get; set; } = [];

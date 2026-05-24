@@ -1,17 +1,22 @@
 using System.ComponentModel.DataAnnotations;
 using FreeSql;
+using Microsoft.Extensions.Logging;
+using NeoAdmin.Blazor.Audit;
 using NeoAdmin.Blazor.Auth;
-using NeoAdmin.Blazor.Data.Entities;
+using NeoAdmin.Blazor.Entities;
+using NeoAdmin.Blazor.Utils;
 
 namespace NeoAdmin.Blazor.Menus;
 
 public sealed class MenuService
 {
     private readonly IFreeSql freeSql;
+    private readonly ILogger<MenuService> logger;
 
-    public MenuService(IFreeSql freeSql)
+    public MenuService(IFreeSql freeSql, ILogger<MenuService> logger)
     {
         this.freeSql = freeSql;
+        this.logger = logger;
     }
 
     public Task<List<SysMenu>> GetAllAsync() =>
@@ -36,6 +41,7 @@ public sealed class MenuService
         ApiResult? validationError = ValidateRequest(model);
         if (validationError is not null)
         {
+            logger.LogWarning("保存菜单失败：{Message}，Label={Label}", validationError.Message, model.Label);
             return ApiResult<SysMenu>.Error(validationError.Message, validationError.Code);
         }
 
@@ -73,6 +79,12 @@ public sealed class MenuService
             await EnsureCrudButtonsAsync(menu.Id);
         }
 
+        if (model.GenerateAuditButtons)
+        {
+            EnsureAuditButtons(freeSql, menu.Id);
+        }
+
+        logger.LogInformation("保存菜单成功：{EntityDesc}", EntityLogHelper.Describe(menu));
         return ApiResult<SysMenu>.Success(menu, "保存成功");
     }
 
@@ -81,11 +93,13 @@ public sealed class MenuService
         SysMenu? menu = await freeSql.Select<SysMenu>().Where(a => a.Id == id).FirstAsync();
         if (menu is null)
         {
+            logger.LogWarning("删除菜单失败：菜单不存在，Id={MenuId}", id);
             return ApiResult.Error("菜单不存在");
         }
 
         if (menu.IsSystem)
         {
+            logger.LogWarning("删除菜单失败：不能删除系统菜单，{EntityDesc}", EntityLogHelper.Describe(menu));
             return ApiResult.Error("不能删除系统菜单");
         }
 
@@ -97,6 +111,7 @@ public sealed class MenuService
         }
 
         await freeSql.Delete<SysMenu>().Where(a => ids.Contains(a.Id)).ExecuteAffrowsAsync();
+        logger.LogInformation("删除菜单成功：{EntityDesc}，共删除 {Count} 个节点", EntityLogHelper.Describe(menu), ids.Count);
         return ApiResult.Success("删除成功");
     }
 
@@ -142,6 +157,19 @@ public sealed class MenuService
         }
 
         return path.StartsWith('/') ? path : "/" + path;
+    }
+
+    public static void EnsureAuditButtons(IFreeSql freeSql, long parentId)
+    {
+        foreach (SysMenu template in AuditMenuDefinitions.CreateAuditButtons())
+        {
+            bool exists = freeSql.Select<SysMenu>()
+                .Any(a => a.ParentId == parentId && a.Path == template.Path);
+            if (!exists)
+            {
+                freeSql.Insert(NewButton(parentId, template.Label, template.Path, template.Sort)).ExecuteAffrows();
+            }
+        }
     }
 
     private async Task EnsureCrudButtonsAsync(long parentId)

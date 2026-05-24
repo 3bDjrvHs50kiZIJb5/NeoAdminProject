@@ -1,6 +1,6 @@
 using FreeSql.DataAnnotations;
 
-using NeoAdmin.Blazor.Data.Entities;
+using NeoAdmin.Blazor.Entities;
 
 namespace NeoAdmin.Entities.Blog;
 

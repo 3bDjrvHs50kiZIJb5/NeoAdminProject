@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using NeoAdmin.Blazor.Data.Entities;
+using NeoAdmin.Blazor.Entities;
 
 namespace NeoAdmin.Blazor.Menus;
 
@@ -31,6 +31,8 @@ public sealed class MenuEditModel
     public bool IsHidden { get; set; }
 
     public bool GenerateCrudButtons { get; set; }
+
+    public bool GenerateAuditButtons { get; set; }
 
     public static MenuEditModel FromEntity(SysMenu menu) => new()
     {

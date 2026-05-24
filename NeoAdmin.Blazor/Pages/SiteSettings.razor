@@ -2,12 +2,13 @@
 @layout LayoutAdmin
 @using Microsoft.AspNetCore.Components.Forms
 @using NeoAdmin.Blazor.Auth
-@using NeoAdmin.Blazor.Data.Entities
+@using NeoAdmin.Blazor.Entities
 @using NeoAdmin.Blazor.Services
 @inject SiteSettingsService SiteSettingsService
 @inject FileService FileService
 @inject IToastService ToastService
 @inject NavigationManager NavigationManager
+@inject ILogger<SiteSettings> Logger
 
 <PageTitle>站点设置</PageTitle>
 
@@ -229,6 +230,7 @@
         }
 
         isSaving = true;
+        Logger.LogInformation("保存站点设置：Title={Title}", model.Title);
         try
         {
             SiteSettingsService.ApplyHosts(model, hostText);
@@ -246,16 +248,19 @@
             ApiResult<SysSiteSettings> result = await SiteSettingsService.SaveAsync(model);
             if (!result.Succeeded)
             {
+                Logger.LogWarning("保存站点设置失败：{Message}", result.Message);
                 ToastService.Error("保存失败", result.Message);
                 return;
             }
 
+            Logger.LogInformation("保存站点设置成功：Title={Title}", model.Title);
             ToastService.Success("站点设置", result.Message);
             SiteSettingsService.InvalidateCache();
             await LoadAsync();
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "保存站点设置异常");
             ToastService.Error("保存失败", ex.Message);
         }
         finally
@@ -407,6 +412,7 @@
         }
 
         isChangingPassword = true;
+        Logger.LogInformation("修改管理员密码：Username={Username}", passwordUsername);
         try
         {
             ApiResult result = await SiteSettingsService.ChangeAdministratorPasswordAsync(
@@ -415,10 +421,12 @@
 
             if (!result.Succeeded)
             {
+                Logger.LogWarning("修改管理员密码失败：Username={Username}，Message={Message}", passwordUsername, result.Message);
                 ToastService.Error("修改密码", result.Message);
                 return;
             }
 
+            Logger.LogInformation("修改管理员密码成功：Username={Username}", passwordUsername);
             ToastService.Success("修改密码", result.Message);
             ClosePasswordDialog();
         }

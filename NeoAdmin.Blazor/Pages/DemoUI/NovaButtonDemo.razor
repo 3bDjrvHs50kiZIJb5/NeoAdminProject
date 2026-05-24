@@ -1,0 +1,71 @@
+@page "/neo-demo/ui/nova-button"
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Attributes
+@inject ILogger<NovaButtonDemo> Logger
+
+<PageTitle>NovaButton 演示</PageTitle>
+
+<div class="flex flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">NovaButtonAttribute 演示</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                演示 <code class="rounded bg-muted px-1 py-0.5 text-xs">NovaButtonAttribute</code> 在方法执行前做按钮权限拦截。
+            </p>
+        </div>
+
+        <div class="grid gap-4 p-4 lg:grid-cols-2">
+            <div class="rounded-lg border bg-background p-4">
+                <div class="mb-3 font-semibold">允许执行的按钮</div>
+                <p class="mb-3 text-sm text-muted-foreground">
+                    <code>[NovaButton("demo_allow")]</code>：当前菜单已种子化该按钮权限。
+                </p>
+                <Button OnClick="BeginAllowAction">执行允许动作</Button>
+                <div class="mt-4 rounded-lg border bg-muted/40 p-3 text-sm">
+                    <div class="mb-1 font-semibold">最近一次结果</div>
+                    <div class="text-muted-foreground">@allowStatus</div>
+                </div>
+            </div>
+
+            <div class="rounded-lg border bg-background p-4">
+                <div class="mb-3 font-semibold">拦截演示</div>
+                <p class="mb-3 text-sm text-muted-foreground">
+                    <code>[NovaButton("demo_blocked")]</code>：未配置按钮权限，非管理员会被拦截。
+                </p>
+                <Button Variant="ButtonVariant.Destructive" OnClick="BeginBlockedAction">执行拦截动作</Button>
+                <Alert Variant="AlertVariant.Warning" Class="mt-4">
+                    点击后会触发 Toast「没有访问权限」。管理员角色默认放行全部按钮。
+                </Alert>
+            </div>
+        </div>
+
+        <div class="border-t p-4">
+            <DemoSection Title="用法说明"
+                         Description="适合绑定在页面按钮、表格操作等需要菜单按钮权限校验的方法上。"
+                         Code="@NovaButtonDemoSnippets.Usage">
+                <pre class="whitespace-pre-wrap text-sm text-muted-foreground">@NovaButtonDemoSnippets.Behavior</pre>
+            </DemoSection>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized() => DemoPageLog.Enter(Logger, "NovaButton 演示");
+    private string allowStatus = "尚未执行";
+
+    [NovaButton("demo_allow")]
+    private async Task BeginAllowAction()
+    {
+        DemoPageLog.Action(Logger, "NovaButton 演示", "BeginAllowAction");
+        allowStatus = $"允许动作已进入方法体（{DateTime.Now:HH:mm:ss}）";
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [NovaButton("demo_blocked")]
+    private async Task BeginBlockedAction()
+    {
+        DemoPageLog.Action(Logger, "NovaButton 演示", "BeginBlockedAction");
+        allowStatus = "如果你看到了这句，说明当前账号拥有 demo_blocked 权限";
+        await InvokeAsync(StateHasChanged);
+    }
+}

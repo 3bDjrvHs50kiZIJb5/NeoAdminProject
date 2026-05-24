@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NeoAdmin.Blazor.Data;
-using NeoAdmin.Blazor.Data.Entities;
+using NeoAdmin.Blazor.Entities;
 using NeoAdmin.Blazor.Utils;
 using FreeSql;
 
@@ -13,15 +14,18 @@ public sealed class FileService
     private readonly IFreeSql _freeSql;
     private readonly IWebHostEnvironment _webHostEnvironment;
     private readonly FileUploadOptions _uploadOptions;
+    private readonly ILogger<FileService> _logger;
 
     public FileService(
         IFreeSql freeSql,
         IWebHostEnvironment webHostEnvironment,
-        IOptions<NeoAdminOptions> options)
+        IOptions<NeoAdminOptions> options,
+        ILogger<FileService> logger)
     {
         _freeSql = freeSql;
         _webHostEnvironment = webHostEnvironment;
         _uploadOptions = options.Value.FileUpload;
+        _logger = logger;
     }
 
     public async Task<SysFile> UploadFileAsync(
@@ -33,6 +37,7 @@ public sealed class FileService
     {
         if (file.Size <= 0)
         {
+            _logger.LogWarning("上传文件失败：文件内容为空，文件名={FileName}", file.Name);
             throw new InvalidOperationException("文件内容不能为空。");
         }
 
@@ -62,6 +67,7 @@ public sealed class FileService
 
             if (existing is not null)
             {
+                _logger.LogInformation("上传文件命中 MD5 去重：{FileName} -> {EntityDesc}", file.Name, EntityLogHelper.Describe(existing));
                 SysFile sameFile = new()
                 {
                     FileGuid = Guid.NewGuid(),
@@ -121,6 +127,7 @@ public sealed class FileService
         }
 
         await _freeSql.Insert(fileEntity).ExecuteAffrowsAsync(cancellationToken);
+        _logger.LogInformation("上传文件成功：{EntityDesc}，原始文件名={OriginFileName}", EntityLogHelper.Describe(fileEntity), file.Name);
         return fileEntity;
     }
 
@@ -129,6 +136,7 @@ public sealed class FileService
         SysFile? file = await _freeSql.Select<SysFile>().Where(a => a.Id == id).FirstAsync(cancellationToken);
         if (file is null)
         {
+            _logger.LogWarning("删除文件失败：文件不存在，Id={FileId}", id);
             return;
         }
 
@@ -146,6 +154,7 @@ public sealed class FileService
         }
 
         await _freeSql.Delete<SysFile>().Where(a => a.Id == id).ExecuteAffrowsAsync(cancellationToken);
+        _logger.LogInformation("删除文件成功：{EntityDesc}", EntityLogHelper.Describe(file));
     }
 
     private string BuildRelativeDirectory(string fileDirectory)

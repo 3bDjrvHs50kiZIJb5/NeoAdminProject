@@ -1,0 +1,313 @@
+@namespace NeoAdmin.Blazor.Components
+@using NeoAdmin.Blazor.Audit
+@using NeoAdmin.Blazor.Auth
+@using NeoAdmin.Blazor.Entities
+@using NeoAdmin.Blazor.Services
+@inject AuditWorkflowService AuditWorkflow
+@inject MenuPermissionService MenuPermission
+@inject IToastService ToastService
+
+@if (Item is null || Item.Id == 0)
+{
+    <p class="text-sm text-muted-foreground">保存记录后可进行审批操作。</p>
+}
+else
+{
+    <div class="rounded-lg border bg-muted/30 p-4 space-y-4">
+        <div class="flex flex-wrap items-center gap-3 text-sm">
+            <span class="font-medium">审批状态：</span>
+            <Badge Variant="@AuditWorkflowRules.GetStatusBadgeVariant(Item.AuditStatus)"
+                   Class="@AuditWorkflowRules.GetStatusBadgeClass(Item.AuditStatus)">@AuditWorkflowRules.GetStatusLabel(Item.AuditStatus)</Badge>
+            <span class="text-muted-foreground">步骤：@(MenuContext?.GetStepLabel(Item.AuditStep) ?? Item.AuditStep)</span>
+            <span class="text-muted-foreground">版本：@Item.AuditVersion</span>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(hintMessage))
+        {
+            <p class="text-sm text-amber-700">@hintMessage</p>
+        }
+
+        <div class="space-y-2">
+            <Label For="audit-opinion">处理意见</Label>
+            <Textarea id="audit-opinion" Class="min-h-20 w-full" MaxLength="500" @bind-Value="opinion" />
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+            @if (showSubmit)
+            {
+                <Button Variant="ButtonVariant.Default" Size="ButtonSize.Small" Disabled="@isBusy" OnClick="SubmitAsync">
+                    @(Item.AuditStatus == SysAuditStatus.审核中 ? "通过" : "提交")
+                </Button>
+            }
+            @if (showBack)
+            {
+                <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small" Disabled="@isBusy" OnClick="BackAsync">
+                    @(Item.AuditStatus is SysAuditStatus.通过 or SysAuditStatus.拒绝 ? "反审" : "退回")
+                </Button>
+            }
+            @if (showRefuse)
+            {
+                <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small" Disabled="@isBusy" OnClick="RefuseAsync">
+                    拒绝
+                </Button>
+            }
+        </div>
+
+        @if (showHistory || showEntityLog)
+        {
+            <Tabs @bind-Value="recordsTab" Class="w-full">
+                <TabsList Class="inline-flex h-auto w-full flex-wrap justify-start gap-1">
+                    @if (showHistory)
+                    {
+                        <TabsTrigger Value="workflow">审批记录</TabsTrigger>
+                    }
+                    @if (showEntityLog)
+                    {
+                        <TabsTrigger Value="versions">历史版本</TabsTrigger>
+                    }
+                </TabsList>
+                @if (showHistory)
+                {
+                    <TabsContent Value="workflow" Class="mt-3">
+                        <div class="max-h-[40vh] overflow-auto rounded-md border bg-background">
+                            @if (workflowLogs.Count == 0)
+                            {
+                                <p class="text-sm text-muted-foreground py-6 text-center">暂无审批记录</p>
+                            }
+                            else
+                            {
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="border-b text-left text-muted-foreground">
+                                            <th class="py-2 px-3">步骤</th>
+                                            <th class="py-2 px-3">结果</th>
+                                            <th class="py-2 px-3">意见</th>
+                                            <th class="py-2 px-3">操作人</th>
+                                            <th class="py-2 px-3">时间</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (SysAuditLog log in workflowLogs)
+                                        {
+                                            <tr class="border-b border-border/60">
+                                                <td class="py-2 px-3">@(MenuContext?.GetStepLabel(log.Step) ?? log.Step)</td>
+                                                <td class="py-2 px-3">@AuditWorkflowRules.GetStatusLabel(log.Result)</td>
+                                                <td class="py-2 px-3 max-w-[200px] truncate" title="@log.Opinion">@log.Opinion</td>
+                                                <td class="py-2 px-3">@log.CreatedUserName</td>
+                                                <td class="py-2 px-3">@(log.CreatedTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                        </div>
+                    </TabsContent>
+                }
+                @if (showEntityLog)
+                {
+                    <TabsContent Value="versions" Class="mt-3">
+                        <div class="max-h-[40vh] overflow-auto rounded-md border bg-background p-3 space-y-3">
+                            @if (entityLogs.Count == 0)
+                            {
+                                <p class="text-sm text-muted-foreground py-6 text-center">暂无变更记录</p>
+                            }
+                            else
+                            {
+                                @foreach (SysAuditEntityLog log in entityLogs)
+                                {
+                                    <div class="rounded border p-3 text-sm space-y-2">
+                                        <div class="flex flex-wrap gap-3 text-muted-foreground">
+                                            <span>@log.LogType</span>
+                                            <span>@log.CreatedUserName</span>
+                                            <span>@(log.CreatedTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")</span>
+                                        </div>
+                                        @if (!string.IsNullOrWhiteSpace(log.DataOld))
+                                        {
+                                            <details>
+                                                <summary class="cursor-pointer">变更前</summary>
+                                                <pre class="mt-2 overflow-auto rounded bg-muted p-2 text-xs">@log.DataOld</pre>
+                                            </details>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(log.Data))
+                                        {
+                                            <details open>
+                                                <summary class="cursor-pointer">@(log.LogType == "remove" ? "删除快照" : "变更后")</summary>
+                                                <pre class="mt-2 overflow-auto rounded bg-muted p-2 text-xs">@log.Data</pre>
+                                            </details>
+                                        }
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </TabsContent>
+                }
+            </Tabs>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public EntityAudited Item { get; set; } = default!;
+    [Parameter, EditorRequired] public Type EntityType { get; set; } = default!;
+    [Parameter, EditorRequired] public string MenuPath { get; set; } = string.Empty;
+    [Parameter] public EventCallback<EntityAudited> OnChanged { get; set; }
+
+    private AuditMenuContext? MenuContext { get; set; }
+    private string opinion = string.Empty;
+    private string? hintMessage;
+    private bool isBusy;
+    private bool showSubmit;
+    private bool showBack;
+    private bool showRefuse;
+    private bool showHistory = true;
+    private bool showEntityLog;
+    private string recordsTab = "workflow";
+    private List<SysAuditLog> workflowLogs = [];
+    private List<SysAuditEntityLog> entityLogs = [];
+    private string tableName = string.Empty;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Item.Id == 0)
+        {
+            return;
+        }
+
+        tableName = AuditWorkflow.GetTableName(EntityType);
+        MenuContext = await AuditWorkflow.LoadMenuContextAsync(MenuPath);
+        await RefreshButtonsAsync();
+    }
+
+    private async Task RefreshButtonsAsync()
+    {
+        if (MenuContext is null || Item.Id == 0)
+        {
+            return;
+        }
+
+        showSubmit = (Item.AuditStatus is SysAuditStatus.待提交 or SysAuditStatus.退回
+                && await MenuPermission.HasButtonAsync(MenuPath, "audit_00"))
+            || (Item.AuditStatus == SysAuditStatus.审核中
+                && !string.IsNullOrEmpty(Item.AuditStep)
+                && await MenuPermission.HasButtonAsync(MenuPath, Item.AuditStep));
+
+        showBack = (Item.AuditStatus == SysAuditStatus.审核中 && await MenuPermission.HasButtonAsync(MenuPath, "audit_99"))
+            || (Item.AuditStatus is SysAuditStatus.通过 or SysAuditStatus.拒绝 && await MenuPermission.HasButtonAsync(MenuPath, "audit_99"));
+
+        showRefuse = Item.AuditStatus == SysAuditStatus.审核中 && await MenuPermission.HasButtonAsync(MenuPath, "audit_98");
+        showEntityLog = MenuContext.HasEditVersion && await MenuPermission.HasButtonAsync(MenuPath, "edit_version");
+        recordsTab = showHistory ? "workflow" : "versions";
+
+        if (!AuditWorkflowRules.CanEdit(Item))
+        {
+            hintMessage = "记录已进入审批流程，仅可在「待提交」或退回到提交节点时编辑正文。";
+        }
+        else
+        {
+            hintMessage = null;
+        }
+
+        workflowLogs = await AuditWorkflow.GetWorkflowLogsAsync(tableName, Item.Id);
+        entityLogs = await AuditWorkflow.GetEntityLogsAsync(tableName, Item.Id);
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (MenuContext is null)
+        {
+            return;
+        }
+
+        isBusy = true;
+        try
+        {
+            ApiResult<EntityAudited> result = await AuditWorkflow.SubmitAsync(
+                Item,
+                EntityType,
+                MenuPath,
+                MenuContext,
+                opinion);
+            if (!result.Succeeded)
+            {
+                ToastService.Error("操作失败", result.Message);
+                return;
+            }
+
+            ToastService.Success("操作成功", result.Message);
+            opinion = string.Empty;
+            await NotifyChangedAsync();
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private async Task BackAsync()
+    {
+        if (MenuContext is null)
+        {
+            return;
+        }
+
+        isBusy = true;
+        try
+        {
+            ApiResult<EntityAudited> result = await AuditWorkflow.BackAsync(
+                Item,
+                EntityType,
+                MenuPath,
+                MenuContext,
+                opinion);
+            if (!result.Succeeded)
+            {
+                ToastService.Error("操作失败", result.Message);
+                return;
+            }
+
+            ToastService.Success("操作成功", result.Message);
+            opinion = string.Empty;
+            await NotifyChangedAsync();
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private async Task RefuseAsync()
+    {
+        isBusy = true;
+        try
+        {
+            ApiResult<EntityAudited> result = await AuditWorkflow.RefuseAsync(
+                Item,
+                EntityType,
+                MenuPath,
+                opinion);
+            if (!result.Succeeded)
+            {
+                ToastService.Error("操作失败", result.Message);
+                return;
+            }
+
+            ToastService.Success("操作成功", result.Message);
+            opinion = string.Empty;
+            await NotifyChangedAsync();
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private async Task NotifyChangedAsync()
+    {
+        await RefreshButtonsAsync();
+        if (OnChanged.HasDelegate)
+        {
+            await OnChanged.InvokeAsync(Item);
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+}

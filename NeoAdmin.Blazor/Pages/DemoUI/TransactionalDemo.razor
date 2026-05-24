@@ -1,0 +1,188 @@
+@page "/neo-demo/ui/transactional"
+@layout LayoutAdmin
+@using FreeSql
+@using NeoAdmin.Blazor.Attributes
+@using NeoAdmin.Blazor.Entities
+@inject UnitOfWorkManager UowManager
+@inject ILogger<TransactionalDemo> Logger
+
+<PageTitle>Transactional 演示</PageTitle>
+
+<div class="flex flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">TransactionalAttribute 演示</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                演示 <code class="rounded bg-muted px-1 py-0.5 text-xs">TransactionalAttribute</code>
+                在两次写入时自动提交，或在失败时整批回滚。
+            </p>
+        </div>
+
+        <div class="grid gap-4 p-4 lg:grid-cols-2">
+            <div class="rounded-lg border bg-background p-4">
+                <div class="mb-3 font-semibold">触发操作</div>
+                <p class="mb-3 text-sm text-muted-foreground">
+                    演示数据写入 <code class="rounded bg-muted px-1 py-0.5 text-xs">SysParam</code>，
+                    Key 前缀为 <code class="rounded bg-muted px-1 py-0.5 text-xs">tx.demo.</code>。
+                </p>
+                <div class="mb-3 flex flex-wrap gap-2">
+                    <Button OnClick="RunCommitAsync">提交两条记录</Button>
+                    <Button Variant="ButtonVariant.Outline" OnClick="RunRollbackAsync">模拟失败回滚</Button>
+                    <Button Variant="ButtonVariant.Secondary" OnClick="QueryCurrentBatchAsync">查询当前批次</Button>
+                    <Button Variant="ButtonVariant.Ghost" OnClick="CleanupDemoDataAsync">清理演示数据</Button>
+                </div>
+                <div class="rounded-lg border bg-muted/40 p-3 text-sm text-muted-foreground">
+                    @statusText
+                </div>
+            </div>
+
+            <div class="rounded-lg border bg-background p-4">
+                <div class="mb-3 font-semibold">执行结果</div>
+                <div class="grid gap-3">
+                    <div class="rounded-lg border p-3">
+                        <div class="text-xs text-muted-foreground">最近批次</div>
+                        <div class="break-all font-semibold">@(string.IsNullOrEmpty(lastBatchId) ? "-" : lastBatchId)</div>
+                    </div>
+                    <div class="rounded-lg border p-3">
+                        <div class="text-xs text-muted-foreground">当前批次记录数</div>
+                        <div class="font-semibold">@demoCount</div>
+                    </div>
+                    <div class="rounded-lg border p-3">
+                        <div class="text-xs text-muted-foreground">演示数据总量</div>
+                        <div class="font-semibold">@totalDemoCount</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="border-t p-4">
+            <DemoSection Title="用法说明"
+                         Description="在 Blazor 方法或 Service 方法上标记 Transactional，配合 UnitOfWorkManager.Orm 执行数据库操作。"
+                         Code="@TransactionalDemoSnippets.Usage">
+                <pre class="whitespace-pre-wrap text-sm text-muted-foreground">@TransactionalDemoSnippets.Behavior</pre>
+            </DemoSection>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized() => DemoPageLog.Enter(Logger, "Transactional 演示");
+    private const string DemoKeyPrefix = "tx.demo.";
+
+    private string lastBatchId = string.Empty;
+    private long demoCount;
+    private long totalDemoCount;
+    private string statusText = "尚未执行";
+
+    private async Task RunCommitAsync()
+    {
+        DemoPageLog.Action(Logger, "Transactional 演示", "RunCommitAsync");
+        statusText = "正在提交...";
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            await CommitAsync();
+            demoCount = await CountByBatchAsync(lastBatchId);
+            totalDemoCount = await CountAllDemoAsync();
+            statusText = $"提交成功，批次 {lastBatchId} 写入 {demoCount} 条记录";
+        }
+        catch (Exception ex)
+        {
+            statusText = $"提交失败：{ex.Message}";
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RunRollbackAsync()
+    {
+        DemoPageLog.Action(Logger, "Transactional 演示", "RunRollbackAsync");
+        statusText = "正在模拟失败...";
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            await RollbackAsync();
+            statusText = "未触发回滚，请检查演示逻辑";
+        }
+        catch (Exception ex)
+        {
+            demoCount = await CountByBatchAsync(lastBatchId);
+            totalDemoCount = await CountAllDemoAsync();
+            statusText = $"已回滚：{ex.Message}，批次 {lastBatchId} 剩余 {demoCount} 条";
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task QueryCurrentBatchAsync()
+    {
+        DemoPageLog.Action(Logger, "Transactional 演示", "QueryCurrentBatchAsync");
+        if (string.IsNullOrEmpty(lastBatchId))
+        {
+            statusText = "请先执行一次提交或回滚演示";
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        demoCount = await CountByBatchAsync(lastBatchId);
+        totalDemoCount = await CountAllDemoAsync();
+        statusText = $"批次 {lastBatchId} 当前有 {demoCount} 条，演示数据共 {totalDemoCount} 条";
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CleanupDemoDataAsync()
+    {
+        DemoPageLog.Action(Logger, "Transactional 演示", "CleanupDemoDataAsync");
+        int deleted = await UowManager.Orm.Delete<SysParam>()
+            .Where(a => a.Key.StartsWith(DemoKeyPrefix))
+            .ExecuteAffrowsAsync();
+
+        demoCount = 0;
+        totalDemoCount = 0;
+        statusText = $"已清理 {deleted} 条演示数据";
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [Transactional]
+    private async Task CommitAsync()
+    {
+        DemoPageLog.Action(Logger, "Transactional 演示", "CommitAsync");
+        lastBatchId = Guid.NewGuid().ToString("N")[..8];
+
+        await UowManager.Orm.Insert(CreateDemoParam($"{DemoKeyPrefix}{lastBatchId}.a", "步骤 A")).ExecuteAffrowsAsync();
+        await UowManager.Orm.Insert(CreateDemoParam($"{DemoKeyPrefix}{lastBatchId}.b", "步骤 B")).ExecuteAffrowsAsync();
+    }
+
+    [Transactional]
+    private async Task RollbackAsync()
+    {
+        DemoPageLog.Action(Logger, "Transactional 演示", "RollbackAsync");
+        lastBatchId = Guid.NewGuid().ToString("N")[..8];
+
+        await UowManager.Orm.Insert(CreateDemoParam($"{DemoKeyPrefix}{lastBatchId}.a", "将被回滚 A")).ExecuteAffrowsAsync();
+        throw new InvalidOperationException("模拟第二步失败，整批回滚");
+    }
+
+    private Task<long> CountByBatchAsync(string batchId) =>
+        UowManager.Orm.Select<SysParam>()
+            .Where(a => a.Key.StartsWith($"{DemoKeyPrefix}{batchId}"))
+            .CountAsync();
+
+    private Task<long> CountAllDemoAsync() =>
+        UowManager.Orm.Select<SysParam>()
+            .Where(a => a.Key.StartsWith(DemoKeyPrefix))
+            .CountAsync();
+
+    private static SysParam CreateDemoParam(string key, string title) => new()
+    {
+        Key = key,
+        Title = title,
+        Value = DateTime.Now.ToString("O"),
+        Description = "TransactionalAttribute 演示数据",
+        Sort = 0,
+        Enabled = true,
+        CreatedTime = DateTime.Now
+    };
+}

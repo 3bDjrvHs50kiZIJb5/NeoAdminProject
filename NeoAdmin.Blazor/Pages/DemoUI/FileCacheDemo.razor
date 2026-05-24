@@ -1,0 +1,152 @@
+@page "/neo-demo/ui/file-cache"
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Attributes
+@inject ILogger<FileCacheDemo> Logger
+
+<PageTitle>文件缓存演示</PageTitle>
+
+<div class="flex flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">FileCacheAttribute 演示</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                演示 <code class="rounded bg-muted px-1 py-0.5 text-xs">FileCacheAttribute</code> 的基础缓存行为、请求结果和说明信息。
+            </p>
+        </div>
+
+        <div class="grid gap-4 p-4 lg:grid-cols-2">
+            <div class="rounded-lg border bg-background p-4">
+                <div class="mb-3 font-semibold">请求参数</div>
+
+                <div class="mb-3 space-y-2">
+                    <Label For="queryValue">参数 a</Label>
+                    <Input Id="queryValue" @bind-Value="queryValue" />
+                </div>
+
+                <div class="mb-3 flex flex-wrap gap-2">
+                    <Button OnClick="RequestAsync">请求一次</Button>
+                    <Button Variant="ButtonVariant.Outline" OnClick="RequestTwiceAsync">连续请求两次</Button>
+                    <Button Variant="ButtonVariant.Secondary" OnClick="ChangeAndRequestAsync">变更参数后请求</Button>
+                </div>
+
+                <div class="rounded-lg border bg-muted/40 p-3">
+                    <div class="mb-1 font-semibold">当前状态</div>
+                    <div class="text-sm text-muted-foreground">@statusText</div>
+                </div>
+            </div>
+
+            <div class="rounded-lg border bg-background p-4">
+                <div class="mb-3 font-semibold">返回结果</div>
+
+                <div class="mb-3 grid gap-3">
+                    <div class="rounded-lg border p-3">
+                        <div class="text-xs text-muted-foreground">参数</div>
+                        <div class="font-semibold">@lastInput</div>
+                    </div>
+                    <div class="rounded-lg border p-3">
+                        <div class="text-xs text-muted-foreground">构建次数</div>
+                        <div class="font-semibold">@lastBuildCount</div>
+                    </div>
+                    <div class="rounded-lg border p-3">
+                        <div class="text-xs text-muted-foreground">缓存键</div>
+                        <div class="break-all font-semibold">@lastCacheKey</div>
+                    </div>
+                </div>
+
+                <div class="rounded-lg bg-zinc-950 p-3 text-zinc-50">
+                    <div class="mb-1 text-xs text-zinc-400">原始返回</div>
+                    <pre class="mb-0 whitespace-pre-wrap text-sm">@rawResponse</pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="border-t p-4">
+            <DemoSection Title="用法说明"
+                         Description="按钮点击后会调用带 FileCache 的方法。第一次进入方法体会生成结果，后续相同参数会直接命中缓存。"
+                         Code="@FileCacheDemoSnippets.Usage">
+                <div class="grid gap-4 lg:grid-cols-2">
+                    <div class="rounded-lg border bg-muted/30 p-3">
+                        <div class="mb-2 text-sm font-semibold">清理规则</div>
+                        <pre class="whitespace-pre-wrap text-sm text-muted-foreground">@FileCacheDemoSnippets.CleanupRules</pre>
+                    </div>
+                    <div class="rounded-lg border bg-muted/30 p-3">
+                        <div class="mb-2 text-sm font-semibold">预期行为</div>
+                        <pre class="whitespace-pre-wrap text-sm text-muted-foreground">@FileCacheDemoSnippets.Behavior</pre>
+                    </div>
+                </div>
+            </DemoSection>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized() => DemoPageLog.Enter(Logger, "文件缓存演示");
+    private string queryValue = "alpha";
+    private string statusText = "尚未请求";
+    private string rawResponse = "暂无结果";
+    private string lastInput = "-";
+    private string lastBuildCount = "-";
+    private string lastCacheKey = "-";
+    private int buildCount;
+
+    [FileCache(60, CacheDirectory = "Cache/FileCache.Tests")]
+    private string BuildCacheResult(string a)
+    {
+        int currentBuildCount = Interlocked.Increment(ref buildCount);
+        return $"input={a};buildCount={currentBuildCount};cacheKey=page:{a}";
+    }
+
+    private Task RequestAsync()
+    {
+        DemoPageLog.Action(Logger, "文件缓存演示", "RequestAsync", queryValue);
+        return ExecuteRequestAsync(queryValue);
+    }
+
+    private async Task RequestTwiceAsync()
+    {
+        DemoPageLog.Action(Logger, "文件缓存演示", "RequestTwiceAsync");
+        await ExecuteRequestAsync(queryValue);
+        await Task.Delay(150);
+        await ExecuteRequestAsync(queryValue);
+    }
+
+    private async Task ChangeAndRequestAsync()
+    {
+        DemoPageLog.Action(Logger, "文件缓存演示", "ChangeAndRequestAsync");
+        queryValue = $"{queryValue}-new";
+        await ExecuteRequestAsync(queryValue);
+    }
+
+    private async Task ExecuteRequestAsync(string value)
+    {
+        DemoPageLog.Action(Logger, "文件缓存演示", "ExecuteRequestAsync");
+        statusText = $"正在请求参数 {value}";
+        string response = BuildCacheResult(value);
+        rawResponse = response;
+
+        foreach (string part in response.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            string[] kv = part.Split('=', 2, StringSplitOptions.TrimEntries);
+            if (kv.Length != 2)
+            {
+                continue;
+            }
+
+            switch (kv[0])
+            {
+                case "input":
+                    lastInput = kv[1];
+                    break;
+                case "buildCount":
+                    lastBuildCount = kv[1];
+                    break;
+                case "cacheKey":
+                    lastCacheKey = kv[1];
+                    break;
+            }
+        }
+
+        statusText = $"已完成请求：{value}";
+        await InvokeAsync(StateHasChanged);
+    }
+}

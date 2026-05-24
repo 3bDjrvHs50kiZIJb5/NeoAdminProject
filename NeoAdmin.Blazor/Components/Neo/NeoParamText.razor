@@ -1,0 +1,82 @@
+@namespace NeoAdmin.Blazor.Components
+@using FreeSql
+@using NeoAdmin.Blazor.Entities
+@inject IFreeSql FreeSql
+
+@if (UseDiv)
+{
+    <div class="@Class" style="@Style">@text</div>
+}
+else
+{
+    <span class="@Class" style="@Style">@text</span>
+}
+
+@code {
+    [Parameter]
+    public string ParamKey { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Field { get; set; } = nameof(SysParam.Value);
+
+    [Parameter]
+    public string DefaultText { get; set; } = string.Empty;
+
+    [Parameter]
+    public string TagName { get; set; } = "span";
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter]
+    public string? Style { get; set; }
+
+    [Parameter]
+    public bool EnabledOnly { get; set; } = true;
+
+    private string text = string.Empty;
+
+    private bool UseDiv => TagName.Equals("div", StringComparison.OrdinalIgnoreCase);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.IsNullOrWhiteSpace(ParamKey))
+        {
+            text = DefaultText;
+            return;
+        }
+
+        var query = FreeSql.Select<SysParam>()
+            .Where(a => a.Key == ParamKey);
+
+        if (EnabledOnly)
+        {
+            query = query.Where(a => a.Enabled);
+        }
+
+        SysParam? param = await query.FirstAsync();
+        text = GetFieldValue(param, Field) ?? DefaultText;
+    }
+
+    private static string? GetFieldValue(SysParam? param, string field)
+    {
+        if (param is null)
+        {
+            return null;
+        }
+
+        return field switch
+        {
+            nameof(SysParam.Title) => param.Title,
+            nameof(SysParam.Value) => param.Value,
+            nameof(SysParam.Value2) => param.Value2,
+            nameof(SysParam.Value3) => param.Value3,
+            nameof(SysParam.Value4) => param.Value4,
+            nameof(SysParam.Value5) => param.Value5,
+            nameof(SysParam.Value6) => param.Value6,
+            nameof(SysParam.Value7) => param.Value7,
+            nameof(SysParam.Description) => param.Description,
+            _ => param.Value
+        };
+    }
+}

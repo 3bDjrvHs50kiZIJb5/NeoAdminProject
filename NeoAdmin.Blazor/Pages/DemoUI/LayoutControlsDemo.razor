@@ -1,5 +1,6 @@
 @page "/neo-demo/ui/layout-controls"
 @layout LayoutAdmin
+@inject ILogger<LayoutControlsDemo> Logger
 
 <PageTitle>按钮与折叠演示</PageTitle>
 
@@ -203,16 +204,33 @@
 </div>
 
 @code {
+    protected override void OnInitialized() => DemoPageLog.Enter(Logger, "布局控件演示");
     private string buttonClickMessage = string.Empty;
     private string splitButtonMessage = string.Empty;
     private string demoTabValue = "overview";
     private bool collapsibleOpen;
 
-    private void OnButtonClick() => buttonClickMessage = $"按钮已点击 — {DateTime.Now:HH:mm:ss}";
+    private void OnButtonClick()
+    {
+        DemoPageLog.Action(Logger, "布局控件演示", "OnButtonClick");
+        buttonClickMessage = $"按钮已点击 — {DateTime.Now:HH:mm:ss}";
+    }
 
-    private void OnSplitSave() => splitButtonMessage = "主操作：保存";
+    private void OnSplitSave()
+    {
+        DemoPageLog.Action(Logger, "布局控件演示", "OnSplitSave");
+        splitButtonMessage = "主操作：保存";
+    }
 
-    private void OnSplitSaveAs() => splitButtonMessage = "次要操作：另存为…";
+    private void OnSplitSaveAs()
+    {
+        DemoPageLog.Action(Logger, "布局控件演示", "OnSplitSaveAs");
+        splitButtonMessage = "次要操作：另存为…";
+    }
 
-    private void OnSplitDiscard() => splitButtonMessage = "次要操作：放弃更改";
+    private void OnSplitDiscard()
+    {
+        DemoPageLog.Action(Logger, "布局控件演示", "OnSplitDiscard");
+        splitButtonMessage = "次要操作：放弃更改";
+    }
 }

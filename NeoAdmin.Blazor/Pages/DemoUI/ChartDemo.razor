@@ -1,5 +1,6 @@
 @page "/neo-demo/ui/chart"
 @layout LayoutAdmin
+@inject ILogger<ChartDemo> Logger
 
 <PageTitle>图表演示</PageTitle>
 
@@ -250,6 +251,7 @@
 </div>
 
 @code {
+    protected override void OnInitialized() => DemoPageLog.Enter(Logger, "图表演示");
     private record ChartPoint(string month, int desktop, int mobile);
     private record PieSlice(string name, int value);
     private record ScatterPoint(double x, double y);

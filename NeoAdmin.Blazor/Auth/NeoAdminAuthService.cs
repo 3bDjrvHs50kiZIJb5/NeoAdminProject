@@ -3,7 +3,7 @@ using FreeSql;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using NeoAdmin.Blazor.Data.Entities;
+using NeoAdmin.Blazor.Entities;
 
 namespace NeoAdmin.Blazor.Auth;
 
@@ -31,6 +31,7 @@ public sealed class NeoAdminAuthService
         ApiResult? validationError = ValidateRequest(request);
         if (validationError is not null)
         {
+            logger.LogWarning("登录失败：{Message}", validationError.Message);
             return ApiResult<LoginResponse>.Error(validationError.Message, validationError.Code);
         }
 
@@ -42,12 +43,14 @@ public sealed class NeoAdminAuthService
         if (user is null || !string.Equals(user.Password, request.Password, StringComparison.Ordinal))
         {
             await WriteLoginLogAsync(username, SysUserLoginLog.LogType.登陆失败, "用户名或密码错误");
+            logger.LogWarning("登录失败：用户名或密码错误，Username={Username}", username);
             return ApiResult<LoginResponse>.Error("用户名或密码错误");
         }
 
         if (!user.IsEnabled)
         {
             await WriteLoginLogAsync(user.Username, SysUserLoginLog.LogType.登陆失败, "账户已禁用");
+            logger.LogWarning("登录失败：账户已禁用，Username={Username}", user.Username);
             return ApiResult<LoginResponse>.Error("账户已被禁用");
         }
 
@@ -58,6 +61,7 @@ public sealed class NeoAdminAuthService
             .ExecuteAffrowsAsync();
 
         await WriteLoginLogAsync(user.Username, SysUserLoginLog.LogType.登陆成功);
+        logger.LogInformation("登录成功：UserId={UserId}，Username={Username}", user.Id, user.Username);
 
         return ApiResult<LoginResponse>.Success(new LoginResponse
         {

@@ -2,6 +2,8 @@ using FreeSql;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using NeoAdmin.Blazor.Data;
+using NeoAdmin.Blazor.Entities;
+using NeoAdmin.Blazor.SeedData;
 using NeoAdmin.Entities.Blog;
 
 namespace NeoAdmin.SeedData;
@@ -22,6 +24,7 @@ public static class DataSetup
         }
 
         MenuSeedData.Ensure(freeSql);
+        AuditMenuSeedData.EnsureButtons(freeSql, "/Blog/Article");
         SeedData.Ensure(freeSql, options);
     }
 
@@ -37,5 +40,7 @@ public static class DataSetup
         freeSql.CodeFirst.SyncStructure<Tag2.TagArticle>();
         freeSql.CodeFirst.SyncStructure<Tag2.ChannelTag2>();
         freeSql.CodeFirst.SyncStructure<Article.ArticleCollection>();
+        freeSql.CodeFirst.SyncStructure<SysAuditLog>();
+        freeSql.CodeFirst.SyncStructure<SysAuditEntityLog>();
     }
 }

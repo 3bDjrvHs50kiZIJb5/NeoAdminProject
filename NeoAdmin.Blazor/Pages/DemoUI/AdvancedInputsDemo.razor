@@ -1,5 +1,6 @@
 @page "/neo-demo/ui/advanced-inputs"
 @layout LayoutAdmin
+@inject ILogger<AdvancedInputsDemo> Logger
 
 <PageTitle>增强输入演示</PageTitle>
 
@@ -199,6 +200,7 @@
 </div>
 
 @code {
+    protected override void OnInitialized() => DemoPageLog.Enter(Logger, "高级输入演示");
     private sealed record FrameworkOption(string Value, string Label);
 
     private readonly List<FrameworkOption> frameworks =
@@ -231,11 +233,13 @@
 
     private void HandleOtpComplete(string _)
     {
+        DemoPageLog.Action(Logger, "高级输入演示", "HandleOtpComplete");
         otpComplete = true;
     }
 
     private void OnVisitDomain()
     {
+        DemoPageLog.Action(Logger, "高级输入演示", "OnVisitDomain");
         // 演示用：仅更新状态提示
         searchText = domainText;
     }

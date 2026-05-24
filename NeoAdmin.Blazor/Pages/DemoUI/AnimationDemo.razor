@@ -1,5 +1,6 @@
 @page "/neo-demo/ui/animation"
 @layout LayoutAdmin
+@inject ILogger<AnimationDemo> Logger
 
 <PageTitle>动画演示</PageTitle>
 
@@ -255,6 +256,7 @@
 </div>
 
 @code {
+    protected override void OnInitialized() => DemoPageLog.Enter(Logger, "动画演示");
     private int carouselSlideIndex;
 
     private Motion? manualMotion;
@@ -269,22 +271,29 @@
 
     private static readonly string[] indicatorOptions = ["日", "周", "月"];
 
-    private void OnCarouselSlideChanged(int index) => carouselSlideIndex = index;
+    private void OnCarouselSlideChanged(int index)
+    {
+        DemoPageLog.Action(Logger, "动画演示", "OnCarouselSlideChanged", index);
+        carouselSlideIndex = index;
+    }
 
     private async Task PlayManualMotionAsync()
     {
+        DemoPageLog.Action(Logger, "动画演示", "PlayManualMotionAsync");
         if (manualMotion is not null)
             await manualMotion.PlayAsync();
     }
 
     private void ReplayAppearAnimations()
     {
+        DemoPageLog.Action(Logger, "动画演示", "ReplayAppearAnimations");
         motionAppearKey++;
         motionSpringKey++;
     }
 
     private void GoScreen(string key, ScreenTransitionDirection direction)
     {
+        DemoPageLog.Action(Logger, "动画演示", "GoScreen");
         screenDirection = direction;
         screenKey = key;
     }

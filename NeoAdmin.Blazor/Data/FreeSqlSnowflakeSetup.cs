@@ -1,6 +1,6 @@
 using System.Reflection;
 using FreeSql;
-using NeoAdmin.Blazor.Data.Attributes;
+using NeoAdmin.Blazor.Attributes;
 using Yitter.IdGenerator;
 
 namespace NeoAdmin.Blazor.Data;

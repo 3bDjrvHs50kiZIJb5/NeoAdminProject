@@ -1,5 +1,6 @@
 @page "/neo-demo/ui/form-controls"
 @layout LayoutAdmin
+@inject ILogger<FormControlsDemo> Logger
 
 <PageTitle>选择与开关演示</PageTitle>
 
@@ -279,6 +280,7 @@
 </div>
 
 @code {
+    protected override void OnInitialized() => DemoPageLog.Enter(Logger, "表单控件演示");
     private bool acceptTerms;
     private bool selectAllChecked;
     private bool selectAllIndeterminate;
@@ -310,6 +312,7 @@
 
     private void OnSelectAllChanged(bool value)
     {
+        DemoPageLog.Action(Logger, "表单控件演示", "OnSelectAllChanged");
         selectAllChecked = value;
         selectAllIndeterminate = false;
         notificationSelections.Clear();
@@ -324,6 +327,7 @@
 
     private void OnNotificationChanged(string option, bool selected)
     {
+        DemoPageLog.Action(Logger, "表单控件演示", "OnNotificationChanged");
         if (selected)
         {
             notificationSelections.Add(option);

@@ -1,6 +1,7 @@
 @page "/neo-demo/ui/mobile"
 @layout LayoutAdmin
 @inject IToastService ToastService
+@inject ILogger<MobileDemo> Logger
 
 <PageTitle>移动端演示</PageTitle>
 
@@ -163,28 +164,40 @@
 </div>
 
 @code {
+    protected override void OnInitialized() => DemoPageLog.Enter(Logger, "移动端演示");
     private string activeTab = "home";
     private int quantity = 1;
     private string stepperMessage = string.Empty;
 
-    private void HandleAppBarBack() =>
+    private void HandleAppBarBack()
+    {
+        DemoPageLog.Action(Logger, "移动端演示", "HandleAppBarBack");
         ToastService.Info("返回", "已触发返回操作。");
+    }
 
-    private void HandleAppBarShare() =>
+    private void HandleAppBarShare()
+    {
+        DemoPageLog.Action(Logger, "移动端演示", "HandleAppBarShare");
         ToastService.Info("分享", "已触发分享操作。");
+    }
 
     private void HandleRemoveFromCart()
     {
+        DemoPageLog.Action(Logger, "移动端演示", "HandleRemoveFromCart");
         stepperMessage = "已从购物车移除";
         quantity = 1;
     }
 
     private void ResetQuantity()
     {
+        DemoPageLog.Action(Logger, "移动端演示", "ResetQuantity");
         quantity = 1;
         stepperMessage = string.Empty;
     }
 
-    private void HandleViewAllPromo() =>
+    private void HandleViewAllPromo()
+    {
+        DemoPageLog.Action(Logger, "移动端演示", "HandleViewAllPromo");
         ToastService.Info("查看全部", "跳转到「热门推荐」列表。");
+    }
 }

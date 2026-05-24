@@ -1,8 +1,9 @@
 @page "/admin/menu"
 @layout LayoutAdmin
+@using NeoAdmin.Blazor.Audit
 @using NeoAdmin.Blazor.Auth
 @using NeoAdmin.Blazor.Components
-@using NeoAdmin.Blazor.Data.Entities
+@using NeoAdmin.Blazor.Entities
 @using NeoAdmin.Blazor.Menus
 @inject MenuService MenuService
 
@@ -193,6 +194,10 @@
                     <Checkbox @bind-Checked="generateCrudButtons" Id="menu-generate-crud-buttons" />
                     <Label for="menu-generate-crud-buttons">生成添加、编辑、删除按钮权限点</Label>
                 </div>
+                <div class="flex items-center gap-2">
+                    <Checkbox @bind-Checked="generateAuditButtons" Id="menu-generate-audit-buttons" />
+                    <Label for="menu-generate-audit-buttons">生成审批流按钮权限点（提交、一审、拒绝、反审、历史版本）</Label>
+                </div>
             </div>
         </EditTemplate>
     </CrudTable>
@@ -203,6 +208,7 @@
     private List<SysMenu> flatMenus = new();
     private Dictionary<long, int> menuLevels = new();
     private bool generateCrudButtons;
+    private bool generateAuditButtons;
     private string? message;
     private AlertVariant messageVariant = AlertVariant.Default;
 
@@ -236,7 +242,8 @@
             Description = item.Description,
             SidebarStyle = item.SidebarStyle,
             IsHidden = item.IsHidden,
-            GenerateCrudButtons = generateCrudButtons
+            GenerateCrudButtons = generateCrudButtons,
+            GenerateAuditButtons = generateAuditButtons
         };
 
         ApiResult<SysMenu> result = await MenuService.SaveAsync(model);
@@ -282,6 +289,7 @@
         if (item.Id == 0)
         {
             generateCrudButtons = false;
+            generateAuditButtons = false;
             if (item.ParentId > 0)
             {
                 item.Sort = GetNextSortLocal(item.ParentId);
@@ -300,11 +308,15 @@
         else
         {
             generateCrudButtons = item.Type == SysMenuType.增删改查;
+            generateAuditButtons = HasAuditButtons(item.Id);
         }
 
         ClearMessage();
         return Task.CompletedTask;
     }
+
+    private bool HasAuditButtons(long menuId) =>
+        flatMenus.Any(a => a.ParentId == menuId && AuditMenuDefinitions.AllButtonPaths.Contains(a.Path));
 
     private async Task HandleTypeFilterChanged(string value)
     {

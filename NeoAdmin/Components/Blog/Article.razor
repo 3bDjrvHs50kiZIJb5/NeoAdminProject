@@ -1,14 +1,19 @@
 @page "/Blog/Article"
 @namespace NeoAdmin.Components.Blog
 @layout LayoutAdmin
+@using NeoAdmin.Blazor.Audit
 @using NeoAdmin.Blazor.Components
+@using NeoAdmin.Blazor.Entities
+@using NeoAdmin.Blazor.Services
 @inject IFreeSql FreeSql
 @inject IToastService ToastService
+@inject AuditWorkflowService AuditWorkflow
 
 <PageTitle>随笔文章</PageTitle>
 
 <div class="flex flex-col flex-1 min-h-0">
     <CrudTable @ref="table" TItem="BlogArticle" Title="随笔文章" PageSize="50" SearchPlaceholder="标题 / 关键字 / 摘要.."
+        IsWorkflowAudit="true" WorkflowAuditMenuPath="/Blog/Article"
         InitQuery="InitQuery" OnQuery="HandleQuery" OnEdit="HandleEdit" OnSaveAsync="HandleSaveAsync"
         OnSaving="HandleSaving" DialogContentSize="CrudDialogContentSize.X6l">
         <Columns>
@@ -40,6 +45,10 @@
                 Header="收藏" Sortable="false" Width="72px" />
             <DataTableColumn TData="CrudGridRow<BlogArticle>" TValue="ArticleType"
                 Property="@(row => row.Item.ArticleType)" Header="类型" Sortable="false" Width="80px" />
+            <DataTableColumn TData="CrudGridRow<BlogArticle>" TValue="bool"
+                Property="@(row => row.Item.IsAudit)" Header="已发布" Sortable="false" Width="72px">
+                <CellTemplate Context="row">@(row.Item.IsAudit ? "是" : "否")</CellTemplate>
+            </DataTableColumn>
             <DataTableColumn TData="CrudGridRow<BlogArticle>" TValue="string" Property="@(_ => string.Empty)"
                 Header="创建时间" Sortable="false" Width="160px">
                 <CellTemplate Context="row">
@@ -53,6 +62,10 @@
                     <TabsTrigger Value="content">随笔</TabsTrigger>
                     <TabsTrigger Value="settings">设置</TabsTrigger>
                     <TabsTrigger Value="collections">收藏集</TabsTrigger>
+                    @if (item.Id > 0)
+                    {
+                        <TabsTrigger Value="audit">审批</TabsTrigger>
+                    }
                 </TabsList>
                 <TabsContent Value="content" Class="mt-4 space-y-4">
                     <div class="grid gap-4 sm:grid-cols-2">
@@ -131,7 +144,11 @@
                     <div class="grid gap-4 sm:grid-cols-3">
                         <div class="flex items-center gap-2">
                             <Checkbox @bind-Checked="item.IsAudit" Id="article-audit" />
-                            <Label for="article-audit">是否审核</Label>
+                            <Label for="article-audit">前台展示（审批通过后可勾选）</Label>
+                        </div>
+                        <div class="space-y-2 sm:col-span-2">
+                            <Label>审批状态</Label>
+                            <Input value="@AuditWorkflowRules.GetStatusLabel(item.AuditStatus)" Class="w-full" readonly />
                         </div>
                         <div class="flex items-center gap-2">
                             <Checkbox @bind-Checked="item.Recommend" Id="article-recommend" />
@@ -183,6 +200,15 @@
                         <TableCell Context="collection">@collection.Name</TableCell>
                     </NeoInputTable>
                 </TabsContent>
+                @if (item.Id > 0)
+                {
+                    <TabsContent Value="audit" Class="mt-4">
+                        <CrudAuditPanel Item="item"
+                                        EntityType="typeof(BlogArticle)"
+                                        MenuPath="/Blog/Article"
+                                        OnChanged="HandleAuditChanged" />
+                    </TabsContent>
+                }
             </Tabs>
         </EditTemplate>
     </CrudTable>
@@ -200,6 +226,13 @@
 
         e.Filters =
         [
+        new CrudFilterInfo(
+"审批状态",
+"AuditStatus",
+multiple: false,
+col: 12,
+string.Join(",", Enum.GetValues<SysAuditStatus>().Select(AuditWorkflowRules.GetStatusLabel)),
+string.Join(",", Enum.GetValues<SysAuditStatus>().Select(s => ((int)s).ToString()))),
         new CrudFilterInfo(
 "随笔专栏",
 "ClassifyId",
@@ -235,12 +268,13 @@ new CrudFilterInfo("标题", "Title", CrudFilterType.Text, 6),
 
     private void HandleQuery(CrudQueryEventArgs<BlogArticle> e)
     {
-        CrudFilterInfo classifyFilter = e.Filters[0];
-        CrudFilterInfo channelFilter = e.Filters[1];
-        CrudFilterInfo typeFilter = e.Filters[2];
-        CrudFilterInfo collectionFilter = e.Filters[3];
-        CrudFilterInfo tagFilter = e.Filters[4];
-        CrudFilterInfo titleFilter = e.Filters[5];
+        CrudFilterInfo classifyFilter = GetFilter(e, "ClassifyId");
+        CrudFilterInfo channelFilter = GetFilter(e, "ChannelId");
+        CrudFilterInfo typeFilter = GetFilter(e, "ArticleType");
+        CrudFilterInfo auditFilter = GetFilter(e, "AuditStatus");
+        CrudFilterInfo collectionFilter = GetFilter(e, "Collections");
+        CrudFilterInfo tagFilter = GetFilter(e, "Tags");
+        CrudFilterInfo titleFilter = GetFilter(e, "Title");
 
         e.Select!
         .Include(a => a.Classify)
@@ -248,6 +282,7 @@ new CrudFilterInfo("标题", "Title", CrudFilterType.Text, 6),
         .WhereIf(classifyFilter.HasValue, a => classifyFilter.Values<long?>().Contains(a.ClassifyId))
         .WhereIf(channelFilter.HasValue, a => channelFilter.Values<long>().Contains(a.ChannelId))
         .WhereIf(typeFilter.HasValue, a => a.ArticleType == typeFilter.Value<ArticleType>())
+        .WhereIf(auditFilter.HasValue, a => auditFilter.Values<SysAuditStatus>().Contains(a.AuditStatus))
         .WhereIf(collectionFilter.HasValue,
         a => FreeSql.Select<BlogArticle.ArticleCollection>()
         .Where(j => j.ArticleId == a.Id && collectionFilter.Values<long>().Contains(j.CollectionId))
@@ -264,6 +299,9 @@ new CrudFilterInfo("标题", "Title", CrudFilterType.Text, 6),
         || a.Excerpt.Contains(e.SearchText!))
         .OrderByDescending(a => a.Id);
     }
+
+    private static CrudFilterInfo GetFilter(CrudQueryEventArgs<BlogArticle> e, string name) =>
+        e.Filters.First(f => f.QueryStringName == name);
 
     private async Task HandleEdit(BlogArticle item)
     {
@@ -286,6 +324,13 @@ new CrudFilterInfo("标题", "Title", CrudFilterType.Text, 6),
         {
             ToastService.Error("保存失败", "请录入正文内容！");
             e.Cancel = true;
+            return Task.CompletedTask;
+        }
+
+        if (!AuditWorkflowRules.CanEdit(e.Item))
+        {
+            ToastService.Error("保存失败", "正在审批中，无法修改！");
+            e.Cancel = true;
         }
 
         return Task.CompletedTask;
@@ -300,19 +345,51 @@ new CrudFilterInfo("标题", "Title", CrudFilterType.Text, 6),
         item.Classify = null;
         item.Channel = null;
 
+        BlogArticle? snapshot = null;
+        if (!isNewItem)
+        {
+            snapshot = await FreeSql.Select<BlogArticle>()
+                .Where(a => a.Id == item.Id)
+                .FirstAsync();
+            if (snapshot is not null && !await AuditWorkflow.TryBumpVersionForEditAsync(item))
+            {
+                ToastService.Error("保存失败", "数据已被他人修改，请刷新后重试");
+                return false;
+            }
+        }
+
         if (isNewItem)
         {
             await FreeSql.Insert(item).ExecuteAffrowsAsync();
+            await AuditWorkflow.WriteEntityLogAsync(item, "add");
         }
         else
         {
             await FreeSql.Update<BlogArticle>().SetSource(item).ExecuteAffrowsAsync();
+            if (snapshot is not null)
+            {
+                await AuditWorkflow.WriteEntityLogAsync(item, "edit", snapshot);
+            }
         }
 
         await BlogRelationService.SaveArticleTagsAsync(FreeSql, item.Id, tags.Select(t => t.Id).ToList());
         await BlogRelationService.SaveArticleCollectionsAsync(
         FreeSql, item.Id, collections.Select(c => c.Id).ToList(), null, string.Empty);
         return true;
+    }
+
+    private async Task HandleAuditChanged(EntityAudited audited)
+    {
+        if (audited is BlogArticle article && article.AuditStatus == SysAuditStatus.通过 && !article.IsAudit)
+        {
+            await FreeSql.Update<BlogArticle>()
+                .Where(a => a.Id == article.Id)
+                .Set(a => a.IsAudit, true)
+                .ExecuteAffrowsAsync();
+            article.IsAudit = true;
+        }
+
+        await table.ReloadAsync();
     }
 
     private Task FilterTagSelectQuery(CrudQueryEventArgs<BlogTag2> args)

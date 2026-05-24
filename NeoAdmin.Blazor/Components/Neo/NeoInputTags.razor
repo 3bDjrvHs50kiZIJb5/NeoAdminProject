@@ -1,0 +1,264 @@
+@namespace NeoAdmin.Blazor.Components
+@typeparam TItem where TItem : class
+@implements IAsyncDisposable
+
+<link href="_content/NeoAdmin.Blazor/css/neo-input-tags.css" rel="stylesheet" />
+
+<div class="neo-input-tags-container"
+     @onclick="FocusInputAsync"
+     @onkeydown="HandleContainerKeyDown">
+    @if (Value != null)
+    {
+        @foreach (TItem item in Value)
+        {
+            <Badge Variant="BadgeVariant.Secondary" Class="neo-input-tags-badge gap-1 pr-1">
+                @DisplayText(item)
+                <span @onclick:stopPropagation="true">
+                    <Button Variant="ButtonVariant.Ghost"
+                            Size="ButtonSize.Small"
+                            Class="h-4 w-4 p-0 hover:bg-transparent"
+                            OnMouseDown="MarkInternalAction"
+                            OnClick="@(() => RemoveItemAsync(item))">
+                        <LucideIcon Name="x" Size="12" />
+                        <span class="sr-only">移除</span>
+                    </Button>
+                </span>
+            </Badge>
+        }
+    }
+    <Input Id="@fieldId"
+           Class="neo-input-tags-field"
+           Placeholder="@(HasTags ? string.Empty : Placeholder)"
+           @bind-Value="inputValue"
+           @bind-Value:after="OnInputValueChangedAsync"
+           @onfocus="ShowDropdownAsync"
+           @onkeydown="HandleInputKeyDown"
+           @onblur="HandleBlurAsync" />
+    @if (dropdownVisible && searchResults.Count > 0)
+    {
+        <div class="@DropdownClass" style="@DropdownStyle">
+            @for (int index = 0; index < searchResults.Count; index++)
+            {
+                int captured = index;
+                TItem result = searchResults[captured];
+                <Button Variant="ButtonVariant.Ghost"
+                        Class="@GetDropdownItemClass(captured)"
+                        OnMouseDown="MarkInternalAction"
+                        OnClick="@(() => SelectItemAsync(result))">
+                    @DisplayText(result)
+                </Button>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Inject]
+    private IJSRuntime JS { get; set; } = default!;
+
+    private readonly string fieldId = $"neo-tags-{Guid.NewGuid():N}";
+    private string inputValue = string.Empty;
+    private List<TItem> searchResults = new();
+    private bool dropdownVisible;
+    private int activeIndex = -1;
+    private bool selectionMade;
+    private bool internalAction;
+    private CancellationTokenSource? debounceCts;
+
+    [Parameter, EditorRequired]
+    public ICollection<TItem>? Value { get; set; }
+
+    [Parameter]
+    public EventCallback<ICollection<TItem>> ValueChanged { get; set; }
+
+    [Parameter, EditorRequired]
+    public Func<TItem, string> DisplayText { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public Func<string, TItem> OnCreate { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public Func<string, Task<IEnumerable<TItem>>> OnSearch { get; set; } = default!;
+
+    [Parameter]
+    public string Placeholder { get; set; } = "输入后回车添加..";
+
+    [Parameter]
+    public bool DropdownAsGrid { get; set; }
+
+    [Parameter]
+    public int GridMinItemWidth { get; set; } = 150;
+
+    private bool HasTags => Value is { Count: > 0 };
+    private string DropdownClass => DropdownAsGrid ? "neo-input-tags-dropdown neo-input-tags-dropdown-grid" : "neo-input-tags-dropdown";
+    private string DropdownStyle => DropdownAsGrid ? $"--grid-item-min-width: {GridMinItemWidth}px;" : string.Empty;
+
+    private async Task OnInputValueChangedAsync()
+    {
+        activeIndex = -1;
+        dropdownVisible = true;
+        await DebouncedSearchAsync();
+    }
+
+    private async Task DebouncedSearchAsync()
+    {
+        debounceCts?.Cancel();
+        debounceCts = new CancellationTokenSource();
+        CancellationToken token = debounceCts.Token;
+        try
+        {
+            await Task.Delay(250, token);
+            await TriggerSearchAsync();
+        }
+        catch (TaskCanceledException)
+        {
+        }
+    }
+
+    private async Task TriggerSearchAsync()
+    {
+        IEnumerable<TItem> results = await OnSearch(inputValue ?? string.Empty);
+        searchResults = results
+            .Where(candidate => Value == null || !Value.Any(existing =>
+                DisplayText(existing).Equals(DisplayText(candidate), StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task AddItemAsync(TItem item)
+    {
+        if (item == null)
+        {
+            return;
+        }
+
+        Value ??= new List<TItem>();
+        if (!Value.Any(existing =>
+                DisplayText(existing).Equals(DisplayText(item), StringComparison.OrdinalIgnoreCase)))
+        {
+            Value.Add(item);
+            await ValueChanged.InvokeAsync(Value);
+        }
+    }
+
+    private async Task RemoveItemAsync(TItem item)
+    {
+        if (Value == null)
+        {
+            return;
+        }
+
+        Value.Remove(item);
+        await ValueChanged.InvokeAsync(Value);
+        dropdownVisible = true;
+        await TriggerSearchAsync();
+        await FocusInputAsync();
+    }
+
+    private async Task SelectItemAsync(TItem item)
+    {
+        selectionMade = true;
+        await AddItemAsync(item);
+        inputValue = string.Empty;
+        dropdownVisible = false;
+        await FocusInputAsync();
+    }
+
+    private async Task CreateAndAddAsync(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return;
+        }
+
+        TItem item = OnCreate(text.Trim());
+        await SelectItemAsync(item);
+    }
+
+    private async Task HandleBlurAsync()
+    {
+        if (internalAction)
+        {
+            internalAction = false;
+            return;
+        }
+
+        await Task.Delay(200);
+        if (selectionMade)
+        {
+            selectionMade = false;
+            return;
+        }
+
+        dropdownVisible = false;
+        activeIndex = -1;
+        await CreateAndAddAsync(inputValue);
+    }
+
+    private async Task HandleInputKeyDown(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "ArrowDown":
+                if (searchResults.Count > 0)
+                {
+                    activeIndex = (activeIndex + 1) % searchResults.Count;
+                }
+                break;
+            case "ArrowUp":
+                if (searchResults.Count > 0)
+                {
+                    activeIndex = (activeIndex - 1 + searchResults.Count) % searchResults.Count;
+                }
+                break;
+            case "Escape":
+                dropdownVisible = false;
+                break;
+            case "Enter":
+                if (activeIndex >= 0 && activeIndex < searchResults.Count)
+                {
+                    await SelectItemAsync(searchResults[activeIndex]);
+                }
+                else
+                {
+                    await CreateAndAddAsync(inputValue);
+                }
+                break;
+            case "Backspace" when string.IsNullOrEmpty(inputValue) && Value is { Count: > 0 }:
+                await RemoveItemAsync(Value.Last());
+                break;
+        }
+    }
+
+    private Task HandleContainerKeyDown(KeyboardEventArgs e) => Task.CompletedTask;
+
+    private async Task ShowDropdownAsync()
+    {
+        dropdownVisible = true;
+        await TriggerSearchAsync();
+    }
+
+    private async Task FocusInputAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("eval", $"document.getElementById('{fieldId}')?.focus()");
+        }
+        catch
+        {
+        }
+    }
+
+    private void MarkInternalAction(MouseEventArgs _) => internalAction = true;
+
+    private string GetDropdownItemClass(int index) =>
+        "neo-input-tags-dropdown-item w-full justify-start font-normal "
+        + (index == activeIndex ? "bg-accent text-accent-foreground " : string.Empty);
+
+    public ValueTask DisposeAsync()
+    {
+        debounceCts?.Cancel();
+        debounceCts?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+}

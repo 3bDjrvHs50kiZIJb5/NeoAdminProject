@@ -1,0 +1,95 @@
+@page "/neo-demo/ui/anti-concurrency"
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Attributes
+@inject ILogger<AntiConcurrencyDemo> Logger
+
+<PageTitle>AntiConcurrency 演示</PageTitle>
+
+<div class="flex flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">AntiConcurrencyAttribute 演示</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                演示 <code class="rounded bg-muted px-1 py-0.5 text-xs">AntiConcurrencyAttribute</code> 的防连点与防抖行为。
+            </p>
+        </div>
+
+        <div class="grid gap-4 p-4 lg:grid-cols-2">
+            <div class="rounded-lg border bg-background p-4">
+                <div class="mb-3 font-semibold">触发操作</div>
+                <p class="mb-3 text-sm text-muted-foreground">
+                    方法体模拟 800ms 耗时。快速连点只会真正执行一次。
+                </p>
+                <div class="mb-3 flex flex-wrap gap-2">
+                    <Button OnClick="ExecuteSlowActionAsync">执行一次</Button>
+                    <Button Variant="ButtonVariant.Outline" OnClick="BurstClickAsync">连点 5 次</Button>
+                </div>
+                <div class="rounded-lg border bg-muted/40 p-3 text-sm text-muted-foreground">
+                    点击次数 @clickCount，实际进入方法体 @executeCount 次
+                </div>
+            </div>
+
+            <div class="rounded-lg border bg-background p-4">
+                <div class="mb-3 font-semibold">执行结果</div>
+                <div class="grid gap-3">
+                    <div class="rounded-lg border p-3">
+                        <div class="text-xs text-muted-foreground">最近执行序号</div>
+                        <div class="font-semibold">@lastExecuteCount</div>
+                    </div>
+                    <div class="rounded-lg border p-3">
+                        <div class="text-xs text-muted-foreground">最近完成时间</div>
+                        <div class="font-semibold">@lastExecutedAt</div>
+                    </div>
+                    <div class="rounded-lg border p-3">
+                        <div class="text-xs text-muted-foreground">状态</div>
+                        <div class="font-semibold">@statusText</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="border-t p-4">
+            <DemoSection Title="用法说明"
+                         Description="在 Blazor 事件处理方法上标记 AntiConcurrency，即可阻止重复触发。"
+                         Code="@AntiConcurrencyDemoSnippets.Usage">
+                <pre class="whitespace-pre-wrap text-sm text-muted-foreground">@AntiConcurrencyDemoSnippets.Behavior</pre>
+            </DemoSection>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized() => DemoPageLog.Enter(Logger, "AntiConcurrency 演示");
+    private int clickCount;
+    private int executeCount;
+    private int lastExecuteCount;
+    private string lastExecutedAt = "-";
+    private string statusText = "尚未执行";
+
+    [AntiConcurrency(500)]
+    private async Task ExecuteSlowActionAsync()
+    {
+        DemoPageLog.Action(Logger, "AntiConcurrency 演示", "ExecuteSlowActionAsync");
+        Interlocked.Increment(ref clickCount);
+        statusText = "正在执行...";
+        await InvokeAsync(StateHasChanged);
+
+        int current = Interlocked.Increment(ref executeCount);
+        await Task.Delay(800);
+
+        lastExecuteCount = current;
+        lastExecutedAt = DateTime.Now.ToString("HH:mm:ss.fff");
+        statusText = $"第 {current} 次执行完成";
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task BurstClickAsync()
+    {
+        DemoPageLog.Action(Logger, "AntiConcurrency 演示", "BurstClickAsync");
+        for (int index = 0; index < 5; index++)
+        {
+            await ExecuteSlowActionAsync();
+            await Task.Delay(50);
+        }
+    }
+}
