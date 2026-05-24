@@ -10,7 +10,7 @@
         <div class="border-b px-4 py-3">
             <strong class="text-base font-semibold">菜单路径权限说明</strong>
             <p class="mt-1 text-sm text-muted-foreground">
-                按实际业务案例拆分：页面、按钮、路由守卫、API 与本地验证步骤。配置入口：
+                按实际业务案例拆分：页面、按钮、路由守卫、API。配置入口：
                 <a class="text-primary underline-offset-4 hover:underline" href="/admin/role">角色管理</a>、
                 <a class="text-primary underline-offset-4 hover:underline" href="/admin/menu">菜单管理</a>。
             </p>
@@ -25,7 +25,6 @@
                         <TabsTrigger Value="route-menu">路由与菜单</TabsTrigger>
                         <TabsTrigger Value="button-crud">按钮与表格</TabsTrigger>
                         <TabsTrigger Value="nova-api">NovaButton 与 API</TabsTrigger>
-                        <TabsTrigger Value="practice">本地验证</TabsTrigger>
                     </TabsList>
                 </div>
 
@@ -268,57 +267,6 @@
                             <li>带 <code>[NovaButton]</code> 的自定义操作 → 点击时再次校验</li>
                         </ol>
                     </DemoSection>
-                </TabsContent>
-
-                <TabsContent Value="practice" Class="mt-4 space-y-4">
-                    <DemoSection Title="建议 5 分钟本地验证"
-                                 Description="用两个账号对比，最直观理解页面权限与按钮权限分离。">
-                        <ol class="list-decimal space-y-3 pl-5 text-sm">
-                            <li>
-                                <span class="font-medium">管理员</span> 进入
-                                <a class="text-primary underline" href="/admin/role">角色管理</a>，
-                                复制「普通用户」为「只读-用户管理」：只勾 <code>/admin</code>、<code>/admin/user</code>，不勾任何按钮。
-                            </li>
-                            <li>
-                                在 <a class="text-primary underline" href="/admin/user">用户管理</a> 新建用户 <code>test01</code>，
-                                仅分配「只读-用户管理」角色。
-                            </li>
-                            <li>
-                                退出后用 <code>test01</code> 登录，依次观察：侧边栏、用户列表按钮、地址栏输入 <code>/admin/role</code>、
-                                再试 <code>/neo-demo/comp/permission-guide</code>（若未分配演示菜单应到 forbidden）。
-                            </li>
-                        </ol>
-                    </DemoSection>
-
-                    <DemoSection Title="与旧系统对照"
-                                 Description="便于从 NoAdmin / NovaAdmin 迁移时记忆。">
-                        <div class="overflow-x-auto rounded-lg border">
-                            <table class="w-full text-sm">
-                                <thead class="bg-muted/50 text-left">
-                                    <tr>
-                                        <th class="px-3 py-2 font-medium">旧系统</th>
-                                        <th class="px-3 py-2 font-medium">新系统</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y text-muted-foreground">
-                                    <tr><td class="px-3 py-2">AuthPath</td><td class="px-3 py-2">HasPageAsync + Layout 守卫</td></tr>
-                                    <tr><td class="px-3 py-2">AuthButton</td><td class="px-3 py-2">HasButtonAsync</td></tr>
-                                    <tr><td class="px-3 py-2">AdminOmniFilter</td><td class="px-3 py-2">NeoAdminPermissionFilter</td></tr>
-                                    <tr><td class="px-3 py-2">RoleMenus 侧边栏</td><td class="px-3 py-2">GetNavigationMenusAsync</td></tr>
-                                    <tr><td class="px-3 py-2">NovaButtonAttribute</td><td class="px-3 py-2">同名，内部 MenuPermissionService</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </DemoSection>
-
-                    <Alert>
-                        相关源码：
-                        <code class="text-xs">MenuPermissionService</code>、
-                        <code class="text-xs">MenuPathHelper</code>、
-                        <code class="text-xs">NeoAdminPermissionFilter</code>、
-                        <code class="text-xs">LayoutAdmin.razor</code>、
-                        <code class="text-xs">CrudTable.razor</code>。
-                    </Alert>
                 </TabsContent>
             </SearchableTabs>
         </div>

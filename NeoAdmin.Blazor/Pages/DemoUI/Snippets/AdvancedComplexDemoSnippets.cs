@@ -24,11 +24,13 @@ internal static class AdvancedComplexDemoSnippets
         <FilterBuilder TData="DemoProduct"
                        @bind-Filters="productFilters"
                        OnFilterChange="ApplyProductFilter">
-            <FilterField Field="@nameof(DemoProduct.Name)" Label="名称" Type="FilterFieldType.Text" />
-            <FilterField Field="@nameof(DemoProduct.Category)" Label="分类" Type="FilterFieldType.Select"
-                         Options="@categoryFilterOptions" />
-            <FilterField Field="@nameof(DemoProduct.Price)" Label="价格" Type="FilterFieldType.Number" />
-            <FilterField Field="@nameof(DemoProduct.InStock)" Label="有货" Type="FilterFieldType.Boolean" />
+            <FilterFields>
+                <FilterField Field="@nameof(DemoProduct.Name)" Label="名称" Type="FilterFieldType.Text" />
+                <FilterField Field="@nameof(DemoProduct.Category)" Label="分类" Type="FilterFieldType.Select"
+                             Options="@categoryFilterOptions" />
+                <FilterField Field="@nameof(DemoProduct.Price)" Label="价格" Type="FilterFieldType.Number" />
+                <FilterField Field="@nameof(DemoProduct.InStock)" Label="有货" Type="FilterFieldType.Boolean" />
+            </FilterFields>
         </FilterBuilder>
         """;
 

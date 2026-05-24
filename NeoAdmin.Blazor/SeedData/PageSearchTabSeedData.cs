@@ -14,7 +14,6 @@ public static class PageSearchTabSeedData
         new("/neo-demo/comp/permission-guide", "route-menu", "权限-路由与菜单"),
         new("/neo-demo/comp/permission-guide", "button-crud", "权限-按钮与表格"),
         new("/neo-demo/comp/permission-guide", "nova-api", "权限-NovaButton与API"),
-        new("/neo-demo/comp/permission-guide", "practice", "权限-本地验证"),
         new("/neo-demo/comp/select-components", "select-dict", "NeoSelectDict"),
         new("/neo-demo/comp/select-components", "select-enum", "NeoSelectEnum"),
         new("/neo-demo/comp/select-components", "select-entity", "NeoSelectEntity"),

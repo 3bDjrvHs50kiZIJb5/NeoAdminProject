@@ -184,8 +184,8 @@ public static class MenuSeedData
         [
             Menu("业务组件", "blocks", string.Empty, 400, SysMenuSidebarStyle.收起,
             [
-                Page("实体选择组件", "/neo-demo/comp/select-components", 401, "list-checks"),
-                Page("字典和参数配置", "/neo-demo/comp/dict-param", 402, "sliders-horizontal"),
+                Page("实体选择", "/neo-demo/comp/select-components", 401, "list-checks"),
+                Page("字典和参数", "/neo-demo/comp/dict-param", 402, "sliders-horizontal"),
                 Page("权限说明", "/neo-demo/comp/permission-guide", 407, "book-open"),
                 Menu("按钮权限", "shield", "/neo-demo/comp/nova-button", 403, children:
                 [
