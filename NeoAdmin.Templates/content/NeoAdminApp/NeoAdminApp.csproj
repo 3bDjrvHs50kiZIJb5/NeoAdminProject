@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NeoAdmin.Blazor" Version="1.0.4" />
+    <PackageReference Include="NeoAdmin.Blazor" Version="1.0.5" />
     <PackageReference Include="NeoUI.Blazor" Version="4.1.7" />
     <PackageReference Include="Rougamo.Fody" Version="5.0.2" />
   </ItemGroup>
