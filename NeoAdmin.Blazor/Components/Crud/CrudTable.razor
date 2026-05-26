@@ -123,7 +123,7 @@
                                         <span class="sr-only">审批</span>
                                     </Button>
                                 }
-                                @if (IsRowEdit && EditTemplate != null && canRowEdit)
+                                @if (RowEditVisible && EditTemplate != null && canRowEdit)
                                 {
                                     <Button Variant="ButtonVariant.Ghost" Size="ButtonSize.Small" Title="@EditText"
                                         Disabled="@(IsWorkflowAudit && row.Item is EntityAudited locked && !AuditWorkflowRules.CanEdit(locked))"
@@ -132,7 +132,7 @@
                                         <span class="sr-only">@EditText</span>
                                     </Button>
                                 }
-                                @if (IsRowRemove && canRowRemove)
+                                @if (RowRemoveVisible && canRowRemove)
                                 {
                                     <Button Variant="ButtonVariant.Ghost" Size="ButtonSize.Small" Title="@RemoveText"
                                         Disabled="@(IsWorkflowAudit && row.Item is EntityAudited lockedRemove && !AuditWorkflowRules.CanEdit(lockedRemove))"
@@ -303,11 +303,6 @@
     private ILogger Logger => _logger ??=
     LoggerFactory.CreateLogger($"{typeof(CrudTable<TItem>).Name}<{typeof(TItem).Name}>");
 
-    private bool _isRemove = true;
-    private bool? _isRowRemove;
-    private bool _isEdit = true;
-    private bool? _isRowEdit;
-
     [Parameter] public string Title { get; set; } = "";
     [Parameter] public int PageSize { get; set; } = 20;
     [Parameter] public int[] PageSizes { get; set; } = [10, 20, 30, 50, 100];
@@ -315,47 +310,15 @@
     [Parameter] public bool IsSearchText { get; set; } = true;
     [Parameter] public string SearchPlaceholder { get; set; } = "搜索...";
     [Parameter] public bool IsAdd { get; set; } = true;
-    [Parameter]
-    public bool IsEdit
-    {
-        get => _isEdit;
-        set
-        {
-            _isEdit = value;
-            if (!_isRowEdit.HasValue)
-            {
-                _isRowEdit = value;
-            }
-        }
-    }
+    [Parameter] public bool IsEdit { get; set; } = true;
+    /// <summary>未设置时与 <see cref="IsEdit"/> 一致。</summary>
+    [Parameter] public bool? IsRowEdit { get; set; }
+    [Parameter] public bool IsRemove { get; set; } = true;
+    /// <summary>未设置时与 <see cref="IsRemove"/> 一致。</summary>
+    [Parameter] public bool? IsRowRemove { get; set; }
 
-    [Parameter]
-    public bool IsRowEdit
-    {
-        get => _isRowEdit ?? true;
-        set => _isRowEdit = value;
-    }
-
-    [Parameter]
-    public bool IsRemove
-    {
-        get => _isRemove;
-        set
-        {
-            _isRemove = value;
-            if (!_isRowRemove.HasValue)
-            {
-                _isRowRemove = value;
-            }
-        }
-    }
-
-    [Parameter]
-    public bool IsRowRemove
-    {
-        get => _isRowRemove ?? true;
-        set => _isRowRemove = value;
-    }
+    private bool RowEditVisible => IsRowEdit ?? IsEdit;
+    private bool RowRemoveVisible => IsRowRemove ?? IsRemove;
 
     [Parameter] public bool IsView { get; set; } = true;
     [Parameter] public bool IsRowView { get; set; }
@@ -475,8 +438,8 @@
     : $"共 {total} 条";
     private bool ShowDefaultActions =>
     RowActionsContent != null ||
-    (IsRowEdit && EditTemplate != null) ||
-    IsRowRemove ||
+    (RowEditVisible && EditTemplate != null) ||
+    RowRemoveVisible ||
     (IsRowView && IsView && (ViewTemplate != null || EditTemplate != null));
     private bool ShowToolbarRemove => IsRemove && (IsMultiSelect || IsSingleSelect);
     private bool HasSelectedRows => selectedRows.Count > 0;
