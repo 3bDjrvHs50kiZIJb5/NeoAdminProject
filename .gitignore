@@ -58,3 +58,4 @@ appsettings.*.local.json
 
 # 旧代码归档（仅本地保留，不上传）
 old/
+NeoAdmin.Templates/Test.md

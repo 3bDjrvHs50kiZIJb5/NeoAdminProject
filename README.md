@@ -48,13 +48,13 @@ dotnet restore --source ../nupkg --source https://api.nuget.org/v3/index.json
 dotnet watch run
 ```
 
-详见 [NeoAdmin.Templates/README.md](NeoAdmin.Templates/README.md)。
+详见 [NeoAdmin.Templates/README.md](NeoAdmin.Templates/README.md)。修改 `NeoAdmin/` 后执行 `python3 NeoAdmin.Templates/sync-from-neoadmin.py` 更新模板内容。
 
 ## 项目结构
 
 ```
 NeoAdmin/
-├── NeoAdmin.Templates/            # dotnet new 项目模板（NeoAdminApp 骨架）
+├── NeoAdmin.Templates/            # dotnet new 项目模板（由 NeoAdmin 宿主同步，见 sync-from-neoadmin.py）
 ├── NeoAdmin/                      # 宿主 Web 项目（启动入口、业务扩展示例）
 │   ├── Program.cs                 # NeoUI、NeoAdmin、Serilog、Blazor 路由、API
 │   ├── Components/
@@ -244,7 +244,9 @@ git push origin v1.0.2
 ```bash
 dotnet new install NeoAdmin.Templates
 # 或锁定版本：dotnet new install NeoAdmin.Templates --version 1.0.2
+mkdir MyApp && cd MyApp
 dotnet new neoadmin -n MyApp -o .
+cd MyApp && dotnet watch run
 ```
 
 ## 相关链接

@@ -1,71 +1,24 @@
 # NeoAdmin.Templates
 
-NeoAdmin 的 `dotnet new` 项目模板，结构与 [NovaAdmin.Templates](https://github.com/3bDjrvHs50kiZIJb5/NovaAdmin.Blazor) 类似：打包后可通过 `dotnet new neoadmin` 生成宿主 Web 项目。
+NeoAdmin 的 `dotnet new` 项目模板，用于快速创建 NeoAdmin 项目。
 
-生成的项目引用 **NeoAdmin.Blazor** NuGet 包，并包含博客 CRUD、REST API、定时任务等扩展示例。
-
-## 安装模板（本地）
+模板内容来自仓库根目录的 **`NeoAdmin`** 宿主项目（命名空间替换为 `NeoAdminApp`，并引用 `NeoAdmin.Blazor` NuGet 包）。修改宿主项目后请执行同步：
 
 ```bash
-# 1. 打包核心库（模板依赖此 NuGet 包）
-cd /path/to/NeoAdmin
-dotnet pack NeoAdmin.Blazor/NeoAdmin.Blazor.csproj -c Release -o ./nupkg
-
-# 2. 安装模板
-dotnet new install ./NeoAdmin.Templates
-```
-
-新建项目时若尚未发布到 nuget.org，需指定本地源：
-
-```bash
-mkdir MyAdmin && cd MyAdmin
-dotnet new neoadmin -n MyAdminApp --nuget-source /path/to/NeoAdmin/nupkg
+python3 NeoAdmin.Templates/sync-from-neoadmin.py
 ```
 
 ## 创建项目
 
+推荐先建**外层目录**（仓库/解决方案根），再在目录内生成项目（内层为实际 `.csproj`）：
+
 ```bash
-mkdir MyCompany.Admin && cd MyCompany.Admin
-dotnet new neoadmin -n MyCompany.Admin -o .
+mkdir MyProject && cd MyProject
+dotnet new neoadmin -n MyAdmin -o .
+cd MyAdmin
 dotnet watch run
 ```
 
-或在空目录外一层指定输出文件夹（会生成 `项目名/项目名.csproj`）：
+## 本地验证
 
-```bash
-dotnet new neoadmin -n MyCompany.Admin -o MyCompany.Admin
-cd MyCompany.Admin
-dotnet watch run
-```
-
-| 项 | 说明 |
-|----|------|
-| 短名 | `neoadmin` |
-| 源名替换 | `NeoAdminApp` → 你的项目名 |
-| 默认库文件 | `neoadmin.db` |
-| 默认账号 | `admin` / `admin`（见 `appsettings.json`） |
-
-## 打包发布模板
-
-```bash
-dotnet pack NeoAdmin.Templates/NeoAdmin.Templates.csproj -c Release -o ./nupkg
-# 将 nupkg 中的 NeoAdmin.Templates.*.nupkg 推送到 NuGet 或私有源
-```
-
-发布 **NeoAdmin.Blazor** 与 **NeoAdmin.Templates** 时，请保持 `NeoAdminApp.csproj` 中的 `NeoAdmin.Blazor` 版本号与包版本一致。
-
-## 目录结构
-
-```
-NeoAdmin.Templates/
-├── NeoAdmin.Templates.csproj    # Template 包工程
-├── README.md
-└── content/
-    ├── .template.config/
-    │   └── template.json
-    └── NeoAdminApp/             # 生成后的宿主项目骨架
-        ├── Program.cs
-        ├── Components/          # 控制台、博客示例页
-        ├── Entities/ / SeedData / Api / Jobs
-        └── docker-compose.yaml
-```
+见 [Test.md](Test.md)（仅本地，已加入 `.gitignore`）。

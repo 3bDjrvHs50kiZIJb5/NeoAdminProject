@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# 释放 NovaAdmin 开发常用端口 5176。
+# 释放 NovaAdmin 开发常用端口 5038。
 # 这个脚本不只杀“占端口的子进程”，还会把同项目的 dotnet 宿主一起结束，
 # 避免刚杀掉又被 `dotnet run` / `dotnet watch run` 重新拉起来。
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-PORT="${1:-5176}"
+PORT="${1:-5038}"
 PROJECT_FILE="${ROOT}/NovaAdmin.csproj"
 APP_NAME="$(basename "${ROOT}")"
 APP_BIN_PATTERN="${ROOT}/bin/.*/${APP_NAME}"

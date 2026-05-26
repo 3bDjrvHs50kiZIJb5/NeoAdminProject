@@ -1,9 +1,100 @@
-@page "/Home"
-@layout LayoutAdmin
+@page "/"
+@layout LayoutEmpty
 
-<PageTitle>Home</PageTitle>
+<PageTitle>NeoAdmin</PageTitle>
 
-<div class="home-placeholder">
-    <h1>Home</h1>
-    <p>这个页面保留给宿主项目本身使用，根路由已交给 `NeoAdmin.Blazor`。</p>
+<div class="w-full max-w-2xl space-y-8 text-center">
+    <header Class="my-6 gap-2">
+        <div class="flex justify-center">
+            <Avatar Size="AvatarSize.ExtraLarge" Class="size-16 border-2 border-primary rounded-2xl shadow-md">
+                <AvatarImage Source="/_content/NeoAdmin.Blazor/images/logo.png" Alt="NeoAdmin" />
+                <AvatarFallback Class="rounded-2xl text-lg font-semibold">NA</AvatarFallback>
+            </Avatar>
+        </div>
+        <div class="space-y-2 mt-4 mb-4">
+            <h1 class="text-3xl font-semibold tracking-tight">NeoAdmin</h1>
+            <p class="text-sm text-muted-foreground leading-relaxed">
+                NeoAdmin 是一个基于 Blazor Server、NeoUI 与 FreeSql 的后台管理框架。
+                登录、菜单、权限、CRUD 与示例模块开箱即用，适合作为业务后台的起点。
+            </p>
+        </div>
+        <div class="flex flex-wrap items-center justify-center gap-2">
+            <LinkButton Variant="ButtonVariant.Outline" Href="/api/index.html" Target="_blank">
+                API 文档
+            </LinkButton>
+            <LinkButton Variant="ButtonVariant.Outline" Href="@GitHubUrl" Target="_blank">
+                <LucideIcon Name="github" Size="16" Class="mr-1.5" />
+                GitHub
+            </LinkButton>
+            <LinkButton Variant="ButtonVariant.Outline" Href="/login?Redirect=%2FAdmin">
+                <LucideIcon Name="layout-dashboard" Size="16" Class="mr-1.5" />
+                进入后台
+            </LinkButton>
+        </div>
+
+    </header>
+
+    <Card Class="text-left mt-4 pt-4">
+        <CardHeader>
+            <CardTitle class="text-base">快速开始</CardTitle>
+            <CardDescription>
+                按顺序完成以下三步即可创建并运行项目。
+            </CardDescription>
+        </CardHeader>
+        <CardContent class="space-y-4 text-sm">
+            <ol class="list-none space-y-4 p-0 m-0">
+                <li class="flex gap-3">
+                    <span class="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">1</span>
+                    <div class="min-w-0 flex-1 space-y-2">
+                        <p class="text-xs leading-relaxed">
+                            安装或升级项目模板（首次安装与覆盖升级均用同一条命令）
+                        </p>
+                        <pre class="overflow-x-auto rounded-lg border bg-muted/40 p-3 text-xs leading-relaxed"><code>dotnet new install NeoAdmin.Templates --force</code></pre>
+                    </div>
+                </li>
+                <li class="flex gap-3">
+                    <span class="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">2</span>
+                    <div class="min-w-0 flex-1 space-y-2">
+                        <p class="text-xs leading-relaxed">
+                            在空目录中创建项目
+                        </p>
+                        <pre class="overflow-x-auto rounded-lg border bg-muted/40 p-3 text-xs leading-relaxed"><code>dotnet new neoadmin -n MyAdmin -o .</code></pre>
+                    </div>
+                </li>
+                <li class="flex gap-3">
+                    <span class="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">3</span>
+                    <div class="min-w-0 flex-1 space-y-2">
+                        <p class="text-xs leading-relaxed">
+                            启动开发服务器；终端出现「正在监听」后，在浏览器打开
+                            <a class="font-medium text-foreground underline underline-offset-2 hover:text-primary"
+                               href="@DevServerUrl" target="_blank" rel="noopener">@DevServerUrl</a>
+                            即可访问站点。
+                        </p>
+                        <pre class="overflow-x-auto rounded-lg border bg-muted/40 p-3 text-xs leading-relaxed"><code>dotnet watch run</code></pre>
+                    </div>
+                </li>
+            </ol>
+        </CardContent>
+    </Card>
+
+    <footer class="pt-4 text-xs text-muted-foreground mt-4">
+        <p>
+            © @CopyrightYear NeoAdmin. 保留所有权利。 · 基于
+            <a class="underline underline-offset-2 hover:text-foreground" href="https://neoui.io" target="_blank"
+                rel="noopener">NeoUI</a>
+            与
+            <a class="underline underline-offset-2 hover:text-foreground" href="https://freesql.net" target="_blank"
+                rel="noopener">FreeSql</a>
+            构建 ·
+            <a class="underline underline-offset-2 hover:text-foreground" href="@GitHubUrl" target="_blank"
+                rel="noopener">开源仓库</a>
+        </p>
+    </footer>
 </div>
+
+@code {
+    private static int CopyrightYear => DateTime.Now.Year;
+
+    private const string GitHubUrl = "https://github.com/3bDjrvHs50kiZIJb5/NeoAdminProject";
+    private const string DevServerUrl = "http://localhost:5038/";
+}

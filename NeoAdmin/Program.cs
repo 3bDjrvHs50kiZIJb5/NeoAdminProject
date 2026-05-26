@@ -1,4 +1,6 @@
 using System.Reflection;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using NeoAdmin.SeedData;
 using NeoAdmin.Blazor.Extensions;
 using NeoAdmin.Blazor.Components;
@@ -44,6 +46,17 @@ app.MapRazorPages();
 app.MapRazorComponents<NeoAdmin.App>()
     .AddAdditionalAssemblies(typeof(LayoutAdmin).Assembly)
     .AddInteractiveServerRenderMode();
+
+app.Lifetime.ApplicationStarted.Register(() =>
+{
+    var addresses = app.Services.GetRequiredService<IServer>()
+        .Features.Get<IServerAddressesFeature>()?.Addresses;
+    if (addresses is null || addresses.Count == 0)
+        return;
+
+    foreach (var address in addresses)
+        app.Logger.LogInformation("请在浏览器中访问: {Address}", address);
+});
 
 try
 {

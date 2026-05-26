@@ -36,54 +36,50 @@
 
     <Card Class="text-left mt-4 pt-4">
         <CardHeader>
-            <CardTitle class="text-base">使用方式</CardTitle>
+            <CardTitle class="text-base">快速开始</CardTitle>
             <CardDescription>
-                从 GitHub 获取源码，或通过 NuGet 引用已发布的包。
+                按顺序完成以下三步即可创建并运行项目。
             </CardDescription>
         </CardHeader>
-        <CardContent class="space-y-6 text-sm">
-            <section class="space-y-2">
-                <h2 class="font-medium text-foreground">1. NuGet 引用（已有 Web 项目）</h2>
-                <p class="text-muted-foreground">
-                    在 <code class="rounded bg-muted px-1 py-0.5 text-xs">.csproj</code> 中添加包引用，并在
-                    <code class="rounded bg-muted px-1 py-0.5 text-xs">Program.cs</code> 中调用
-                    <code class="rounded bg-muted px-1 py-0.5 text-xs">AddNeoAdmin</code> 等扩展（详见仓库 README）。
-                </p>
-                <pre class="overflow-x-auto rounded-lg border bg-muted/40 p-3 text-xs leading-relaxed"><code>&lt;PackageReference Include="NeoAdmin.Blazor" Version="1.0.0" /&gt;
-&lt;PackageReference Include="NeoUI.Blazor" Version="4.1.7" /&gt;</code></pre>
-                <p class="text-xs text-muted-foreground">
-                    包地址：
-                    <a class="underline underline-offset-2 hover:text-foreground" href="@NuGetBlazorUrl" target="_blank"
-                        rel="noopener">nuget.org · NeoAdmin.Blazor</a>
-                </p>
-            </section>
-
-            <section class="space-y-2">
-                <h2 class="font-medium text-foreground">2. 项目模板（新建后台）</h2>
-                <p class="text-muted-foreground">
-                    安装模板后一键生成宿主项目，已包含博客示例、API 与 Docker 配置。
-                </p>
-                <pre class="overflow-x-auto rounded-lg border bg-muted/40 p-3 text-xs leading-relaxed"><code>dotnet new install NeoAdmin.Templates
-mkdir MyAdmin &amp;&amp; cd MyAdmin
-dotnet new neoadmin -n MyAdmin -o .
-dotnet watch run</code></pre>
-                <p class="text-xs text-muted-foreground">
-                    包地址：
-                    <a class="underline underline-offset-2 hover:text-foreground" href="@NuGetTemplatesUrl"
-                        target="_blank" rel="noopener">nuget.org · NeoAdmin.Templates</a>
-                </p>
-            </section>
-
-
+        <CardContent class="space-y-4 text-sm">
+            <ol class="list-none space-y-4 p-0 m-0">
+                <li class="flex gap-3">
+                    <span class="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">1</span>
+                    <div class="min-w-0 flex-1 space-y-2">
+                        <p class="text-xs leading-relaxed">
+                            安装或升级项目模板（首次安装与覆盖升级均用同一条命令）
+                        </p>
+                        <pre class="overflow-x-auto rounded-lg border bg-muted/40 p-3 text-xs leading-relaxed"><code>dotnet new install NeoAdmin.Templates --force</code></pre>
+                    </div>
+                </li>
+                <li class="flex gap-3">
+                    <span class="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">2</span>
+                    <div class="min-w-0 flex-1 space-y-2">
+                        <p class="text-xs leading-relaxed">
+                            在空目录中创建项目
+                        </p>
+                        <pre class="overflow-x-auto rounded-lg border bg-muted/40 p-3 text-xs leading-relaxed"><code>dotnet new neoadmin -n MyAdmin -o .</code></pre>
+                    </div>
+                </li>
+                <li class="flex gap-3">
+                    <span class="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">3</span>
+                    <div class="min-w-0 flex-1 space-y-2">
+                        <p class="text-xs leading-relaxed">
+                            启动开发服务器；终端出现「正在监听」后，在浏览器打开
+                            <a class="font-medium text-foreground underline underline-offset-2 hover:text-primary"
+                               href="@DevServerUrl" target="_blank" rel="noopener">@DevServerUrl</a>
+                            即可访问站点。
+                        </p>
+                        <pre class="overflow-x-auto rounded-lg border bg-muted/40 p-3 text-xs leading-relaxed"><code>dotnet watch run</code></pre>
+                    </div>
+                </li>
+            </ol>
         </CardContent>
     </Card>
 
-    <footer class=" pt-4 text-xs text-muted-foreground mt-4">
+    <footer class="pt-4 text-xs text-muted-foreground mt-4">
         <p>
-            © @CopyrightYear NeoAdmin. 保留所有权利。
-        </p>
-        <p class="mt-1">
-            基于
+            © @CopyrightYear NeoAdmin. 保留所有权利。 · 基于
             <a class="underline underline-offset-2 hover:text-foreground" href="https://neoui.io" target="_blank"
                 rel="noopener">NeoUI</a>
             与
@@ -100,6 +96,5 @@ dotnet watch run</code></pre>
     private static int CopyrightYear => DateTime.Now.Year;
 
     private const string GitHubUrl = "https://github.com/3bDjrvHs50kiZIJb5/NeoAdminProject";
-    private const string NuGetBlazorUrl = "https://www.nuget.org/packages/NeoAdmin.Blazor";
-    private const string NuGetTemplatesUrl = "https://www.nuget.org/packages/NeoAdmin.Templates";
+    private const string DevServerUrl = "http://localhost:5038/";
 }
