@@ -1,9 +1,105 @@
-@page "/Home"
-@layout LayoutAdmin
+@page "/"
+@layout LayoutEmpty
 
-<PageTitle>Home</PageTitle>
+<PageTitle>NeoAdmin</PageTitle>
 
-<div class="home-placeholder">
-    <h1>Home</h1>
-    <p>这个页面保留给宿主项目本身使用，根路由已交给 `NeoAdmin.Blazor`。</p>
+<div class="w-full max-w-2xl space-y-8 text-center">
+    <header Class="my-6 gap-2">
+        <div class="flex justify-center">
+            <Avatar Size="AvatarSize.ExtraLarge" Class="size-16 border-2 border-primary rounded-2xl shadow-md">
+                <AvatarImage Source="/_content/NeoAdmin.Blazor/images/logo.png" Alt="NeoAdmin" />
+                <AvatarFallback Class="rounded-2xl text-lg font-semibold">NA</AvatarFallback>
+            </Avatar>
+        </div>
+        <div class="space-y-2 mt-4 mb-4">
+            <h1 class="text-3xl font-semibold tracking-tight">NeoAdmin</h1>
+            <p class="text-sm text-muted-foreground leading-relaxed">
+                NeoAdmin 是一个基于 Blazor Server、NeoUI 与 FreeSql 的后台管理框架。
+                登录、菜单、权限、CRUD 与示例模块开箱即用，适合作为业务后台的起点。
+            </p>
+        </div>
+        <div class="flex flex-wrap items-center justify-center gap-2">
+            <LinkButton Variant="ButtonVariant.Outline" Href="/api/index.html" Target="_blank">
+                API 文档
+            </LinkButton>
+            <LinkButton Variant="ButtonVariant.Outline" Href="@GitHubUrl" Target="_blank">
+                <LucideIcon Name="github" Size="16" Class="mr-1.5" />
+                GitHub
+            </LinkButton>
+            <LinkButton Variant="ButtonVariant.Outline" Href="/login?Redirect=%2FAdmin">
+                <LucideIcon Name="layout-dashboard" Size="16" Class="mr-1.5" />
+                进入后台
+            </LinkButton>
+        </div>
+
+    </header>
+
+    <Card Class="text-left mt-4 pt-4">
+        <CardHeader>
+            <CardTitle class="text-base">使用方式</CardTitle>
+            <CardDescription>
+                从 GitHub 获取源码，或通过 NuGet 引用已发布的包。
+            </CardDescription>
+        </CardHeader>
+        <CardContent class="space-y-6 text-sm">
+            <section class="space-y-2">
+                <h2 class="font-medium text-foreground">1. NuGet 引用（已有 Web 项目）</h2>
+                <p class="text-muted-foreground">
+                    在 <code class="rounded bg-muted px-1 py-0.5 text-xs">.csproj</code> 中添加包引用，并在
+                    <code class="rounded bg-muted px-1 py-0.5 text-xs">Program.cs</code> 中调用
+                    <code class="rounded bg-muted px-1 py-0.5 text-xs">AddNeoAdmin</code> 等扩展（详见仓库 README）。
+                </p>
+                <pre class="overflow-x-auto rounded-lg border bg-muted/40 p-3 text-xs leading-relaxed"><code>&lt;PackageReference Include="NeoAdmin.Blazor" Version="1.0.0" /&gt;
+&lt;PackageReference Include="NeoUI.Blazor" Version="4.1.7" /&gt;</code></pre>
+                <p class="text-xs text-muted-foreground">
+                    包地址：
+                    <a class="underline underline-offset-2 hover:text-foreground" href="@NuGetBlazorUrl" target="_blank"
+                        rel="noopener">nuget.org · NeoAdmin.Blazor</a>
+                </p>
+            </section>
+
+            <section class="space-y-2">
+                <h2 class="font-medium text-foreground">2. 项目模板（新建后台）</h2>
+                <p class="text-muted-foreground">
+                    安装模板后一键生成宿主项目，已包含博客示例、API 与 Docker 配置。
+                </p>
+                <pre class="overflow-x-auto rounded-lg border bg-muted/40 p-3 text-xs leading-relaxed"><code>dotnet new install NeoAdmin.Templates
+mkdir MyAdmin &amp;&amp; cd MyAdmin
+dotnet new neoadmin -n MyAdmin -o .
+dotnet watch run</code></pre>
+                <p class="text-xs text-muted-foreground">
+                    包地址：
+                    <a class="underline underline-offset-2 hover:text-foreground" href="@NuGetTemplatesUrl"
+                        target="_blank" rel="noopener">nuget.org · NeoAdmin.Templates</a>
+                </p>
+            </section>
+
+
+        </CardContent>
+    </Card>
+
+    <footer class=" pt-4 text-xs text-muted-foreground mt-4">
+        <p>
+            © @CopyrightYear NeoAdmin. 保留所有权利。
+        </p>
+        <p class="mt-1">
+            基于
+            <a class="underline underline-offset-2 hover:text-foreground" href="https://neoui.io" target="_blank"
+                rel="noopener">NeoUI</a>
+            与
+            <a class="underline underline-offset-2 hover:text-foreground" href="https://freesql.net" target="_blank"
+                rel="noopener">FreeSql</a>
+            构建 ·
+            <a class="underline underline-offset-2 hover:text-foreground" href="@GitHubUrl" target="_blank"
+                rel="noopener">开源仓库</a>
+        </p>
+    </footer>
 </div>
+
+@code {
+    private static int CopyrightYear => DateTime.Now.Year;
+
+    private const string GitHubUrl = "https://github.com/3bDjrvHs50kiZIJb5/NeoAdminProject";
+    private const string NuGetBlazorUrl = "https://www.nuget.org/packages/NeoAdmin.Blazor";
+    private const string NuGetTemplatesUrl = "https://www.nuget.org/packages/NeoAdmin.Templates";
+}
