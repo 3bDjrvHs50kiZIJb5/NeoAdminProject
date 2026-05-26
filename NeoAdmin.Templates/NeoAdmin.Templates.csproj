@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <Version>1.0.1</Version>
     <TargetFramework>net10.0</TargetFramework>
     <PackageId>NeoAdmin.Templates</PackageId>
     <Title>NeoAdmin.Templates</Title>
-    <Version>1.0.1</Version>
     <Authors>NeoAdmin</Authors>
     <RepositoryUrl>https://github.com/3bDjrvHs50kiZIJb5/NeoAdminProject</RepositoryUrl>
     <PackageProjectUrl>https://github.com/3bDjrvHs50kiZIJb5/NeoAdminProject</PackageProjectUrl>

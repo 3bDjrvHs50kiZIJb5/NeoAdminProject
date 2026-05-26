@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
   <PropertyGroup>
+    <Version>1.0.1</Version>
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>NeoAdmin.Blazor</AssemblyName>
     <RootNamespace>NeoAdmin.Blazor</RootNamespace>
@@ -12,7 +13,6 @@
     <Title>NeoAdmin.Blazor</Title>
     <Product>NeoAdmin.Blazor</Product>
     <PackageId>NeoAdmin.Blazor</PackageId>
-    <Version>1.0.1</Version>
     <Authors>NeoAdmin</Authors>
     <PackageTags>blazor;blazor-server;admin;freesql;neoui;neoadmin</PackageTags>
     <RepositoryUrl>https://github.com/3bDjrvHs50kiZIJb5/NeoAdminProject</RepositoryUrl>
