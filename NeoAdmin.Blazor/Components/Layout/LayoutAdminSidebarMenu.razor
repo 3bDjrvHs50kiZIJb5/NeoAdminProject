@@ -19,7 +19,7 @@
         }
         else
         {
-            @foreach (SysMenu menu in roots)
+            @foreach (SysMenu menu in roots.Where(IsVisibleMenu))
             {
                 var children = GetVisibleChildren(menu);
                 var hasChildren = children.Count > 0;
@@ -62,7 +62,7 @@
 else
 {
     <SidebarMenuSub>
-        @foreach (SysMenu menu in Items)
+        @foreach (SysMenu menu in Items.Where(IsVisibleMenu))
         {
             var children = GetVisibleChildren(menu);
             var hasChildren = children.Count > 0;
@@ -121,8 +121,18 @@ else
         isLoading = false;
     }
 
-    private static List<SysMenu> GetVisibleChildren(SysMenu menu) =>
-        menu.Children.Where(a => !a.IsHidden && !a.Type.IsPermissionNode()).ToList();
+    private static bool IsVisibleMenu(SysMenu menu) =>
+        !menu.IsHidden && !menu.Type.IsPermissionNode();
+
+    private static List<SysMenu> GetVisibleChildren(SysMenu menu)
+    {
+        if (menu.IsHidden)
+        {
+            return [];
+        }
+
+        return menu.Children.Where(IsVisibleMenu).ToList();
+    }
 
     private static string GetIconName(SysMenu menu) =>
         string.IsNullOrWhiteSpace(menu.Icon) ? "circle" : menu.Icon;

@@ -226,7 +226,7 @@ public sealed class MenuService
         return ids;
     }
 
-    private static bool HasHiddenAncestor(SysMenu menu, IReadOnlyDictionary<long, SysMenu> map)
+    public static bool HasHiddenAncestor(SysMenu menu, IReadOnlyDictionary<long, SysMenu> map)
     {
         long parentId = menu.ParentId;
         while (parentId > 0)

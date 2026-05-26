@@ -137,9 +137,11 @@ public sealed class MenuPermissionService
       return [];
     }
 
+    Dictionary<long, SysMenu> menuMap = snapshot.AllMenus.ToDictionary(menu => menu.Id);
     List<SysMenu> all = snapshot.AllMenus
       .Where(menu => !menu.Type.IsPermissionNode())
       .Where(menu => !menu.IsHidden)
+      .Where(menu => !MenuService.HasHiddenAncestor(menu, menuMap))
       .OrderBy(menu => menu.Sort)
       .ThenBy(menu => menu.Id)
       .ToList();
