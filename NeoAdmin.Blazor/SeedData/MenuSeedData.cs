@@ -135,7 +135,6 @@ public static class MenuSeedData
             freeSql.Update<SysMenu>()
                 .Where(a => a.Id == current.Id)
                 .Set(a => a.Icon, target.Icon)
-                .Set(a => a.Sort, target.Sort)
                 .Set(a => a.Type, target.Type)
                 .Set(a => a.SidebarStyle, target.SidebarStyle)
                 .Set(a => a.IsHidden, target.IsHidden)

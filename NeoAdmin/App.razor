@@ -7,8 +7,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
+    <link rel='stylesheet' href='@Assets["css/tailwind.css"]' />
     <link rel='stylesheet' href='@Assets["_content/NeoUI.Blazor/components.css"]' />
-    @* Theme Switcher：需预加载各主题 CSS，切换时仅改 html 上的 class *@
     <link rel='stylesheet' href='@Assets["_content/NeoUI.Blazor/css/themes/base/zinc.css"]' />
     <link rel='stylesheet' href='@Assets["_content/NeoUI.Blazor/css/themes/base/slate.css"]' />
     <link rel='stylesheet' href='@Assets["_content/NeoUI.Blazor/css/themes/base/gray.css"]' />
@@ -35,8 +35,7 @@
     <link rel='stylesheet' href='@Assets["_content/NeoUI.Blazor/css/themes/primary/purple.css"]' />
     <link rel='stylesheet' href='@Assets["_content/NeoUI.Blazor/css/themes/primary/fuchsia.css"]' />
     <link rel='stylesheet' href='@Assets["_content/NeoUI.Blazor/css/themes/primary/pink.css"]' />
-    @* 宿主 Tailwind（dotnet build 时由 package.json 编译；扫描本工程 + ProjectReference 的 NeoAdmin.Blazor） *@
-    <link rel='stylesheet' href='@Assets["css/tailwind.css"]' />
+
     <link rel='stylesheet' href='@Assets["_content/NeoAdmin.Blazor/app.css"]' />
     <link rel='stylesheet' href='@Assets["_content/NeoAdmin.Blazor/css/layout-shell.css"]' />
     <link rel='stylesheet' href='@Assets["_content/NeoAdmin.Blazor/css/dialog-max-width.css"]' />
