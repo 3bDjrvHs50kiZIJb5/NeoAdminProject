@@ -219,6 +219,7 @@
         e.Filters =
         [
             new CrudFilterInfo("类型", "Type", typeof(SysMenuType), multiple: true, col: 8),
+            new CrudFilterInfo("系统菜单", "IsSystem", false, 4, "是,否", "true,false"),
             new CrudFilterInfo("隐藏", "IsHidden", false, 4, "是,否", "true,false"),
             new CrudFilterInfo("折叠", "Collapsed", false, 4, "是,否", "true,false")
         ];
@@ -243,6 +244,13 @@
         else
         {
             query = query.Where(a => !a.Type.IsPermissionNode());
+        }
+
+        CrudFilterInfo systemFilter = e.Filters.First(f => f.QueryStringName == "IsSystem");
+        if (systemFilter.HasValue)
+        {
+            bool isSystem = systemFilter.Value<bool>();
+            query = query.Where(a => a.IsSystem == isSystem);
         }
 
         CrudFilterInfo hiddenFilter = e.Filters.First(f => f.QueryStringName == "IsHidden");

@@ -161,24 +161,35 @@ public sealed class MenuService
 
     public static void EnsureAuditButtons(IFreeSql freeSql, long parentId)
     {
+        bool isSystem = freeSql.Select<SysMenu>().Where(a => a.Id == parentId).First(a => a.IsSystem);
         foreach (SysMenu template in AuditMenuDefinitions.CreateAuditButtons())
         {
-            bool exists = freeSql.Select<SysMenu>()
-                .Any(a => a.ParentId == parentId && a.Path == template.Path);
-            if (!exists)
+            SysMenu? existing = freeSql.Select<SysMenu>()
+                .Where(a => a.ParentId == parentId && a.Path == template.Path)
+                .First();
+            if (existing is null)
             {
-                freeSql.Insert(NewButton(parentId, template.Label, template.Path, template.Sort)).ExecuteAffrows();
+                SysMenu button = NewButton(parentId, template.Label, template.Path, template.Sort, isSystem);
+                freeSql.Insert(button).ExecuteAffrows();
+            }
+            else if (existing.IsSystem != isSystem)
+            {
+                freeSql.Update<SysMenu>()
+                    .Where(a => a.Id == existing.Id)
+                    .Set(a => a.IsSystem, isSystem)
+                    .ExecuteAffrows();
             }
         }
     }
 
     private async Task EnsureCrudButtonsAsync(long parentId)
     {
+        bool isSystem = await freeSql.Select<SysMenu>().Where(a => a.Id == parentId).FirstAsync(a => a.IsSystem);
         SysMenu[] buttons =
         [
-            NewButton(parentId, "添加", "add", 301),
-            NewButton(parentId, "编辑", "edit", 302),
-            NewButton(parentId, "删除", "remove", 303)
+            NewButton(parentId, "添加", "add", 301, isSystem),
+            NewButton(parentId, "编辑", "edit", 302, isSystem),
+            NewButton(parentId, "删除", "remove", 303, isSystem)
         ];
 
         foreach (SysMenu button in buttons)
@@ -274,7 +285,7 @@ public sealed class MenuService
         menu.IsHidden = model.IsHidden;
     }
 
-    private static SysMenu NewButton(long parentId, string label, string path, int sort) => new()
+    private static SysMenu NewButton(long parentId, string label, string path, int sort, bool isSystem = true) => new()
     {
         ParentId = parentId,
         Label = label,
@@ -283,7 +294,7 @@ public sealed class MenuService
         Sort = sort,
         Type = SysMenuType.按钮,
         SidebarStyle = SysMenuSidebarStyle.收起,
-        IsSystem = true
+        IsSystem = isSystem
     };
 
     private static SysMenu CloneFlat(SysMenu menu) => new()

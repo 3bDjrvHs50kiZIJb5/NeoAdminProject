@@ -57,6 +57,7 @@
                         <span>@AddText</span>
                     </Button>
                 }
+                @ToolbarTrailingContent
             </div>
         </div>
         @if (IsSearchText)
@@ -360,6 +361,8 @@
     [Parameter] public RenderFragment<TItem>? ViewTemplate { get; set; }
     [Parameter] public RenderFragment<CrudGridRow<TItem>>? RowActionsContent { get; set; }
     [Parameter] public RenderFragment? ToolbarContent { get; set; }
+    /// <summary>显示在工具栏「新增」按钮右侧的自定义内容。</summary>
+    [Parameter] public RenderFragment? ToolbarTrailingContent { get; set; }
     [Parameter] public RenderFragment? HeaderContent { get; set; }
     [Parameter] public RenderFragment? FooterContent { get; set; }
 

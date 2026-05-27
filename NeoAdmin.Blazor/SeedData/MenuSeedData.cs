@@ -138,7 +138,7 @@ public static class MenuSeedData
                 .Set(a => a.Type, target.Type)
                 .Set(a => a.SidebarStyle, target.SidebarStyle)
                 .Set(a => a.IsHidden, target.IsHidden)
-                .Set(a => a.IsSystem, true)
+                .Set(a => a.IsSystem, target.IsSystem)
                 .ExecuteAffrows();
         }
 
@@ -158,7 +158,7 @@ public static class MenuSeedData
         Type = source.Type,
         Description = source.Description,
         SidebarStyle = source.SidebarStyle,
-        IsSystem = true,
+        IsSystem = source.IsSystem,
         IsHidden = source.IsHidden
     };
 
@@ -215,44 +215,21 @@ public static class MenuSeedData
                 Page("模态与侧板", "/neo-demo/ui/overlays-modal", 540, "panel-top"),
                 Page("浮动与菜单", "/neo-demo/ui/overlays-floating", 541, "layers")
             ])
-        ]),
-        Menu("Api", "code", string.Empty, 0, SysMenuSidebarStyle.收起,
-        [
-            Menu("Login", "log-in", "login", 100, type: SysMenuType.接口, children:
-            [
-                Api("Register", "user-plus", "Register", 101),
-                Api("GetWhoIsUsingList", "users", "GetWhoIsUsingList", 102),
-                Api("Login", "log-in", "Login", 103),
-                Api("Logout", "log-out", "Logout", 104),
-                Api("Check", "circle-check", "Check", 105),
-                Api("UpdateMemberInfo", "user-pen", "UpdateMemberInfo", 106),
-                Api("ChangePassword", "key-round", "ChangePassword", 107),
-                Api("DeleteAccount", "user-x", "DeleteAccount", 108),
-                Api("UploadAvatar", "image", "UploadAvatar", 109),
-                Api("UploadBadgePhoto", "badge", "UploadBadgePhoto", 110),
-                Api("SendResetPasswordCode", "mail", "SendResetPasswordCode", 111),
-                Api("ResetPassword", "unlock-keyhole", "ResetPassword", 112),
-                Api("SetAIAlarmLevel", "bot", "SetAIAlarmLevel", 113)
-            ]),
-            Menu("Article", "newspaper", "article", 200, type: SysMenuType.接口, children:
-            [
-                Api("GetAll", "list", "GetAll", 201)
-            ])
-        ], type: SysMenuType.接口, isHidden: true)
+        ])
     ];
 
-    public static SysMenu Page(string label, string path, int sort, string icon) =>
-        Menu(label, icon, path, sort, type: SysMenuType.增删改查);
+    public static SysMenu Page(string label, string path, int sort, string icon, bool isSystem = true) =>
+        Menu(label, icon, path, sort, type: SysMenuType.增删改查, isSystem: isSystem);
 
     /// <summary>增删改查 + 审批流按钮（提交/一审/拒绝/反审/历史版本）。</summary>
-    public static SysMenu PageWithAudit(string label, string path, int sort, string icon) =>
-        Menu(label, icon, path, sort, type: SysMenuType.增删改查, children: CreateCrudAndAuditButtons());
+    public static SysMenu PageWithAudit(string label, string path, int sort, string icon, bool isSystem = true) =>
+        Menu(label, icon, path, sort, type: SysMenuType.增删改查, children: CreateCrudAndAuditButtons(isSystem), isSystem: isSystem);
 
-    private static SysMenu Button(string label, string icon, string path, int sort) =>
-        Menu(label, icon, path, sort, type: SysMenuType.按钮);
+    private static SysMenu Button(string label, string icon, string path, int sort, bool isSystem = true) =>
+        Menu(label, icon, path, sort, type: SysMenuType.按钮, isSystem: isSystem);
 
-    private static SysMenu Api(string label, string icon, string path, int sort) =>
-        Menu(label, icon, path, sort, type: SysMenuType.接口);
+    public static SysMenu Api(string label, string icon, string path, int sort, bool isSystem = true) =>
+        Menu(label, icon, path, sort, type: SysMenuType.接口, isSystem: isSystem);
 
     public static SysMenu Menu(
         string label,
@@ -262,7 +239,8 @@ public static class MenuSeedData
         SysMenuSidebarStyle sidebarStyle = SysMenuSidebarStyle.收起,
         List<SysMenu>? children = null,
         SysMenuType type = SysMenuType.菜单,
-        bool isHidden = false)
+        bool isHidden = false,
+        bool isSystem = true)
     {
         SysMenu menu = new()
         {
@@ -272,7 +250,7 @@ public static class MenuSeedData
             Sort = sort,
             Type = type,
             SidebarStyle = sidebarStyle,
-            IsSystem = true,
+            IsSystem = isSystem,
             IsHidden = isHidden
         };
 
@@ -280,9 +258,9 @@ public static class MenuSeedData
         {
             children =
             [
-                Button("添加", "plus", "add", 301),
-                Button("编辑", "pencil", "edit", 302),
-                Button("删除", "trash-2", "remove", 303)
+                Button("添加", "plus", "add", 301, isSystem),
+                Button("编辑", "pencil", "edit", 302, isSystem),
+                Button("删除", "trash-2", "remove", 303, isSystem)
             ];
         }
 
@@ -294,15 +272,20 @@ public static class MenuSeedData
         return menu;
     }
 
-    private static List<SysMenu> CreateCrudAndAuditButtons()
+    private static List<SysMenu> CreateCrudAndAuditButtons(bool isSystem = true)
     {
         List<SysMenu> buttons =
         [
-            Button("添加", "plus", "add", 301),
-            Button("编辑", "pencil", "edit", 302),
-            Button("删除", "trash-2", "remove", 303)
+            Button("添加", "plus", "add", 301, isSystem),
+            Button("编辑", "pencil", "edit", 302, isSystem),
+            Button("删除", "trash-2", "remove", 303, isSystem)
         ];
-        buttons.AddRange(AuditMenuDefinitions.CreateAuditButtons());
+        foreach (SysMenu auditButton in AuditMenuDefinitions.CreateAuditButtons())
+        {
+            auditButton.IsSystem = isSystem;
+            buttons.Add(auditButton);
+        }
+
         return buttons;
     }
 }
