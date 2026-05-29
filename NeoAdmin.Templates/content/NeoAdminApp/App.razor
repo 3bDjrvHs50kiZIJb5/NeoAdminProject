@@ -1,4 +1,6 @@
 @using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Endpoints
+@using Microsoft.AspNetCore.Http
 @using static Microsoft.AspNetCore.Components.Web.RenderMode
 
 <!DOCTYPE html>
@@ -43,10 +45,10 @@
     @* DataGrid（AG Grid）依赖 ES module import map，见 https://demos.neoui.io/components/datagrid *@
     <ImportMap />
     <DataGridImportMap />
-    <HeadOutlet @rendermode="@InteractiveServer" />
+    <HeadOutlet @rendermode="@RenderModeForPage" />
 </head>
 <body>
-    <NeoAdminApp.Routes @rendermode="new InteractiveServerRenderMode(prerender: false)" />
+    <NeoAdminApp.Routes @rendermode="@RenderModeForPage" />
 
     <script src='@Assets["_content/NeoAdmin.Blazor/js/auth.js"]'></script>
     <script src='@Assets["_content/NeoUI.Blazor/js/theme.js"]'></script>
@@ -56,3 +58,17 @@
     <script src='@Assets["_framework/blazor.web.js"]'></script>
 </body>
 </html>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    // 走 SignalR 的交互式渲染模式。
+    private static readonly IComponentRenderMode Interactive =
+        new InteractiveServerRenderMode(prerender: false);
+
+    // 标记了 [ExcludeFromInteractiveRouting] 的页面（如 Home、Error）走静态 SSR（返回 null），
+    // 其余页面走 InteractiveServer。这样交互边界始终落在无参数的 <Routes> 上，可正常序列化。
+    private IComponentRenderMode? RenderModeForPage =>
+        HttpContext.AcceptsInteractiveRouting() ? Interactive : null;
+}

@@ -1,11 +1,10 @@
 @using NeoAdmin.Blazor.Components
-@using static Microsoft.AspNetCore.Components.Web.RenderMode
 
+@* 渲染模式由 App.razor 上的 <Routes> 统一决定：
+   默认 InteractiveServer；标记了 [ExcludeFromInteractiveRouting] 的页面走静态 SSR。 *@
 <Router AppAssembly="@typeof(Program).Assembly" AdditionalAssemblies="new[] { typeof(LayoutAdmin).Assembly }">
     <Found Context="routeData">
-        <RouteView RouteData="@routeData"
-                   DefaultLayout="@typeof(LayoutAdmin)"
-                   @rendermode="new InteractiveServerRenderMode(prerender: false)" />
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(LayoutAdmin)" />
     </Found>
     <NotFound>
         <PageTitle>Not found</PageTitle>

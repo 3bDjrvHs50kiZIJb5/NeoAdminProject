@@ -1,8 +1,10 @@
 @page "/"
 @layout LayoutEmpty
-@using Microsoft.JSInterop
-@inject IJSRuntime JS
-@inject IToastService ToastService
+@using Microsoft.AspNetCore.Components.Endpoints
+@attribute [ExcludeFromInteractiveRouting]
+
+@* 本页为纯静态 SSR：通过 [ExcludeFromInteractiveRouting] 让 App.razor 以静态模式渲染，
+   因此不建立 SignalR 电路。复制按钮使用原生 onclick 调用 JS，而非 Blazor 的 OnClick 事件。 *@
 
 <PageTitle>NeoAdmin</PageTitle>
 
@@ -54,13 +56,12 @@
                         </p>
                         <div class="relative">
                             <pre class="overflow-x-auto rounded-lg border bg-muted/40 p-3 pr-10 text-xs leading-relaxed"><code>@InstallTemplateCommand</code></pre>
-                            <Button Variant="ButtonVariant.Ghost"
-                                    Size="ButtonSize.Small"
-                                    Class="absolute right-1 top-1 size-10 p-0 text-muted-foreground hover:text-foreground"
+                            <button type="button"
+                                    onclick="neoAdminAuth.copyText('@InstallTemplateCommand')"
                                     aria-label="复制命令"
-                                    OnClick="@(() => CopyCommandAsync(InstallTemplateCommand))">
+                                    class="absolute right-1 top-1 inline-flex size-10 items-center justify-center rounded-md p-0 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
                                 <LucideIcon Name="copy" Size="18" />
-                            </Button>
+                            </button>
                         </div>
                     </div>
                 </li>
@@ -72,13 +73,12 @@
                         </p>
                         <div class="relative">
                             <pre class="overflow-x-auto rounded-lg border bg-muted/40 p-3 pr-10 text-xs leading-relaxed"><code>@CreateProjectCommand</code></pre>
-                            <Button Variant="ButtonVariant.Ghost"
-                                    Size="ButtonSize.Small"
-                                    Class="absolute right-1 top-1 size-10 p-0 text-muted-foreground hover:text-foreground"
+                            <button type="button"
+                                    onclick="neoAdminAuth.copyText('@CreateProjectCommand')"
                                     aria-label="复制命令"
-                                    OnClick="@(() => CopyCommandAsync(CreateProjectCommand))">
+                                    class="absolute right-1 top-1 inline-flex size-10 items-center justify-center rounded-md p-0 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
                                 <LucideIcon Name="copy" Size="18" />
-                            </Button>
+                            </button>
                         </div>
                     </div>
                 </li>
@@ -93,13 +93,12 @@
                         </p>
                         <div class="relative">
                             <pre class="overflow-x-auto rounded-lg border bg-muted/40 p-3 pr-10 text-xs leading-relaxed"><code>@WatchRunCommand</code></pre>
-                            <Button Variant="ButtonVariant.Ghost"
-                                    Size="ButtonSize.Small"
-                                    Class="absolute right-1 top-1 size-10 p-0 text-muted-foreground hover:text-foreground"
+                            <button type="button"
+                                    onclick="neoAdminAuth.copyText('@WatchRunCommand')"
                                     aria-label="复制命令"
-                                    OnClick="@(() => CopyCommandAsync(WatchRunCommand))">
+                                    class="absolute right-1 top-1 inline-flex size-10 items-center justify-center rounded-md p-0 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
                                 <LucideIcon Name="copy" Size="18" />
-                            </Button>
+                            </button>
                         </div>
                     </div>
                 </li>
@@ -131,17 +130,4 @@
     private const string InstallTemplateCommand = "dotnet new install NeoAdmin.Templates --force";
     private const string CreateProjectCommand = "dotnet new neoadmin -n MyAdmin -o .";
     private const string WatchRunCommand = "dotnet watch run";
-
-    private async Task CopyCommandAsync(string command)
-    {
-        try
-        {
-            await JS.InvokeVoidAsync("neoAdminAuth.copyText", command);
-            ToastService.Success("已复制", "命令已复制到剪贴板");
-        }
-        catch
-        {
-            ToastService.Error("复制失败", "请手动选中命令复制");
-        }
-    }
 }
