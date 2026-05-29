@@ -29,7 +29,10 @@ artifacts/
 *.snupkg
 nupkg/
 
-# IDE
+# IDE / 本地编辑器与 CI（不上传）
+.vscode/
+.github/workflows/
+.playwright-cli/
 .vs/
 .idea/
 *.swp
