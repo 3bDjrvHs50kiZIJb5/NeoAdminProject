@@ -17,7 +17,7 @@
 @inject MenuPermissionService MenuPermissionService
 @inject NavigationManager NavigationManager
 
-<div class="crud-table flex flex-col flex-1 min-h-0 min-w-0 overflow-hidden">
+<div class="crud-table flex flex-col flex-1 min-h-0 min-w-0 overflow-y-hidden">
     @HeaderContent
 
     @if (queryInfo.Filters.Length > 0)
@@ -74,7 +74,8 @@
             InitialPageSize="@DataTablePageSize" SelectionMode="@SelectionMode" SelectedItems="@selectedRows"
             SelectedItemsChanged="@OnSelectedRowsChanged" ColumnsVisibility="false" IsLoading="@isLoading" Dense="true"
             ColumnSizing="TableColumnSizing.Fixed" AdditionalRowAttributes="GetRowAttributes"
-            Class="h-full w-full min-w-0" TableContainerClass="h-full min-w-0 overflow-x-hidden">
+            Class="h-full w-full min-w-0"
+            TableContainerClass="h-full min-w-0 overflow-y-auto [&_table]:w-max [&_table]:min-w-full">
             <Columns>
                 @if (IsWorkflowAudit)
                 {
