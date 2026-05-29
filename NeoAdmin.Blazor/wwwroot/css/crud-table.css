@@ -1,0 +1,20 @@
+/**
+ * crud-table.css — CrudTable / NeoInputTable 表格滚动
+ *
+ * NeoUI DataTable 容器默认 overflow-x-auto（sticky 列需要）。
+ * 操作列按钮等内容若超出单元格，会把 tbody 撑宽 1～4px，导致横向滚动条一直出现。
+ *
+ * 做法：table 铺满容器 + table-layout:fixed，单元格 overflow:hidden，内容用 truncate 省略。
+ * 列总宽超出视口时仍可通过容器 overflow-x-auto 滚动（见 table min-width）。
+ */
+
+.crud-table [data-keyboard-nav] table {
+  width: 100%;
+  min-width: 100%;
+  table-layout: fixed;
+}
+
+.crud-table [data-keyboard-nav] th,
+.crud-table [data-keyboard-nav] td {
+  overflow: hidden;
+}

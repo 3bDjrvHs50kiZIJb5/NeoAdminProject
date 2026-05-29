@@ -75,7 +75,7 @@
             SelectedItemsChanged="@OnSelectedRowsChanged" ColumnsVisibility="false" IsLoading="@isLoading" Dense="true"
             ColumnSizing="TableColumnSizing.Fixed" AdditionalRowAttributes="GetRowAttributes"
             Class="h-full w-full min-w-0"
-            TableContainerClass="h-full min-w-0 overflow-y-auto [&_table]:w-max [&_table]:min-w-full">
+            TableContainerClass="h-full min-w-0 overflow-y-auto">
             <Columns>
                 @if (IsWorkflowAudit)
                 {
@@ -102,7 +102,7 @@
                 @if (ShowDefaultActions)
                 {
                     <DataTableColumn TData="CrudGridRow<TItem>" TValue="string" Property="@(_ => string.Empty)" Header="操作"
-                        Alignment="ColumnAlignment.Center" Sortable="false" Width="120px">
+                        Alignment="ColumnAlignment.Center" Sortable="false" Width="180px">
                         <CellTemplate Context="row">
                             <div class="flex justify-center gap-1" @onclick:stopPropagation="true">
                                 @if (RowActionsContent != null)
