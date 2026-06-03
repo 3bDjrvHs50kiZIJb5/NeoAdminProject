@@ -1,0 +1,15 @@
+/**
+ * neo-select.css — NativeSelect / NeoSelect*
+ *
+ * 与 Input(h-8) 等高，覆盖 NeoUI NativeSelect 默认 py-2 / h-10。
+ */
+
+select {
+  box-sizing: border-box;
+  height: 2rem !important;
+  min-height: 2rem !important;
+  padding-block: 0.25rem !important;
+  padding-inline: 0.5rem 2rem !important;
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+}
