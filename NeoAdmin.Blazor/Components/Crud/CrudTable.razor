@@ -229,14 +229,20 @@
                         @EditTemplate!(editor)
                     </div>
                     <DialogFooter Class="mt-4">
-                        <DialogClose AsChild>
-                            <Button Variant="ButtonVariant.Outline" Type="ButtonType.Button">
-                                取消
+                        <div class="flex w-full flex-col-reverse flex-wrap gap-2 sm:flex-row sm:items-center sm:justify-end">
+                            @if (EditDialogFooterLeading != null)
+                            {
+                                @EditDialogFooterLeading(editor)
+                            }
+                            <DialogClose AsChild>
+                                <Button Variant="ButtonVariant.Outline" Type="ButtonType.Button">
+                                    取消
+                                </Button>
+                            </DialogClose>
+                            <Button Variant="ButtonVariant.Outline" Type="ButtonType.Submit">
+                                @SaveText
                             </Button>
-                        </DialogClose>
-                        <Button Variant="ButtonVariant.Outline" Type="ButtonType.Submit">
-                            @SaveText
-                        </Button>
+                        </div>
                     </DialogFooter>
                 </EditForm>
             }
@@ -366,6 +372,8 @@
     [Parameter] public RenderFragment? ToolbarTrailingContent { get; set; }
     [Parameter] public RenderFragment? HeaderContent { get; set; }
     [Parameter] public RenderFragment? FooterContent { get; set; }
+    /// <summary>编辑对话框底部右侧按钮组内、位于「取消」「保存」之前的自定义内容。</summary>
+    [Parameter] public RenderFragment<TItem>? EditDialogFooterLeading { get; set; }
 
     [Parameter] public EventCallback<CrudQueryInfo> InitQuery { get; set; }
     [Parameter] public EventCallback<CrudQueryEventArgs<TItem>> OnQuery { get; set; }
