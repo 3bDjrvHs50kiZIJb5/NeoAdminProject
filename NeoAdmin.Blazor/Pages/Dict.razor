@@ -33,12 +33,25 @@
             <Columns>
                 <DataTableColumn TData="CrudGridRow<SysDict>"
                                  TValue="string"
-                                 Property="@(row => row.Item.Name)"
-                                 Header="编码"
+                                 Property="@(row => row.Item.Description)"
+                                 Header="备注"
                                  Sortable="false"
-                                 Width="90px">
+                                 Width="160px">
                     <CellTemplate Context="row">
-                        <span class="block truncate font-medium" title="@row.Item.Name">@row.Item.Name</span>
+                        <div class="flex min-w-0 flex-col gap-1">
+                            @if (!string.IsNullOrWhiteSpace(row.Item.Description))
+                            {
+                                <span class="block truncate font-medium"
+                                      title="@row.Item.Description.Trim()">
+                                    @row.Item.Description.Trim()
+                                </span>
+                            }
+                            <span class="w-fit max-w-full truncate" title="@row.Item.Name">
+                                <Badge Variant="BadgeVariant.Secondary">
+                                    @row.Item.Name
+                                </Badge>
+                            </span>
+                        </div>
                     </CellTemplate>
                 </DataTableColumn>
             </Columns>
@@ -89,52 +102,29 @@
                 </DataTableColumn>
                 <DataTableColumn TData="CrudGridRow<SysDict>"
                                  TValue="string"
-                                 Property="@(row => row.Item.Value)"
-                                 Header="值1"
+                                 Property="@(row => GetDictValuesDisplay(row.Item))"
+                                 Header="值"
                                  Sortable="false"
-                                 Width="100px">
+                                 Width="240px">
                     <CellTemplate Context="row">
-                        <span class="block truncate" title="@row.Item.Value">@row.Item.Value</span>
-                    </CellTemplate>
-                </DataTableColumn>
-                <DataTableColumn TData="CrudGridRow<SysDict>"
-                                 TValue="string"
-                                 Property="@(row => row.Item.Value2)"
-                                 Header="值2"
-                                 Sortable="false"
-                                 Width="100px">
-                    <CellTemplate Context="row">
-                        <span class="block truncate" title="@row.Item.Value2">@row.Item.Value2</span>
-                    </CellTemplate>
-                </DataTableColumn>
-                <DataTableColumn TData="CrudGridRow<SysDict>"
-                                 TValue="string"
-                                 Property="@(row => row.Item.Value3)"
-                                 Header="值3"
-                                 Sortable="false"
-                                 Width="100px">
-                    <CellTemplate Context="row">
-                        <span class="block truncate" title="@row.Item.Value3">@row.Item.Value3</span>
-                    </CellTemplate>
-                </DataTableColumn>
-                <DataTableColumn TData="CrudGridRow<SysDict>"
-                                 TValue="string"
-                                 Property="@(row => row.Item.Value4)"
-                                 Header="值4"
-                                 Sortable="false"
-                                 Width="100px">
-                    <CellTemplate Context="row">
-                        <span class="block truncate" title="@row.Item.Value4">@row.Item.Value4</span>
-                    </CellTemplate>
-                </DataTableColumn>
-                <DataTableColumn TData="CrudGridRow<SysDict>"
-                                 TValue="string"
-                                 Property="@(row => row.Item.Value5)"
-                                 Header="值5"
-                                 Sortable="false"
-                                 Width="100px">
-                    <CellTemplate Context="row">
-                        <span class="block truncate" title="@row.Item.Value5">@row.Item.Value5</span>
+                        @{
+                            IReadOnlyList<string> values = GetDictValues(row.Item);
+                        }
+                        @if (values.Count == 0)
+                        {
+                            <span class="text-muted-foreground">-</span>
+                        }
+                        else
+                        {
+                            <div class="flex flex-wrap gap-1">
+                                @foreach (string value in values)
+                                {
+                                    <span class="max-w-full truncate" title="@value">
+                                        <Badge Variant="BadgeVariant.Secondary">@value</Badge>
+                                    </span>
+                                }
+                            </div>
+                        }
                     </CellTemplate>
                 </DataTableColumn>
                 <DataTableColumn TData="CrudGridRow<SysDict>"
@@ -396,4 +386,14 @@
 
         return Task.CompletedTask;
     }
+
+    private static IReadOnlyList<string> GetDictValues(SysDict item) =>
+        new[] { item.Value, item.Value2, item.Value3, item.Value4, item.Value5 }
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .Select(v => v.Trim())
+            .ToList();
+
+    private static string GetDictValuesDisplay(SysDict item) =>
+        string.Join(' ', GetDictValues(item));
+
 }
