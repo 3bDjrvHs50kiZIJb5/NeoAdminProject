@@ -1,5 +1,6 @@
 @namespace NeoAdmin.Blazor.Components
 @typeparam TItem where TItem : class, new()
+@using System.Globalization
 @using System.Text.Json
 @using FreeSql
 @using Microsoft.JSInterop
@@ -70,14 +71,37 @@
     </div>
 
     <div class="flex-1 min-h-0 min-w-0">
-        <DataTable TData="CrudGridRow<TItem>" Data="@rows" ShowToolbar="false" ShowPagination="false"
-            InitialPageSize="@DataTablePageSize" SelectionMode="@SelectionMode" SelectedItems="@selectedRows"
-            SelectedItemsChanged="@OnSelectedRowsChanged" ColumnsVisibility="false" IsLoading="@isLoading" Dense="true"
-            ColumnSizing="TableColumnSizing.Fixed" AdditionalRowAttributes="GetRowAttributes"
-            Class="h-full w-full min-w-0"
-            TableContainerClass="h-full min-w-0 overflow-y-auto">
-            <Columns>
-                @if (IsWorkflowAudit)
+        <CrudTableSingleSelectShell Enabled="@IsSingleSelect"
+                                    Value="@SingleSelectBoundValue"
+                                    ValueChanged="HandleSingleSelectValueChanged">
+            <DataTable TData="CrudGridRow<TItem>" Data="@rows" ShowToolbar="false" ShowPagination="false"
+                InitialPageSize="@DataTablePageSize" SelectionMode="@SelectionMode" SelectedItems="@selectedRows"
+                SelectedItemsChanged="@OnSelectedRowsChanged" ColumnsVisibility="false" IsLoading="@isLoading" Dense="true"
+                ColumnSizing="TableColumnSizing.Fixed" AdditionalRowAttributes="GetRowAttributes"
+                Class="h-full w-full min-w-0"
+                TableContainerClass="h-full min-w-0 overflow-y-auto">
+                <Columns>
+                    @if (IsSingleSelect)
+                    {
+                        <DataTableColumn TData="CrudGridRow<TItem>"
+                                         TValue="string"
+                                         Property="@(_ => string.Empty)"
+                                         Header=""
+                                         Sortable="false"
+                                         Width="48px"
+                                         Alignment="ColumnAlignment.Center">
+                            <CellTemplate Context="row">
+                                <div class="flex justify-center" @onclick:stopPropagation="true">
+                                    <RadioGroupItem TValue="string"
+                                                    Value="@GetRowSelectValue(row)"
+                                                    Id="@GetRowSelectId(row)"
+                                                    Disabled="@(!CanSelectRow(row))"
+                                                    AriaLabel="选择此行" />
+                                </div>
+                            </CellTemplate>
+                        </DataTableColumn>
+                    }
+                    @if (IsWorkflowAudit)
                 {
                     <DataTableColumn TData="CrudGridRow<TItem>" TValue="SysAuditStatus"
                         Property="@(row => row.Item is EntityAudited audited ? audited.AuditStatus : default)" Header="审批"
@@ -150,8 +174,9 @@
             </Columns>
             <EmptyTemplate>
                 <div class="py-10 text-center text-sm text-muted-foreground">@NoDataText</div>
-            </EmptyTemplate>
-        </DataTable>
+                </EmptyTemplate>
+            </DataTable>
+        </CrudTableSingleSelectShell>
     </div>
 
     @if (IsPaged || FooterContent != null || total > 0)
@@ -402,6 +427,8 @@
     /// <summary>审批按钮权限所属的页面菜单路径，如 /Blog/Article。</summary>
     [Parameter] public string WorkflowAuditMenuPath { get; set; } = string.Empty;
 
+    [Parameter] public EventCallback<EntityAudited> OnWorkflowAuditChanged { get; set; }
+
     /// <summary>用于权限判断的菜单路径，默认取当前页面路由。</summary>
     [Parameter] public string MenuPath { get; set; } = string.Empty;
 
@@ -457,9 +484,9 @@
     private bool HasSelectedRows => selectedRows.Count > 0;
     private bool UseCascadeSelection => IsCascadeSelection && LevelSelector != null;
     private DataTableSelectionMode SelectionMode =>
-    IsMultiSelect ? DataTableSelectionMode.Multiple :
-    IsSingleSelect ? DataTableSelectionMode.Single :
-    DataTableSelectionMode.None;
+        IsSingleSelect ? DataTableSelectionMode.None :
+        IsMultiSelect ? DataTableSelectionMode.Multiple :
+        DataTableSelectionMode.None;
 
     protected override async Task OnInitializedAsync()
     {
@@ -1114,6 +1141,11 @@
         }
         else
         {
+            if (IsSingleSelect && incoming.Count > 1)
+            {
+                incoming = [incoming[^1]];
+            }
+
             selectedRows = incoming;
         }
 
@@ -1308,8 +1340,13 @@
         }
     }
 
-    private async Task HandleAuditPanelChanged(EntityAudited _)
+    private async Task HandleAuditPanelChanged(EntityAudited audited)
     {
+        if (OnWorkflowAuditChanged.HasDelegate)
+        {
+            await OnWorkflowAuditChanged.InvokeAsync(audited);
+        }
+
         await LoadAsync();
     }
 
@@ -1342,6 +1379,62 @@
     private const string DataTableBodyRowBaseClass =
     "group border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted";
 
+    private string SingleSelectBoundValue =>
+        selectedRows.Count == 0 ? string.Empty : GetRowSelectValue(selectedRows[0]);
+
+    private async Task HandleSingleSelectValueChanged(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            selectedRows.Clear();
+        }
+        else
+        {
+            CrudGridRow<TItem>? row = rows.FirstOrDefault(item => GetRowSelectValue(item) == value);
+            if (row is not null)
+            {
+                selectedRows = [row];
+            }
+        }
+
+        await OnSelectedRowsAfterBind();
+    }
+
+    private async Task SelectSingleRowAsync(CrudGridRow<TItem> row)
+    {
+        if (!CanSelectRow(row))
+        {
+            return;
+        }
+
+        selectedRows = [row];
+        await OnSelectedRowsAfterBind();
+    }
+
+    private async Task HandleSingleSelectRowClickAsync(CrudGridRow<TItem> row)
+    {
+        await SelectSingleRowAsync(row);
+
+        if (OnRowClick.HasDelegate)
+        {
+            await OnRowClick.InvokeAsync(row.Item);
+        }
+    }
+
+    private bool IsRowSelected(CrudGridRow<TItem> row) =>
+        selectedRows.Any(selected => ReferenceEquals(selected, row));
+
+    private string GetRowSelectValue(CrudGridRow<TItem> row) =>
+        SelectionKey != null
+            ? SelectionKey(row.Item)?.ToString() ?? string.Empty
+            : row.RowIndex.ToString(CultureInfo.InvariantCulture);
+
+    private string GetRowSelectId(CrudGridRow<TItem> row) =>
+        $"crud-row-select-{GetHashCode()}-{GetRowSelectValue(row)}";
+
+    private bool CanSelectRow(CrudGridRow<TItem> row) =>
+        CanbeSelect?.Invoke(row.Item) ?? true;
+
     private Dictionary<string, object> GetRowAttributes(CrudGridRow<TItem> row)
     {
         Dictionary<string, object> attrs = new()
@@ -1350,12 +1443,30 @@
         };
 
         List<string> classes = new();
+        if (IsSingleSelect)
+        {
+            if (IsRowSelected(row))
+            {
+                attrs["data-state"] = "selected";
+                classes.Add("bg-muted");
+                classes.Add(DataTableBodyRowBaseClass);
+            }
+
+            if (CanSelectRow(row))
+            {
+                classes.Add("cursor-pointer");
+                attrs["onclick"] = EventCallback.Factory.Create<MouseEventArgs>(
+                    this,
+                    () => HandleSingleSelectRowClickAsync(row));
+            }
+        }
+
         if (IsRowHighlighted?.Invoke(row.Item) == true)
         {
             classes.Add("bg-accent/60");
         }
 
-        if (OnRowClick.HasDelegate)
+        if (!IsSingleSelect && OnRowClick.HasDelegate)
         {
             classes.Add("cursor-pointer");
             attrs["onclick"] = EventCallback.Factory.Create<MouseEventArgs>(

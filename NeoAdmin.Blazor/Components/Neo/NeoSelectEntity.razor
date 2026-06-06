@@ -64,7 +64,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        boundKey = FormatKey(Value);
+        boundKey = IsEmptyValue(Value) ? string.Empty : FormatKey(Value);
         if (Source != null)
         {
             await LoadItemsAsync();
@@ -120,4 +120,7 @@
     }
 
     private static string FormatKey(TKey key) => key?.ToString() ?? string.Empty;
+
+    private static bool IsEmptyValue(TKey key) =>
+        EqualityComparer<TKey>.Default.Equals(key, default!);
 }

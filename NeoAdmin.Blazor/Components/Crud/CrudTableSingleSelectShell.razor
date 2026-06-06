@@ -1,0 +1,29 @@
+@namespace NeoAdmin.Blazor.Components
+@if (Enabled)
+{
+    <RadioGroup @key="@Value"
+                TValue="string"
+                Value="@Value"
+                ValueChanged="@ValueChanged"
+                Class="contents flex h-full min-h-0 flex-col">
+        @ChildContent
+    </RadioGroup>
+}
+else
+{
+    @ChildContent
+}
+
+@code {
+    [Parameter]
+    public bool Enabled { get; set; }
+
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}
