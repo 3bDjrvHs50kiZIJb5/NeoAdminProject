@@ -29,8 +29,8 @@
 
                     int index = i;
 
-                    <div class="flex flex-wrap items-center gap-2 @GetColClass(filter.Col)">
-                        <span class="w-16 shrink-0 text-sm text-muted-foreground">@filter.Label</span>
+                    <div class="flex items-start gap-2 @GetColClass(filter.Col)">
+                        <span class="w-16 shrink-0 pt-1.5 text-sm text-muted-foreground">@filter.Label</span>
                         @if (filter.Type == CrudFilterType.DateRange)
                         {
                             <DateRangePicker StartDate="@GetStartDate(filter)"
@@ -45,7 +45,7 @@
                         }
                         else
                         {
-                            <div class="flex flex-wrap gap-1">
+                            <div class="flex min-w-0 flex-1 flex-wrap items-center gap-1">
                                 <Button Variant="@(filter.HasValue? ButtonVariant.Outline: ButtonVariant.Default)" Size="ButtonSize.Small"
                                     OnClick="@(() => HandleTagClick(index, -1))">
                                     默认

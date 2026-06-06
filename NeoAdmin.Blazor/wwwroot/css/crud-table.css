@@ -18,3 +18,27 @@
 .crud-table [data-keyboard-nav] td {
   overflow: hidden;
 }
+
+/* 单选模式：RadioGroup 包裹 DataTable 时需参与 flex 高度链，否则纵向滚动条不出现 */
+.crud-table [role="radiogroup"] {
+  display: flex;
+  flex: 1 1 0%;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* DataTable 内层默认 h-full，在 flex 列布局下 min-height:auto 会按内容撑开，需显式收缩 */
+.crud-table [role="radiogroup"] > .space-y-4 {
+  display: flex;
+  flex: 1 1 0%;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.crud-table [role="radiogroup"] > .space-y-4 > .rounded-md {
+  flex: 1 1 0%;
+  min-height: 0;
+}

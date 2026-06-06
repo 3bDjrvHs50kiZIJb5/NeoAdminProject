@@ -1,11 +1,10 @@
 @namespace NeoAdmin.Blazor.Components
 @if (Enabled)
 {
-    <RadioGroup @key="@Value"
-                TValue="string"
+    <RadioGroup TValue="string"
                 Value="@Value"
                 ValueChanged="@ValueChanged"
-                Class="contents flex h-full min-h-0 flex-col">
+                Class="flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden">
         @ChildContent
     </RadioGroup>
 }

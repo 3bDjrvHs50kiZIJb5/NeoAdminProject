@@ -70,7 +70,7 @@
         }
     </div>
 
-    <div class="flex-1 min-h-0 min-w-0">
+    <div class="flex min-h-0 min-w-0 flex-1 flex-col">
         <CrudTableSingleSelectShell Enabled="@IsSingleSelect"
                                     Value="@SingleSelectBoundValue"
                                     ValueChanged="HandleSingleSelectValueChanged">
@@ -312,7 +312,7 @@
 @if (IsWorkflowAudit && auditDialogOpen && auditTarget is EntityAudited auditEntity)
 {
     <Dialog Open="@auditDialogOpen" OpenChanged="HandleAuditDialogOpenChanged">
-        <DialogContent Variant="DialogContentVariant.Form" Class="@DialogContentSize.ToDialogClass()">
+        <DialogContent Variant="DialogContentVariant.Form" Class="@GetWorkflowAuditDialogClass()">
             <DialogHeader>
                 <DialogTitle>审批 — @Title</DialogTitle>
                 <DialogDescription>提交、审核、退回或拒绝当前记录。</DialogDescription>
@@ -426,6 +426,9 @@
 
     /// <summary>审批按钮权限所属的页面菜单路径，如 /Blog/Article。</summary>
     [Parameter] public string WorkflowAuditMenuPath { get; set; } = string.Empty;
+
+    /// <summary>行内「审批」弹窗宽度；未设置时使用 <see cref="DialogContentSize"/>。</summary>
+    [Parameter] public CrudDialogContentSize? WorkflowAuditDialogContentSize { get; set; }
 
     [Parameter] public EventCallback<EntityAudited> OnWorkflowAuditChanged { get; set; }
 
@@ -641,6 +644,9 @@
 
         return MenuService.NormalizePath("/" + relativePath);
     }
+
+    private string GetWorkflowAuditDialogClass() =>
+        (WorkflowAuditDialogContentSize ?? DialogContentSize).ToDialogClass();
 
     public Task ReloadAsync() => LoadAsync();
 
@@ -1421,8 +1427,13 @@
         }
     }
 
-    private bool IsRowSelected(CrudGridRow<TItem> row) =>
-        selectedRows.Any(selected => ReferenceEquals(selected, row));
+    private bool IsRowSelected(CrudGridRow<TItem> row)
+    {
+        string rowValue = GetRowSelectValue(row);
+        return selectedRows.Any(selected =>
+            ReferenceEquals(selected, row)
+            || (!string.IsNullOrEmpty(rowValue) && GetRowSelectValue(selected) == rowValue));
+    }
 
     private string GetRowSelectValue(CrudGridRow<TItem> row) =>
         SelectionKey != null
