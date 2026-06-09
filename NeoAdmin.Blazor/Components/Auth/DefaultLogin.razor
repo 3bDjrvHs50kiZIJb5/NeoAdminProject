@@ -1,5 +1,3 @@
-@page "/login"
-@layout LayoutEmpty
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Components.Forms
 @using NeoAdmin.Blazor.Core.Identity
@@ -7,7 +5,7 @@
 @inject SiteSettingsService SiteSettingsService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
-@inject ILogger<Login> Logger
+@inject ILogger<DefaultLogin> Logger
 @using Microsoft.Extensions.Hosting
 @inject IHostEnvironment HostEnvironment
 @using NeoAdmin.Blazor.Entities
@@ -59,9 +57,9 @@
                         }
 
                         <Field>
-                            <FieldLabel For="userName">用户名</FieldLabel>
+                            <FieldLabel For="userName">@UsernameLabel</FieldLabel>
                             <FieldContent>
-                                <Input Id="userName" Placeholder="请输入用户名" @bind-Value="loginModel.Username" />
+                                <Input Id="userName" Placeholder="@UsernamePlaceholder" @bind-Value="loginModel.Username" />
                             </FieldContent>
                             <ValidationMessage For="@(() => loginModel.Username)" class="text-xs text-destructive" />
                         </Field>
@@ -112,117 +110,165 @@
 </div>
 
 @code {
-    private readonly LoginModel loginModel = new();
-    private string? errorMessage;
-    private SysSiteSettings? siteSettings;
+  /// <summary>
+  /// 登录账号字段标签。宿主项目可改为「手机号（用户名）」等文案。
+  /// </summary>
+  [Parameter]
+  public string UsernameLabel { get; set; } = "用户名";
 
-    private bool HasLoginExtraLinks =>
-        !string.IsNullOrWhiteSpace(siteSettings?.RegisterUrl)
-        || !string.IsNullOrWhiteSpace(siteSettings?.ForgotPasswordUrl);
+  /// <summary>
+  /// 登录账号输入框占位符。
+  /// </summary>
+  [Parameter]
+  public string UsernamePlaceholder { get; set; } = "请输入用户名";
 
-    protected override async Task OnInitializedAsync()
+  /// <summary>
+  /// 登录账号必填校验提示。
+  /// </summary>
+  [Parameter]
+  public string UsernameRequiredMessage { get; set; } = "请输入用户名";
+
+  /// <summary>
+  /// 登录账号长度校验提示。
+  /// </summary>
+  [Parameter]
+  public string UsernameLengthMessage { get; set; } = "用户名不能超过 50 个字符";
+
+  private LoginModel loginModel = null!;
+  private string? errorMessage;
+  private SysSiteSettings? siteSettings;
+
+  private bool HasLoginExtraLinks =>
+      !string.IsNullOrWhiteSpace(siteSettings?.RegisterUrl)
+      || !string.IsNullOrWhiteSpace(siteSettings?.ForgotPasswordUrl);
+
+  protected override void OnInitialized()
+  {
+    loginModel = new LoginModel(UsernameRequiredMessage, UsernameLengthMessage);
+  }
+
+  protected override async Task OnInitializedAsync()
+  {
+    siteSettings = await SiteSettingsService.GetAsync();
+    ApplySessionExpiredHintFromQuery();
+
+    if (HostEnvironment.IsDevelopment())
     {
-        siteSettings = await SiteSettingsService.GetAsync();
-        ApplySessionExpiredHintFromQuery();
+      loginModel.Username = "admin";
+      loginModel.Password = "admin";
+    }
+  }
 
-        if (HostEnvironment.IsDevelopment())
-        {
-            loginModel.Username = "admin";
-            loginModel.Password = "admin";
-        }
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+  {
+    if (!firstRender)
+    {
+      return;
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    string? token = await JSRuntime.InvokeAsync<string?>("neoAdminAuth.getToken");
+    if (!string.IsNullOrWhiteSpace(token))
     {
-        if (!firstRender)
-        {
-            return;
-        }
-
-        string? token = await JSRuntime.InvokeAsync<string?>("neoAdminAuth.getToken");
-        if (!string.IsNullOrWhiteSpace(token))
-        {
-            ApiResult<UserSummaryResponse> checkResult = await AuthService.CheckAsync(token);
-            if (checkResult.Succeeded)
-            {
-                NavigationManager.NavigateTo(GetRedirectUrl(), true);
-            }
-            else
-            {
-                await JSRuntime.InvokeVoidAsync("neoAdminAuth.clearToken");
-                if (!string.IsNullOrWhiteSpace(checkResult.Message))
-                {
-                    errorMessage = checkResult.Message;
-                    StateHasChanged();
-                }
-            }
-        }
-    }
-
-    private async Task HandleLoginAsync()
-    {
-        errorMessage = null;
-        Logger.LogInformation("用户提交登录：Username={Username}", loginModel.Username);
-        ApiResult<LoginResponse> result = await AuthService.LoginAsync(new LoginRequest
-        {
-            Username = loginModel.Username,
-            Password = loginModel.Password
-        });
-
-        if (!result.Succeeded || result.Data is null)
-        {
-            errorMessage = result.Message;
-            Logger.LogWarning("登录页登录失败：Username={Username}，Message={Message}", loginModel.Username, result.Message);
-            return;
-        }
-
-        Logger.LogInformation("登录页登录成功，即将跳转：Username={Username}", loginModel.Username);
-
-        await JSRuntime.InvokeVoidAsync("neoAdminAuth.setToken", result.Data.Token);
+      ApiResult<UserSummaryResponse> checkResult = await AuthService.CheckAsync(token);
+      if (checkResult.Succeeded)
+      {
         NavigationManager.NavigateTo(GetRedirectUrl(), true);
-    }
-
-    private string GetRedirectUrl()
-    {
-        Uri uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
-        if (!string.IsNullOrWhiteSpace(uri.Query))
+      }
+      else
+      {
+        await JSRuntime.InvokeVoidAsync("neoAdminAuth.clearToken");
+        if (!string.IsNullOrWhiteSpace(checkResult.Message))
         {
-            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
-            if (query.TryGetValue("redirect", out var redirect) && !string.IsNullOrWhiteSpace(redirect))
-            {
-                return redirect.ToString();
-            }
+          errorMessage = checkResult.Message;
+          StateHasChanged();
         }
-
-        return "/Admin";
+      }
     }
+  }
 
-    private void ApplySessionExpiredHintFromQuery()
+  private async Task HandleLoginAsync()
+  {
+    errorMessage = null;
+    Logger.LogInformation("用户提交登录：Username={Username}", loginModel.Username);
+    ApiResult<LoginResponse> result = await AuthService.LoginAsync(new LoginRequest
     {
-        Uri uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
-        if (string.IsNullOrWhiteSpace(uri.Query))
-        {
-            return;
-        }
+      Username = loginModel.Username,
+      Password = loginModel.Password
+    });
 
-        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
-        if (query.TryGetValue("reason", out var reason)
-            && string.Equals(reason.ToString(), "kicked", StringComparison.OrdinalIgnoreCase))
-        {
-            errorMessage = "账号已在其他地方登录，请重新登录";
-        }
-    }
-
-    private sealed class LoginModel
+    if (!result.Succeeded || result.Data is null)
     {
-        [Required(ErrorMessage = "请输入用户名")]
-        [StringLength(50, ErrorMessage = "用户名不能超过 50 个字符")]
-        public string Username { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "请输入密码")]
-        [StringLength(50, ErrorMessage = "密码不能超过 50 个字符")]
-        public string Password { get; set; } = string.Empty;
-
-        public bool RememberMe { get; set; } = true;
+      errorMessage = result.Message;
+      Logger.LogWarning("登录页登录失败：Username={Username}，Message={Message}", loginModel.Username, result.Message);
+      return;
     }
+
+    Logger.LogInformation("登录页登录成功，即将跳转：Username={Username}", loginModel.Username);
+
+    await JSRuntime.InvokeVoidAsync("neoAdminAuth.setToken", result.Data.Token);
+    NavigationManager.NavigateTo(GetRedirectUrl(), true);
+  }
+
+  private string GetRedirectUrl()
+  {
+    Uri uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+    if (!string.IsNullOrWhiteSpace(uri.Query))
+    {
+      var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+      if (query.TryGetValue("redirect", out var redirect) && !string.IsNullOrWhiteSpace(redirect))
+      {
+        return redirect.ToString();
+      }
+    }
+
+    return "/Admin";
+  }
+
+  private void ApplySessionExpiredHintFromQuery()
+  {
+    Uri uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+    if (string.IsNullOrWhiteSpace(uri.Query))
+    {
+      return;
+    }
+
+    var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+    if (query.TryGetValue("reason", out var reason)
+        && string.Equals(reason.ToString(), "kicked", StringComparison.OrdinalIgnoreCase))
+    {
+      errorMessage = "账号已在其他地方登录，请重新登录";
+    }
+  }
+
+  private sealed class LoginModel : IValidatableObject
+  {
+    private readonly string _usernameRequiredMessage;
+    private readonly string _usernameLengthMessage;
+
+    public LoginModel(string usernameRequiredMessage, string usernameLengthMessage)
+    {
+      _usernameRequiredMessage = usernameRequiredMessage;
+      _usernameLengthMessage = usernameLengthMessage;
+    }
+
+    public string Username { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "请输入密码")]
+    [StringLength(50, ErrorMessage = "密码不能超过 50 个字符")]
+    public string Password { get; set; } = string.Empty;
+
+    public bool RememberMe { get; set; } = true;
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+      if (string.IsNullOrWhiteSpace(Username))
+      {
+        yield return new ValidationResult(_usernameRequiredMessage, [nameof(Username)]);
+      }
+      else if (Username.Length > 50)
+      {
+        yield return new ValidationResult(_usernameLengthMessage, [nameof(Username)]);
+      }
+    }
+  }
 }
