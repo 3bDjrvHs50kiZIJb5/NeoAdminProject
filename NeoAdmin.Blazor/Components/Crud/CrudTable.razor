@@ -444,8 +444,8 @@
     /// <summary>审批按钮权限所属的页面菜单路径，如 /Blog/Article。</summary>
     [Parameter] public string WorkflowAuditMenuPath { get; set; } = string.Empty;
 
-    /// <summary>行内「审批」弹窗宽度；未设置时使用 <see cref="DialogContentSize"/>。</summary>
-    [Parameter] public CrudDialogContentSize? WorkflowAuditDialogContentSize { get; set; }
+    /// <summary>行内「审批」弹窗宽度，默认 <see cref="CrudDialogContentSize.X2l"/>。</summary>
+    [Parameter] public CrudDialogContentSize WorkflowAuditDialogContentSize { get; set; } = CrudDialogContentSize.X2l;
 
     [Parameter] public EventCallback<EntityAudited> OnWorkflowAuditChanged { get; set; }
 
@@ -696,7 +696,7 @@
     }
 
     private string GetWorkflowAuditDialogClass() =>
-        (WorkflowAuditDialogContentSize ?? DialogContentSize).ToDialogClass();
+        WorkflowAuditDialogContentSize.ToDialogClass();
 
     public Task ReloadAsync() => LoadAsync();
 

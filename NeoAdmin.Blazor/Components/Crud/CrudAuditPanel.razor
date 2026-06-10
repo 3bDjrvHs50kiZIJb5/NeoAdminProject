@@ -3,6 +3,7 @@
 @using NeoAdmin.Blazor.Core.Identity
 @using NeoAdmin.Blazor.Entities
 @using NeoAdmin.Blazor.Services
+@using System.Text.Encodings.Web
 @using System.Text.Json
 @inject AuditWorkflowService AuditWorkflow
 @inject MenuPermissionService MenuPermission
@@ -227,7 +228,11 @@ else
         try
         {
             using JsonDocument document = JsonDocument.Parse(raw);
-            return JsonSerializer.Serialize(document, new JsonSerializerOptions { WriteIndented = true });
+            return JsonSerializer.Serialize(document, new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            });
         }
         catch
         {
