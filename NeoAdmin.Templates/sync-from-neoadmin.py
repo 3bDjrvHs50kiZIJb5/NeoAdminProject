@@ -77,6 +77,28 @@ def transform_text(text: str) -> str:
     return text
 
 
+def transform_cursor_rule(text: str) -> str:
+    """宿主 .cursor/rules → 模板项目（NeoAdminApp、NuGet 消费者）。"""
+    text = transform_text(text)
+    text = text.replace(
+        "（monorepo 为 `../NeoAdmin.Blazor/`，模板项目为 NuGet）",
+        "（NuGet）",
+    )
+    text = text.replace(
+        "- monorepo 维护宿主后同步模板：`python3 NeoAdmin.Templates/sync-from-neoadmin.py`\n",
+        "",
+    )
+    text = text.replace(
+        "- monorepo 维护宿主后：`python3 NeoAdmin.Templates/sync-from-neoadmin.py`\n",
+        "",
+    )
+    text = text.replace(
+        "完整文档见 monorepo 根目录 `NEOADMIN开发上手.md` 或本项目 `README.md`。",
+        "完整文档见本项目 `README.md`。",
+    )
+    return text
+
+
 def read_blazor_version() -> str:
     content = BLAZOR_CSPROJ.read_text(encoding="utf-8")
     m = re.search(r"<Version>([^<]+)</Version>", content)
@@ -100,15 +122,21 @@ def patch_csproj_package_version(version: str) -> None:
 
 
 def sync_file(src: Path, dst: Path) -> None:
-    if src.suffix in {".cs", ".razor", ".json", ".sh", ".yaml", ".yml"} or src.name in {
+    text_suffixes = {".cs", ".razor", ".json", ".sh", ".yaml", ".yml", ".mdc"}
+    if src.suffix in text_suffixes or src.name in {
         "Dockerfile",
         "_Imports.razor",
         "Routes.razor",
         "App.razor",
     }:
         raw = src.read_text(encoding="utf-8")
+        rel = src.relative_to(SOURCE).as_posix()
+        if rel.startswith(".cursor/rules/"):
+            raw = transform_cursor_rule(raw)
+        else:
+            raw = transform_text(raw)
         dst.parent.mkdir(parents=True, exist_ok=True)
-        dst.write_text(transform_text(raw), encoding="utf-8")
+        dst.write_text(raw, encoding="utf-8")
     else:
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, dst)

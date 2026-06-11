@@ -1,0 +1,64 @@
+---
+description: NeoAdmin 项目架构、职责划分与核心开发约定
+alwaysApply: true
+---
+
+# NeoAdmin 核心约定
+
+NeoAdmin 是基于 **ASP.NET Core Blazor Server** 的后台框架：**NeoAdmin.Blazor** 提供 CRUD、权限、系统页；**宿主项目**承载业务；**NeoUI.Blazor** 提供 UI 控件。
+
+## 三层职责
+
+| 层 | 路径 | 职责 |
+|----|------|------|
+| 宿主 | `Entities/`、`Components/`、`SeedData/`、`Api/`、`Jobs/`、`Program.cs` | 业务实体、页面、种子、API、定时任务 |
+| 框架 | `NeoAdmin.Blazor`（monorepo 为 `../NeoAdmin.Blazor/`，模板项目为 NuGet） | `CrudTable`、`LayoutAdmin`、系统 `/admin/*`、身份与权限 |
+| UI | NeoUI.Blazor（NuGet） | Button、Input、DataTable、Dialog 等，文档 https://neoui.io |
+
+**扩展业务时，必须同步维护 `Entities/`、`Components/`、`SeedData/` 三处。**
+
+旧项目对照：`AdminBlazor.dll` → `NeoAdmin.Blazor`；`NovaSelect*` → `NeoSelect*`；`Component` → `Components/`。
+
+## Program.cs 要点
+
+```csharp
+builder.Services.AddNeoUIPrimitives();
+builder.Services.AddNeoUIComponents();
+builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+builder.Services.AddNeoAdmin(builder.Configuration, options =>
+    options.SchedulerAssemblies = [Assembly.GetExecutingAssembly()]);
+builder.Services.AddNeoAdminApi(Assembly.GetExecutingAssembly());
+// ...
+DataSetup.Initialize(app.Services);  // 宿主：业务表结构 + 菜单种子
+app.UseNeoAdmin();
+app.MapRazorComponents<App>()
+    .AddAdditionalAssemblies(typeof(LayoutAdmin).Assembly)  // 必须，否则框架页 404
+    .AddInteractiveServerRenderMode();
+```
+
+## 配置注意
+
+- `NeoAdmin:AutoSyncStructure` 仅同步**框架系统表**；业务表须在宿主 `SeedData/DataSetup.SyncStructure` 中 `freeSql.CodeFirst.SyncStructure<T>()`
+- 多实例部署时各实例 `WorkId`（0–63）须不同
+- monorepo 维护宿主后同步模板：`python3 NeoAdmin.Templates/sync-from-neoadmin.py`
+
+## 新增业务模块流程
+
+1. `Entities/` 定义实体（选对基类：`EntityModified` 常规，`EntityAudited` 需审批）
+2. `Components/` 建 `@page` + `@layout LayoutAdmin` + `CrudTable`
+3. `SeedData/DataSetup` 注册 `SyncStructure<T>`
+4. `SeedData/MenuSeedData` 注册菜单（`Path` 必须与 `@page` 路由一致）
+5. 可选：`Api/`、`Jobs/[Scheduler]`、`Services/`
+
+## 常见坑
+
+| 问题 | 解决 |
+|------|------|
+| 新页 404 | `AddAdditionalAssemblies(typeof(LayoutAdmin).Assembly)` |
+| 菜单不显示 | `MenuSeedData.Ensure` + 角色分配菜单 |
+| 按钮不可用 | 角色勾选 add/edit/remove |
+| 业务表不存在 | 宿主 `DataSetup.SyncStructure<T>` |
+| NeoInputTable 无弹窗 | 页面须 `@layout LayoutAdmin` |
+| 样式错乱 | `npm run watch:css` 或 `dotnet build` |
+
+完整文档见 monorepo 根目录 `NEOADMIN开发上手.md` 或本项目 `README.md`。

@@ -60,9 +60,17 @@ node_modules/
 # Tailwind 构建产物（dotnet build / npm run build:css 生成）
 NeoAdmin/wwwroot/css/tailwind.css
 
-# Cursor / local AI（不上传）
+# Cursor / local AI（根目录个人配置不上传；宿主与模板 rules 纳入版本管理）
 .claude/
 .cursor/
+!NeoAdmin/.cursor/
+NeoAdmin/.cursor/*
+!NeoAdmin/.cursor/rules/
+!NeoAdmin/.cursor/rules/**
+!NeoAdmin.Templates/content/NeoAdminApp/.cursor/
+NeoAdmin.Templates/content/NeoAdminApp/.cursor/*
+!NeoAdmin.Templates/content/NeoAdminApp/.cursor/rules/
+!NeoAdmin.Templates/content/NeoAdminApp/.cursor/rules/**
 
 # 旧代码归档（仅本地保留，不上传）
 old/

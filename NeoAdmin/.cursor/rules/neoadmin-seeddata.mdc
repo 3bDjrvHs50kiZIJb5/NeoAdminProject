@@ -1,0 +1,64 @@
+---
+description: NeoAdmin 菜单种子与 DataSetup 表结构同步
+globs: "**/SeedData/**/*.cs"
+alwaysApply: false
+---
+
+# SeedData 约定
+
+宿主 `SeedData/` 负责：**业务表结构同步**、**菜单种子**、演示数据。与 `Entities/`、`Components/` 同步维护。
+
+## DataSetup.Initialize
+
+```csharp
+public static void Initialize(IServiceProvider sp)
+{
+    var freeSql = sp.GetRequiredService<IFreeSql>();
+    SyncStructure(freeSql);
+    MenuSeedData.Ensure(freeSql);
+    // 其他种子...
+}
+
+public static void SyncStructure(IFreeSql freeSql)
+{
+    freeSql.CodeFirst.SyncStructure<MyItem>();
+}
+```
+
+在 `Program.cs` 启动时调用：`DataSetup.Initialize(app.Services);`
+
+## 菜单种子 MenuSeedData
+
+```csharp
+BlazorMenuSeedData.EnsureMenus(freeSql, CreateMenus());
+
+private static List<SysMenu> CreateMenus() =>
+[
+    BlazorMenuSeedData.Menu("我的模块", "box", string.Empty, 900, SysMenuSidebarStyle.展开,
+    [
+        BlazorMenuSeedData.Page("示例", "/MyModule/Item", 901, "file", isSystem: false),
+    ], isSystem: false),
+];
+```
+
+| 方法 | 说明 |
+|------|------|
+| `Menu(...)` | 目录菜单 |
+| `Page(label, path, sort, icon)` | CRUD 页（自动 add/edit/remove 按钮权限） |
+| `PageWithAudit(...)` | CRUD + 审批按钮 |
+| `Button(...)` | 独立按钮权限 |
+| `Api(...)` | API 接口权限 |
+
+## 审批流菜单
+
+实体继承 `EntityAudited` 且 `CrudTable` 设 `IsWorkflowAudit="true"` 时：
+
+```csharp
+AuditMenuSeedData.EnsureButtons(freeSql, "/Blog/Article");
+```
+
+## 注意
+
+- 菜单 `Path` 必须与页面 `@page` 路由完全一致
+- 新菜单需为角色分配后侧边栏才可见
+- monorepo 维护宿主后：`python3 NeoAdmin.Templates/sync-from-neoadmin.py`

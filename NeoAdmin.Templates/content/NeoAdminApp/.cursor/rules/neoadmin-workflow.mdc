@@ -1,0 +1,33 @@
+---
+description: NeoAdmin 审批流启用与 CrudAuditPanel 用法
+globs: "{**/Entities/**/*.cs,**/*.razor}"
+alwaysApply: false
+---
+
+# 审批流
+
+## 启用三要素
+
+1. 实体继承 `EntityAudited`
+2. `CrudTable` 设置 `IsWorkflowAudit="true"` 和 `WorkflowAuditMenuPath`（与 `@page` 一致）
+3. 菜单种子：`PageWithAudit` 或 `AuditMenuSeedData.EnsureButtons(freeSql, "/Blog/Article")`
+
+```razor
+<CrudTable TItem="BlogArticle" IsWorkflowAudit="true"
+           WorkflowAuditMenuPath="/Blog/Article" ...>
+```
+
+## 编辑页嵌入审批面板
+
+```razor
+<CrudAuditPanel Item="item" EntityType="typeof(BlogArticle)"
+    MenuPath="/Blog/Article" OnChanged="HandleAuditChanged" />
+```
+
+## 状态与行为
+
+- `SysAuditStatus`：草稿、待审、已通过、已拒绝等
+- `CrudTable` 自动显示审批状态列
+- 已提交数据默认禁止编辑/删除（除非规则允许）
+
+完整示例：`Components/Blog/Article.razor`
