@@ -2,10 +2,12 @@ using FreeSql.DataAnnotations;
 
 namespace NeoAdmin.Blazor.Entities;
 
-public class SysUser : Entity
+public partial class SysUser : Entity
 {
     [Navigate(ManyToMany = typeof(SysRoleUser))]
     public List<SysRole> Roles { get; set; } = new();
+
+
 
     [Column(StringLength = 50)]
     public string Username { get; set; } = string.Empty;
@@ -26,4 +28,11 @@ public class SysUser : Entity
     public string Description { get; set; } = string.Empty;
 
     public DateTime CreatedTime { get; set; } = DateTime.Now;
+}
+
+public partial class SysUser {
+    public long? OrgId { get; set; }
+
+    [Navigate(nameof(OrgId))]
+    public SysOrg? Org { get; set; }
 }

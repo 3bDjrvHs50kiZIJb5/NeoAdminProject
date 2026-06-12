@@ -54,6 +54,18 @@
   background-color: color-mix(in oklab, var(--muted) 90%, transparent);
   backdrop-filter: blur(8px);
   box-shadow: 0 1px 0 var(--border);
+  white-space: nowrap;
+}
+
+.crud-table [data-keyboard-nav] thead th > div {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.crud-table [data-keyboard-nav] thead th span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 单选模式：RadioGroup 包裹 DataTable 时需参与 flex 高度链，否则纵向滚动条不出现 */

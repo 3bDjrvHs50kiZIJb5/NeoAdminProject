@@ -28,6 +28,13 @@
                 <span class="block truncate" title="@row.Item.Nickname">@row.Item.Nickname</span>
             </CellTemplate>
         </DataTableColumn>
+        <DataTableColumn TData="CrudGridRow<SysUser>" TValue="string"
+            Property="@(row => row.Item.Org != null ? row.Item.Org.Label : string.Empty)" Header="组织"
+            Sortable="false" Width="140px">
+            <CellTemplate Context="row">
+                <span class="block truncate" title="@row.Item.Org?.Label">@(row.Item.Org?.Label ?? "-")</span>
+            </CellTemplate>
+        </DataTableColumn>
         <DataTableColumn TData="CrudGridRow<SysUser>" TValue="bool" Property="@(row => row.Item.IsEnabled)" Header="启用"
             Sortable="true" Width="100px">
             <CellTemplate Context="row">
@@ -75,6 +82,10 @@
             <div class="space-y-2">
                 <Label>昵称</Label>
                 <Input @bind-Value="item.Nickname" />
+            </div>
+            <div class="space-y-2 sm:col-span-2">
+                <Label>组织</Label>
+                <NeoSelectEntity TItem="SysOrg" TKey="long?" @bind-Value="item.OrgId" DisplayText="o => o.Label" />
             </div>
         </div>
         <div class="space-y-2">
@@ -131,6 +142,7 @@ new CrudFilterInfo("用户名", "Username", CrudFilterType.Text, 2),
         }
 
         e.Select!
+        .Include(a => a.Org)
         .WhereIf(filters[0].HasValue, a => a.IsEnabled == filters[0].Value<bool>())
         .WhereIf(filters[1].HasValue, a => a.IsSystem == filters[1].Value<bool>())
         .WhereIf(createdStart.HasValue, a => a.CreatedTime >= createdStart!.Value)

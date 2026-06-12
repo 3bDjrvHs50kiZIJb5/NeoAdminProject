@@ -26,15 +26,15 @@
         <CrudSearchFilter QueryInfo="queryInfo" FilterExpanded="FilterExpanded" />
     }
 
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div class="flex flex-wrap items-center gap-3">
+    <div class="flex flex-nowrap items-center justify-between gap-3 mb-4 min-w-0">
+        <div class="flex min-w-0 flex-1 flex-nowrap items-center gap-3 overflow-hidden">
             @if (!Compact)
             {
-                <div class="flex items-center min-h-9 mr-2">
-                    <h2 class="text-lg font-semibold leading-none">@Title</h2>
+                <div class="mr-2 flex min-h-9 shrink-0 items-center">
+                    <h2 class="truncate text-lg font-semibold leading-none">@Title</h2>
                 </div>
             }
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto">
                 @if (ShowToolbarRemove && canToolbarRemove)
                 {
                     <Button Variant="ButtonVariant.Outline" Size="ButtonSize.Small" Title="@RemoveText"
@@ -63,7 +63,7 @@
         </div>
         @if (IsSearchText)
         {
-            <form class="w-96 shrink-0" @onsubmit="HandleSearchSubmit" @onsubmit:preventDefault>
+            <form class="w-64 shrink-0 sm:w-80 lg:w-96" @onsubmit="HandleSearchSubmit" @onsubmit:preventDefault>
                 <Input Type="InputType.Search" @bind-Value="searchText" Placeholder="@SearchPlaceholder"
                     @onblur="HandleSearchBlur" />
             </form>

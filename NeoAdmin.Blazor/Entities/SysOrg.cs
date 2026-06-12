@@ -14,6 +14,9 @@ public sealed class SysOrg : Entity
     [Navigate(nameof(ParentId))]
     public List<SysOrg> Children { get; set; } = new();
 
+    [Navigate("OrgId")]
+    public List<SysUser> Users { get; set; } = new();
+
     public long ParentId { get; set; }
 
     [Required(ErrorMessage = "请输入组织名称")]

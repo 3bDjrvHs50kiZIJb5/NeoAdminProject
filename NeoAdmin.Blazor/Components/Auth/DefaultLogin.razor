@@ -6,6 +6,7 @@
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @inject ILogger<DefaultLogin> Logger
+@inject IToastService ToastService
 @using Microsoft.Extensions.Hosting
 @inject IHostEnvironment HostEnvironment
 @using NeoAdmin.Blazor.Entities
@@ -48,13 +49,6 @@
                     <EditForm Model="@loginModel" OnValidSubmit="@HandleLoginAsync" class="space-y-4">
                         <DataAnnotationsValidator />
                         <ValidationSummary class="text-sm text-destructive" />
-                        @if (!string.IsNullOrWhiteSpace(errorMessage))
-                        {
-                            <div
-                                class="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                                @errorMessage
-                            </div>
-                        }
 
                         <Field>
                             <FieldLabel For="userName">@UsernameLabel</FieldLabel>
@@ -135,7 +129,6 @@
   public string UsernameLengthMessage { get; set; } = "用户名不能超过 50 个字符";
 
   private LoginModel loginModel = null!;
-  private string? errorMessage;
   private SysSiteSettings? siteSettings;
 
   private bool HasLoginExtraLinks =>
@@ -150,7 +143,6 @@
   protected override async Task OnInitializedAsync()
   {
     siteSettings = await SiteSettingsService.GetAsync();
-    ApplySessionExpiredHintFromQuery();
 
     if (HostEnvironment.IsDevelopment())
     {
@@ -166,6 +158,8 @@
       return;
     }
 
+    ShowSessionExpiredToastIfNeeded();
+
     string? token = await JSRuntime.InvokeAsync<string?>("neoAdminAuth.getToken");
     if (!string.IsNullOrWhiteSpace(token))
     {
@@ -179,8 +173,7 @@
         await JSRuntime.InvokeVoidAsync("neoAdminAuth.clearToken");
         if (!string.IsNullOrWhiteSpace(checkResult.Message))
         {
-          errorMessage = checkResult.Message;
-          StateHasChanged();
+          ToastService.Error("登录", checkResult.Message);
         }
       }
     }
@@ -188,7 +181,6 @@
 
   private async Task HandleLoginAsync()
   {
-    errorMessage = null;
     Logger.LogInformation("用户提交登录：Username={Username}", loginModel.Username);
     ApiResult<LoginResponse> result = await AuthService.LoginAsync(new LoginRequest
     {
@@ -198,14 +190,20 @@
 
     if (!result.Succeeded || result.Data is null)
     {
-      errorMessage = result.Message;
+      ToastService.Error("登录失败", result.Message ?? "用户名或密码错误");
       Logger.LogWarning("登录页登录失败：Username={Username}，Message={Message}", loginModel.Username, result.Message);
       return;
     }
 
     Logger.LogInformation("登录页登录成功，即将跳转：Username={Username}", loginModel.Username);
 
+    string displayName = string.IsNullOrWhiteSpace(result.Data.User.Nickname)
+        ? result.Data.User.Username
+        : result.Data.User.Nickname;
+    ToastService.Success("登录成功", $"欢迎回来，{displayName}");
+
     await JSRuntime.InvokeVoidAsync("neoAdminAuth.setToken", result.Data.Token);
+    await Task.Delay(500);
     NavigationManager.NavigateTo(GetRedirectUrl(), true);
   }
 
@@ -224,7 +222,7 @@
     return "/Admin";
   }
 
-  private void ApplySessionExpiredHintFromQuery()
+  private void ShowSessionExpiredToastIfNeeded()
   {
     Uri uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
     if (string.IsNullOrWhiteSpace(uri.Query))
@@ -236,7 +234,7 @@
     if (query.TryGetValue("reason", out var reason)
         && string.Equals(reason.ToString(), "kicked", StringComparison.OrdinalIgnoreCase))
     {
-      errorMessage = "账号已在其他地方登录，请重新登录";
+      ToastService.Error("登录", "账号已在其他地方登录，请重新登录");
     }
   }
 

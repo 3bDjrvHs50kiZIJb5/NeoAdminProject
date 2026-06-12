@@ -55,10 +55,25 @@ body {
   overflow: hidden;
 }
 
-/* dashboard-02：侧栏导航主色高亮（Large 菜单项） */
-.neo-admin-sidebar-menu [data-active="true"] {
-  background-color: hsl(var(--primary) / 0.12);
-  color: hsl(var(--primary));
+/* dashboard-02：侧栏菜单悬停 / 选中背景一致并加深 */
+.neo-admin-sidebar-menu {
+  --sidebar-accent: color-mix(in oklch, var(--sidebar-foreground) 7%, var(--sidebar));
+  --sidebar-accent-foreground: var(--sidebar-foreground);
+}
+
+.neo-admin-sidebar-menu :is(a, button):hover,
+.neo-admin-sidebar-menu :is(a, button)[data-active="true"] {
+  background-color: var(--sidebar-accent) !important;
+  color: var(--sidebar-accent-foreground) !important;
+}
+
+.neo-admin-sidebar-menu :is(a, button):hover svg,
+.neo-admin-sidebar-menu :is(a, button)[data-active="true"] svg {
+  color: var(--sidebar-accent-foreground) !important;
+}
+
+.neo-admin-sidebar-menu :is(a, button)[data-active="true"] {
+  font-weight: 600;
 }
 
 /* 主内容区：与 SidebarInset 的 neo-admin-inset 配合 */
