@@ -29,6 +29,7 @@ public static class NeoAdminSerilogExtensions
                 .MinimumLevel.Information()
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
                 .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+                .Filter.ByExcluding(IsBlazorCircuitDisconnectNoise)
                 .Enrich.FromLogContext()
                 .Enrich.WithProperty("Application", "NeoAdmin")
                 .WriteTo.Console()
@@ -60,5 +61,23 @@ public static class NeoAdminSerilogExtensions
         });
 
         return app;
+    }
+
+    /// <summary>Blazor Server 页面关闭/刷新时 Circuit 断开产生的无害异常，不写入日志文件。</summary>
+    private static bool IsBlazorCircuitDisconnectNoise(LogEvent logEvent)
+    {
+        if (logEvent.Exception?.GetType().Name == "JSDisconnectedException")
+        {
+            return true;
+        }
+
+        if (!logEvent.Properties.TryGetValue("SourceContext", out LogEventPropertyValue? sourceContext))
+        {
+            return false;
+        }
+
+        string source = sourceContext.ToString().Trim('"');
+        return source.Contains("CircuitHost", StringComparison.Ordinal)
+            && logEvent.MessageTemplate.Text.Contains("Unhandled exception in circuit", StringComparison.Ordinal);
     }
 }

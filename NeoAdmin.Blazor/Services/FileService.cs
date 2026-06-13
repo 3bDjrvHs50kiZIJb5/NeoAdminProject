@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.JSInterop;
+using NeoAdmin.Blazor.Core.Identity;
 using NeoAdmin.Blazor.Data;
 using NeoAdmin.Blazor.Entities;
 using NeoAdmin.Blazor.Utils;
@@ -14,17 +17,26 @@ public sealed class FileService
     private readonly IFreeSql _freeSql;
     private readonly IWebHostEnvironment _webHostEnvironment;
     private readonly FileUploadOptions _uploadOptions;
+    private readonly NeoAdminAuthService _authService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IJSRuntime _jsRuntime;
     private readonly ILogger<FileService> _logger;
 
     public FileService(
         IFreeSql freeSql,
         IWebHostEnvironment webHostEnvironment,
         IOptions<NeoAdminOptions> options,
+        NeoAdminAuthService authService,
+        IHttpContextAccessor httpContextAccessor,
+        IJSRuntime jsRuntime,
         ILogger<FileService> logger)
     {
         _freeSql = freeSql;
         _webHostEnvironment = webHostEnvironment;
         _uploadOptions = options.Value.FileUpload;
+        _authService = authService;
+        _httpContextAccessor = httpContextAccessor;
+        _jsRuntime = jsRuntime;
         _logger = logger;
     }
 
@@ -41,9 +53,6 @@ public sealed class FileService
             throw new InvalidOperationException("文件内容不能为空。");
         }
 
-        string extension = Path.GetExtension(file.Name).ToLowerInvariant();
-        ValidateExtension(extension);
-
         long limit = maxSizeLimit > 0 ? maxSizeLimit : _uploadOptions.MaxSize;
         if (limit > 0 && file.Size > limit)
         {
@@ -51,14 +60,35 @@ public sealed class FileService
         }
 
         await using Stream stream = file.OpenReadStream(limit, cancellationToken);
-        string md5 = string.Empty;
-        byte[] fileBytes;
+        using MemoryStream buffer = new();
+        await stream.CopyToAsync(buffer, cancellationToken);
+        return await UploadBytesAsync(
+            file.Name,
+            buffer.ToArray(),
+            fileDirectory,
+            isRename,
+            cancellationToken);
+    }
 
+    public async Task<SysFile> UploadBytesAsync(
+        string fileName,
+        byte[] fileBytes,
+        string fileDirectory = "",
+        bool isRename = true,
+        CancellationToken cancellationToken = default)
+    {
+        if (fileBytes.Length <= 0)
+        {
+            _logger.LogWarning("上传文件失败：文件内容为空，文件名={FileName}", fileName);
+            throw new InvalidOperationException("文件内容不能为空。");
+        }
+
+        string extension = Path.GetExtension(fileName).ToLowerInvariant();
+        ValidateExtension(extension);
+
+        string md5 = string.Empty;
         if (_uploadOptions.Md5)
         {
-            using MemoryStream buffer = new();
-            await stream.CopyToAsync(buffer, cancellationToken);
-            fileBytes = buffer.ToArray();
             md5 = FileMd5.GetHash(new MemoryStream(fileBytes));
 
             SysFile? existing = await _freeSql.Select<SysFile>()
@@ -67,13 +97,13 @@ public sealed class FileService
 
             if (existing is not null)
             {
-                _logger.LogInformation("上传文件命中 MD5 去重：{FileName} -> {EntityDesc}", file.Name, EntityLogHelper.Describe(existing));
+                _logger.LogInformation("上传文件命中 MD5 去重：{FileName} -> {EntityDesc}", fileName, EntityLogHelper.Describe(existing));
                 SysFile sameFile = new()
                 {
                     FileGuid = Guid.NewGuid(),
                     SaveFileName = existing.SaveFileName,
                     Extension = extension,
-                    OriginFileName = file.Name,
+                    OriginFileName = fileName,
                     FileDirectory = existing.FileDirectory,
                     Size = existing.Size,
                     SizeFormat = existing.SizeFormat,
@@ -81,20 +111,15 @@ public sealed class FileService
                     Md5 = md5,
                     CreatedTime = DateTime.Now
                 };
+                await FillCreatedUserAsync(sameFile, cancellationToken);
                 await _freeSql.Insert(sameFile).ExecuteAffrowsAsync(cancellationToken);
                 return sameFile;
             }
         }
-        else
-        {
-            using MemoryStream buffer = new();
-            await stream.CopyToAsync(buffer, cancellationToken);
-            fileBytes = buffer.ToArray();
-        }
 
         string relativeDirectory = BuildRelativeDirectory(fileDirectory);
         Guid fileGuid = Guid.NewGuid();
-        string saveFileName = isRename ? fileGuid.ToString("N") : Path.GetFileNameWithoutExtension(file.Name);
+        string saveFileName = isRename ? fileGuid.ToString("N") : Path.GetFileNameWithoutExtension(fileName);
         string fileNameOnDisk = saveFileName + extension;
         string relativePath = Path.Combine(relativeDirectory, fileNameOnDisk).Replace('\\', '/');
 
@@ -107,7 +132,7 @@ public sealed class FileService
         SysFile fileEntity = new()
         {
             FileGuid = fileGuid,
-            OriginFileName = file.Name,
+            OriginFileName = fileName,
             Extension = extension,
             FileDirectory = relativeDirectory.Replace('\\', '/'),
             Size = fileBytes.LongLength,
@@ -126,8 +151,9 @@ public sealed class FileService
                 StringComparison.Ordinal);
         }
 
+        await FillCreatedUserAsync(fileEntity, cancellationToken);
         await _freeSql.Insert(fileEntity).ExecuteAffrowsAsync(cancellationToken);
-        _logger.LogInformation("上传文件成功：{EntityDesc}，原始文件名={OriginFileName}", EntityLogHelper.Describe(fileEntity), file.Name);
+        _logger.LogInformation("上传文件成功：{EntityDesc}，原始文件名={OriginFileName}", EntityLogHelper.Describe(fileEntity), fileName);
         return fileEntity;
     }
 
@@ -186,5 +212,65 @@ public sealed class FileService
         {
             throw new InvalidOperationException($"不允许上传 {extension} 文件格式");
         }
+    }
+
+    private async Task FillCreatedUserAsync(SysFile file, CancellationToken cancellationToken)
+    {
+        UserSummaryResponse? user = await GetCurrentUserAsync(cancellationToken);
+        if (user is null)
+        {
+            _logger.LogWarning("上传文件时未获取到当前用户，CreatedUserName 将为空，FileName={FileName}", file.OriginFileName);
+            return;
+        }
+
+        file.CreatedUserId = user.Id;
+        file.CreatedUserName = !string.IsNullOrWhiteSpace(user.Nickname) ? user.Nickname : user.Username;
+    }
+
+    private async Task<UserSummaryResponse?> GetCurrentUserAsync(CancellationToken cancellationToken)
+    {
+        string? token = GetBearerTokenFromHttpContext();
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            try
+            {
+                token = await _jsRuntime.InvokeAsync<string?>("neoAdminAuth.getToken", cancellationToken);
+            }
+            catch (InvalidOperationException)
+            {
+                // 非 Blazor 交互上下文时忽略。
+            }
+            catch (JSException)
+            {
+                // JS 未就绪时忽略。
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return null;
+        }
+
+        ApiResult<UserSummaryResponse> result = await _authService.CheckAsync(token);
+        return result.Succeeded ? result.Data : null;
+    }
+
+    private string? GetBearerTokenFromHttpContext()
+    {
+        HttpContext? httpContext = _httpContextAccessor.HttpContext;
+        if (httpContext is null)
+        {
+            return null;
+        }
+
+        string? authorization = httpContext.Request.Headers.Authorization.FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(authorization))
+        {
+            return null;
+        }
+
+        return authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+            ? authorization[7..].Trim()
+            : authorization.Trim();
     }
 }

@@ -2,12 +2,14 @@
 @layout LayoutAdmin
 @using NeoAdmin.Blazor.Components
 @using NeoAdmin.Blazor.Entities
+@inject IFreeSql FreeSql
+@inject ILogger<User> Logger
 
 <PageTitle>用户管理</PageTitle>
 
 <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
 <CrudTable @ref="table" TItem="SysUser" Title="用户管理" PageSize="20" SearchPlaceholder="账号/姓名.." InitQuery="InitQuery"
-    OnQuery="HandleQuery" OnSaving="HandleSaving" IsRowView="true" IsMultiSelect="true"
+    OnQuery="HandleQuery" OnSaving="HandleSaving" IsMultiSelect="true"
     DialogContentSize="CrudDialogContentSize.X4l">
     <Columns>
         <DataTableColumn TData="CrudGridRow<SysUser>"
@@ -73,6 +75,15 @@
             <CellTemplate Context="row">@row.Item.CreatedTime.ToString("yyyy-MM-dd HH:mm:ss")</CellTemplate>
         </DataTableColumn>
     </Columns>
+    <RowActionsContent Context="row">
+        <Button Variant="ButtonVariant.Ghost"
+                Size="ButtonSize.Small"
+                Title="登录日志"
+                OnClick="@(() => OpenLoginLogDialog(row.Item))">
+            <LucideIcon Name="scroll-text" Size="16" />
+            <span class="sr-only">日志</span>
+        </Button>
+    </RowActionsContent>
     <EditTemplate Context="item">
         <div class="grid gap-3 sm:grid-cols-2">
             <div class="space-y-2">
@@ -107,8 +118,92 @@
 </CrudTable>
 </div>
 
+<Dialog @bind-Open="loginLogOpen">
+    <DialogContent Variant="DialogContentVariant.Form" Class="@(CrudDialogContentSize.X7l.ToDialogClass())">
+        <DialogHeader>
+            <DialogTitle>登录日志 — @(loginLogUser?.Username)</DialogTitle>
+            <DialogDescription>
+                @if (!string.IsNullOrWhiteSpace(loginLogUser?.Nickname))
+                {
+                    <span>@loginLogUser.Nickname · </span>
+                }
+                共 @loginLogTotal 条记录
+            </DialogDescription>
+        </DialogHeader>
+        <div class="max-h-[75vh] overflow-auto rounded-md border">
+            <table class="w-full text-sm">
+                <thead class="sticky top-0 z-10 border-b bg-muted/40">
+                    <tr>
+                        <th class="px-2 py-2 text-left">时间</th>
+                        <th class="px-2 py-2 text-left">结果</th>
+                        <th class="px-2 py-2 text-left">IP</th>
+                        <th class="px-2 py-2 text-left">备注</th>
+                        <th class="px-2 py-2 text-left">User-Agent</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (loginLogs.Count > 0)
+                    {
+                        @foreach (SysUserLoginLog log in loginLogs)
+                        {
+                            <tr class="border-b">
+                                <td class="whitespace-nowrap px-2 py-2">@log.LoginTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                <td class="px-2 py-2">
+                                    <span class="@(log.Type == SysUserLoginLog.LogType.登陆成功 ? "text-emerald-600" : "text-red-500")">
+                                        @log.Type
+                                    </span>
+                                </td>
+                                <td class="whitespace-nowrap px-2 py-2">@(string.IsNullOrWhiteSpace(log.Ip) ? "-" : log.Ip)</td>
+                                <td class="max-w-[200px] break-all px-2 py-2">@(string.IsNullOrWhiteSpace(log.Extra) ? "-" : log.Extra)</td>
+                                <td class="max-w-[480px] break-all px-2 py-2" title="@log.UserAgent">
+                                    @(string.IsNullOrWhiteSpace(log.UserAgent) ? "-" : TruncateText(log.UserAgent, 160))
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="px-4 py-8 text-center text-muted-foreground">暂无登录日志</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-2 flex justify-between text-sm text-muted-foreground">
+            <span>第 @loginLogPageNumber / @loginLogMaxPageNumber 页</span>
+            <div class="flex gap-2">
+                <Button Variant="ButtonVariant.Outline"
+                        Size="ButtonSize.Small"
+                        Disabled="@(loginLogPageNumber <= 1 || loginLogLoading)"
+                        OnClick="LoginLogPrevPage">
+                    上一页
+                </Button>
+                <Button Variant="ButtonVariant.Outline"
+                        Size="ButtonSize.Small"
+                        Disabled="@(loginLogPageNumber >= loginLogMaxPageNumber || loginLogLoading)"
+                        OnClick="LoginLogNextPage">
+                    下一页
+                </Button>
+            </div>
+        </div>
+        <DialogFooter Class="mt-4">
+            <Button Variant="ButtonVariant.Outline" OnClick="CloseLoginLogDialog">关闭</Button>
+        </DialogFooter>
+    </DialogContent>
+</Dialog>
+
 @code {
     private CrudTable<SysUser> table = default!;
+
+    private bool loginLogOpen;
+    private bool loginLogLoading;
+    private SysUser? loginLogUser;
+    private List<SysUserLoginLog> loginLogs = [];
+    private int loginLogPageNumber = 1;
+    private const int LoginLogPageSize = 10;
+    private long loginLogTotal;
+    private int loginLogMaxPageNumber = 1;
 
     private Task InitQuery(CrudQueryInfo e)
     {
@@ -169,4 +264,94 @@ new CrudFilterInfo("用户名", "Username", CrudFilterType.Text, 2),
         e.Item.Nickname = e.Item.Nickname?.Trim() ?? string.Empty;
         e.Item.Description = e.Item.Description?.Trim() ?? string.Empty;
     }
+
+    private async Task OpenLoginLogDialog(SysUser user)
+    {
+        loginLogUser = user;
+        loginLogPageNumber = 1;
+        loginLogOpen = true;
+        Logger.LogInformation("打开用户登录日志，Username={Username}", user.Username);
+        await LoadLoginLogsAsync();
+    }
+
+    private void CloseLoginLogDialog()
+    {
+        loginLogOpen = false;
+        loginLogUser = null;
+        loginLogs = [];
+    }
+
+    private async Task LoadLoginLogsAsync()
+    {
+        if (loginLogUser is null || string.IsNullOrWhiteSpace(loginLogUser.Username))
+        {
+            loginLogs = [];
+            loginLogTotal = 0;
+            loginLogMaxPageNumber = 1;
+            return;
+        }
+
+        loginLogLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            string username = loginLogUser.Username;
+            loginLogTotal = await FreeSql.Select<SysUserLoginLog>()
+                .Where(log => log.Username == username)
+                .CountAsync();
+
+            loginLogMaxPageNumber = Math.Max(1, (int)Math.Ceiling((double)loginLogTotal / LoginLogPageSize));
+            if (loginLogPageNumber > loginLogMaxPageNumber)
+            {
+                loginLogPageNumber = loginLogMaxPageNumber;
+            }
+
+            loginLogs = await FreeSql.Select<SysUserLoginLog>()
+                .Where(log => log.Username == username)
+                .OrderByDescending(log => log.LoginTime)
+                .Page(loginLogPageNumber, LoginLogPageSize)
+                .ToListAsync();
+
+            Logger.LogInformation("查询用户登录日志完成，Username={Username}，Count={Count}，Total={Total}",
+                username, loginLogs.Count, loginLogTotal);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "查询用户登录日志失败，Username={Username}", loginLogUser.Username);
+            loginLogs = [];
+            loginLogTotal = 0;
+            loginLogMaxPageNumber = 1;
+        }
+        finally
+        {
+            loginLogLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoginLogPrevPage()
+    {
+        if (loginLogPageNumber <= 1)
+        {
+            return;
+        }
+
+        loginLogPageNumber--;
+        await LoadLoginLogsAsync();
+    }
+
+    private async Task LoginLogNextPage()
+    {
+        if (loginLogPageNumber >= loginLogMaxPageNumber)
+        {
+            return;
+        }
+
+        loginLogPageNumber++;
+        await LoadLoginLogsAsync();
+    }
+
+    private static string TruncateText(string text, int maxLength) =>
+        text.Length <= maxLength ? text : text[..maxLength] + "…";
 }

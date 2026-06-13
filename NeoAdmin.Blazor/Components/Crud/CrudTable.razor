@@ -272,7 +272,7 @@
                                     取消
                                 </Button>
                             </DialogClose>
-                            <Button Variant="ButtonVariant.Outline" Type="ButtonType.Submit">
+                            <Button Variant="ButtonVariant.Default" Type="ButtonType.Submit">
                                 @SaveText
                             </Button>
                         </div>
@@ -293,7 +293,7 @@
             <Button Variant="ButtonVariant.Outline" Type="ButtonType.Button" OnClick="HandleCancelDeleteClick">
                 取消
             </Button>
-            <Button Variant="ButtonVariant.Outline" Type="ButtonType.Button" OnClick="HandleConfirmDeleteClick">
+            <Button Variant="ButtonVariant.Destructive" Type="ButtonType.Button" OnClick="HandleConfirmDeleteClick">
                 @RemoveText
             </Button>
         </DialogFooter>
@@ -310,7 +310,7 @@
             <Button Variant="ButtonVariant.Outline" Type="ButtonType.Button" OnClick="HandleCancelBatchDeleteClick">
                 取消
             </Button>
-            <Button Variant="ButtonVariant.Outline" Type="ButtonType.Button" OnClick="HandleConfirmBatchDeleteClick">
+            <Button Variant="ButtonVariant.Destructive" Type="ButtonType.Button" OnClick="HandleConfirmBatchDeleteClick">
                 @RemoveText
             </Button>
         </DialogFooter>
@@ -875,6 +875,10 @@
         typeof(TItem).Name,
         EntityLogHelper.Describe(editor));
 
+        string toastTitle = isNewItem ? AddText : SaveText;
+        string toastMessage = isNewItem ? $"{Title}新增成功" : $"{Title}保存成功";
+        ToastService.Success(toastTitle, toastMessage);
+
         if (OnSaved.HasDelegate)
         {
             await OnSaved.InvokeAsync(editor);
@@ -944,6 +948,11 @@
             if (!await DeleteEntityAsync(item))
             {
                 Logger.LogWarning("删除 {Entity} 失败：{EntityDesc}", typeof(TItem).Name, EntityLogHelper.Describe(item));
+                if (OnDeleteAsync is null)
+                {
+                    ToastService.Error(RemoveText, $"{Title}删除失败");
+                }
+
                 return false;
             }
 
@@ -959,6 +968,11 @@
         {
             await OnBatchRemoved.InvokeAsync(items);
         }
+
+        string deleteToastMessage = single
+            ? $"{Title}删除成功"
+            : $"已成功删除 {items.Count} 条{Title}记录";
+        ToastService.Success(RemoveText, deleteToastMessage);
 
         selectedRows.Clear();
         await LoadAsync();
@@ -1373,7 +1387,7 @@
         editorDialogMaximized = !editorDialogMaximized;
     }
 
-    private async Task CloseEditorAsync()
+    public async Task CloseEditorAsync()
     {
         TItem? closingItem = editorOpen ? editor : null;
         editorOpen = false;

@@ -6,6 +6,8 @@
 @using NeoAdmin.Blazor.Services
 @inject FileService FileService
 @inject IToastService ToastService
+@inject NavigationManager NavigationManager
+@inject ILogger<File> Logger
 
 <PageTitle>文件管理</PageTitle>
 
@@ -16,15 +18,14 @@
            PageSize="30"
            SearchPlaceholder="文件名.."
            AddText="上传"
-           SaveText="上传至服务器"
+           SaveText="完成"
            IsEdit="false"
            IsRowEdit="false"
            IsMultiSelect="true"
            DialogContentSize="CrudDialogContentSize.X4l"
            OnQuery="HandleQuery"
-           OnSaving="HandleSaving"
-           OnRemoving="HandleRemoving"
-           OnBatchRemoving="HandleBatchRemoving"
+           OnSaveAsync="HandleSaveAsync"
+           OnDeleteAsync="HandleDeleteAsync"
            OnEditClose="HandleEditClose">
     <Columns>
         <DataTableColumn TData="CrudGridRow<SysFile>"
@@ -36,15 +37,25 @@
         <DataTableColumn TData="CrudGridRow<SysFile>"
                          TValue="string"
                          Property="@(row => row.Item.OriginFileName)"
-                         Header="文件名"
+                         Header="原始文件名"
                          Sortable="false">
             <CellTemplate Context="row">
+                @Path.GetFileNameWithoutExtension(row.Item.OriginFileName)
+            </CellTemplate>
+        </DataTableColumn>
+        <DataTableColumn TData="CrudGridRow<SysFile>"
+                         TValue="string"
+                         Property="@(row => row.Item.SaveFileName)"
+                         Header="保存文件名"
+                         Sortable="false"
+                         Width="320px">
+            <CellTemplate Context="row">
                 <a class="text-primary hover:underline"
-                   href="@row.Item.LinkUrl"
+                   href="@NavigationManager.ToMediaUrl(row.Item.LinkUrl)"
                    target="_blank"
                    rel="noopener noreferrer"
                    @onclick:stopPropagation="true">
-                    @row.Item.OriginFileName
+                    @(row.Item.SaveFileName + row.Item.Extension)
                 </a>
             </CellTemplate>
         </DataTableColumn>
@@ -79,87 +90,265 @@
     </Columns>
     <EditTemplate>
         <div class="space-y-3 p-1">
-            <p class="text-sm text-muted-foreground">选择一个或多个文件后，再点保存。</p>
+            <p class="text-sm text-muted-foreground">选择一个或多个文件后将自动上传，全部成功后对话框会自动关闭。</p>
+            @if (isUploading)
+            {
+                <p class="flex items-center gap-2 text-sm text-muted-foreground">
+                    <LucideIcon Name="loader-circle" Size="16" Class="animate-spin" />
+                    正在上传，请稍候…
+                </p>
+            }
             <FileUpload @ref="fileUpload"
-                        @bind-Files="pendingFiles"
+                        FilesChanged="OnFilesChangedAsync"
                         Multiple="true"
-                        ShowProgress="true"
+                        ShowProgress="false"
+                        ShowPreview="false"
+                        Disabled="isUploading"
                         MaxFileSize="104857600" />
         </div>
     </EditTemplate>
+    <ViewTemplate Context="item">
+        <div class="space-y-4 p-1">
+            @if (IsImageFile(item.Extension))
+            {
+                <div class="rounded-lg border bg-muted/30 p-3">
+                    <p class="mb-2 text-xs text-muted-foreground">图片预览</p>
+                    <img src="@NavigationManager.ToMediaUrl(item.LinkUrl)"
+                         alt="@item.OriginFileName"
+                         class="mx-auto max-h-[60vh] max-w-full rounded-md border bg-background object-contain" />
+                </div>
+            }
+            else
+            {
+                <div class="flex items-center gap-3 rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
+                    <LucideIcon Name="file" Size="32" Class="shrink-0 opacity-60" />
+                    <span>该文件类型不支持预览，可点击下方链接在新窗口打开。</span>
+                </div>
+            }
+
+            <dl class="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+                <div>
+                    <dt class="text-muted-foreground">原始文件名</dt>
+                    <dd class="mt-0.5 break-all font-medium">@item.OriginFileName</dd>
+                </div>
+                <div>
+                    <dt class="text-muted-foreground">保存文件名</dt>
+                    <dd class="mt-0.5 break-all font-medium">@(item.SaveFileName + item.Extension)</dd>
+                </div>
+                <div>
+                    <dt class="text-muted-foreground">扩展名</dt>
+                    <dd class="mt-0.5 font-medium">@item.Extension</dd>
+                </div>
+                <div>
+                    <dt class="text-muted-foreground">大小</dt>
+                    <dd class="mt-0.5 font-medium">@item.SizeFormat</dd>
+                </div>
+                <div>
+                    <dt class="text-muted-foreground">创建者</dt>
+                    <dd class="mt-0.5 font-medium">@(string.IsNullOrWhiteSpace(item.CreatedUserName) ? "-" : item.CreatedUserName)</dd>
+                </div>
+                <div>
+                    <dt class="text-muted-foreground">创建时间</dt>
+                    <dd class="mt-0.5 font-medium">@(item.CreatedTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")</dd>
+                </div>
+            </dl>
+
+            <div class="flex flex-wrap gap-2 pt-1">
+                <a class="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:bg-muted"
+                   href="@NavigationManager.ToMediaUrl(item.LinkUrl)"
+                   target="_blank"
+                   rel="noopener noreferrer">
+                    <LucideIcon Name="external-link" Size="14" />
+                    在新窗口打开
+                </a>
+            </div>
+        </div>
+    </ViewTemplate>
 </CrudTable>
 </div>
 
 @code {
+    private const long MaxUploadBytes = 104_857_600;
+
+    private static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".svg", ".ico", ".avif"
+    };
+
     private CrudTable<SysFile> table = default!;
     private FileUpload? fileUpload;
-    private List<IBrowserFile> pendingFiles = new();
+    private int processedFileCount;
+    private bool isUploading;
+    private bool suppressFilesChanged;
 
     private void HandleQuery(CrudQueryEventArgs<SysFile> e)
     {
         e.Select!
             .WhereIf(!string.IsNullOrWhiteSpace(e.SearchText),
                 a => a.OriginFileName.Contains(e.SearchText!)
+                     || a.SaveFileName.Contains(e.SearchText!)
                      || a.Extension.Contains(e.SearchText!)
                      || a.CreatedUserName.Contains(e.SearchText!))
             .OrderByDescending(a => a.CreatedTime);
     }
 
-    private async Task HandleSaving(CrudConfirmEventArgs<SysFile> e)
+    private async Task OnFilesChangedAsync(List<IBrowserFile> files)
     {
-        e.Cancel = true;
-
-        if (pendingFiles.Count == 0)
+        if (suppressFilesChanged)
         {
-            ToastService.Warning("上传文件", "请先选择要上传的文件。");
             return;
         }
 
-        int total = 0;
-        foreach (IBrowserFile file in pendingFiles)
+        try
         {
-            try
-            {
-                await FileService.UploadFileAsync(file);
-                total++;
-            }
-            catch (Exception ex)
-            {
-                ToastService.Error("上传失败", $"{file.Name}: {ex.Message}");
-            }
-        }
+            Logger.LogInformation("文件选择变更，Count={Count}，Processed={Processed}，Uploading={Uploading}",
+                files.Count, processedFileCount, isUploading);
 
-        if (total > 0)
+            if (files.Count == 0)
+            {
+                processedFileCount = 0;
+                return;
+            }
+
+            if (isUploading || files.Count <= processedFileCount)
+            {
+                return;
+            }
+
+            List<IBrowserFile> newFiles = files.Skip(processedFileCount).ToList();
+            int batchStart = processedFileCount;
+
+            List<(string Name, byte[] Bytes)> bufferedFiles = [];
+            foreach (IBrowserFile file in newFiles)
+            {
+                try
+                {
+                    await using Stream stream = file.OpenReadStream(MaxUploadBytes);
+                    using MemoryStream buffer = new();
+                    await stream.CopyToAsync(buffer);
+                    bufferedFiles.Add((file.Name, buffer.ToArray()));
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "读取待上传文件失败，FileName={FileName}", file.Name);
+                    ToastService.Error("读取文件失败", $"{file.Name}: {ex.Message}");
+                }
+            }
+
+            if (bufferedFiles.Count == 0)
+            {
+                Logger.LogWarning("没有可上传的文件，NewCount={NewCount}", newFiles.Count);
+                return;
+            }
+
+            await UploadFilesAsync(bufferedFiles, batchStart, files.Count);
+        }
+        catch (Exception ex)
         {
-            ToastService.Success("上传文件", $"已成功上传 {total} 个文件。");
+            Logger.LogError(ex, "处理文件选择变更失败");
+            ToastService.Error("上传文件", ex.Message);
         }
-
-        pendingFiles.Clear();
-        await fileUpload!.ClearFiles();
-        await table.ReloadAsync();
     }
 
-    private async Task HandleRemoving(CrudConfirmEventArgs<SysFile> e)
+    private async Task UploadFilesAsync(
+        IReadOnlyList<(string Name, byte[] Bytes)> files,
+        int batchStart,
+        int totalSelectedCount)
     {
-        e.Cancel = true;
-        await FileService.DeleteAsync(e.Item.Id);
-        await table.ReloadAsync();
+        isUploading = true;
+        Logger.LogInformation("开始上传文件，Count={Count}", files.Count);
+        StateHasChanged();
+
+        int success = 0;
+        try
+        {
+            foreach ((string name, byte[] bytes) in files)
+            {
+                try
+                {
+                    await FileService.UploadBytesAsync(name, bytes);
+                    success++;
+                    Logger.LogInformation("上传文件成功，FileName={FileName}", name);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "上传文件失败，FileName={FileName}", name);
+                    ToastService.Error("上传失败", $"{name}: {ex.Message}");
+                }
+            }
+
+            if (success > 0)
+            {
+                processedFileCount = batchStart + success;
+                ToastService.Success("上传文件", $"已成功上传 {success} 个文件。");
+                await table.ReloadAsync();
+            }
+        }
+        finally
+        {
+            isUploading = false;
+
+            if (success > 0 && success == files.Count && processedFileCount >= totalSelectedCount)
+            {
+                suppressFilesChanged = true;
+                if (fileUpload is not null)
+                {
+                    await fileUpload.ClearFiles();
+                }
+
+                suppressFilesChanged = false;
+                processedFileCount = 0;
+                await table.CloseEditorAsync();
+            }
+
+            StateHasChanged();
+        }
     }
 
-    private async Task HandleBatchRemoving(CrudBatchConfirmEventArgs<SysFile> e)
+    private async Task<bool> HandleSaveAsync(SysFile item, bool isNew)
     {
-        e.Cancel = true;
-        foreach (SysFile item in e.Items)
+        if (isUploading)
+        {
+            ToastService.Warning("上传文件", "正在上传，请稍候。");
+            return false;
+        }
+
+        await table.ReloadAsync();
+        return true;
+    }
+
+    private async Task<bool> HandleDeleteAsync(SysFile item)
+    {
+        try
         {
             await FileService.DeleteAsync(item.Id);
+            Logger.LogInformation("删除文件成功，Id={Id}，FileName={FileName}", item.Id, item.OriginFileName);
+            return true;
         }
-
-        await table.ReloadAsync();
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "删除文件失败，Id={Id}，FileName={FileName}", item.Id, item.OriginFileName);
+            ToastService.Error("删除失败", $"{item.OriginFileName}: {ex.Message}");
+            return false;
+        }
     }
 
     private Task HandleEditClose(SysFile _)
     {
-        pendingFiles.Clear();
+        processedFileCount = 0;
+        isUploading = false;
+        suppressFilesChanged = false;
         return Task.CompletedTask;
+    }
+
+    private static bool IsImageFile(string? extension)
+    {
+        if (string.IsNullOrWhiteSpace(extension))
+        {
+            return false;
+        }
+
+        string normalized = extension.StartsWith('.') ? extension : "." + extension;
+        return ImageExtensions.Contains(normalized);
     }
 }

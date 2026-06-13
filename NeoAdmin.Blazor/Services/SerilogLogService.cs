@@ -62,7 +62,9 @@ public sealed class SerilogLogService
         try
         {
             List<string> lines = ReadTailLines(fileInfo.FullPath, MaxLinesToRead);
-            entries = ParseEntries(lines);
+            entries = ParseEntries(lines)
+                .Where(entry => !IsHiddenNoiseEntry(entry))
+                .ToList();
         }
         catch (Exception ex)
         {
@@ -227,6 +229,20 @@ public sealed class SerilogLogService
         }
 
         return null;
+    }
+
+    /// <summary>Blazor Server 断开连接时的无害日志，系统日志页不展示。</summary>
+    private static bool IsHiddenNoiseEntry(SerilogLogEntry entry)
+    {
+        if (entry.Content.Contains("CircuitHost", StringComparison.OrdinalIgnoreCase)
+            && entry.Content.Contains("Unhandled exception in circuit", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        string combined = entry.Content + Environment.NewLine + entry.Exception;
+        return combined.Contains("JSDisconnectedException", StringComparison.OrdinalIgnoreCase)
+            && combined.Contains("circuit has disconnected", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string NormalizeLevel(string level) => level.Trim().ToUpperInvariant() switch
