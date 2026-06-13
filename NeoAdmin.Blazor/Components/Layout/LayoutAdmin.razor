@@ -16,6 +16,7 @@
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.WebUtilities
 @using Microsoft.Extensions.Hosting
+@using System.Reflection
 @inject IHostEnvironment HostEnvironment
 @inject MenuService MenuService
 @inject MenuPermissionService MenuPermission
@@ -62,6 +63,14 @@
                     {
                         <SidebarFooter>
                             <SidebarMenu>
+                                <SidebarMenuItem>
+                                    <div class="px-2 py-1 group-data-[collapsible=icon]:hidden">
+                                        <Badge Variant="BadgeVariant.Secondary"
+                                               Class="w-full justify-center truncate text-xs font-normal">
+                                            当前框架版本: @NeoAdminVersion
+                                        </Badge>
+                                    </div>
+                                </SidebarMenuItem>
                                 <SidebarMenuItem>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger AsChild>
@@ -232,6 +241,8 @@
 
 @code {
     private const int SessionCheckIntervalSeconds = 10;
+
+    private static readonly string NeoAdminVersion = ResolveNeoAdminVersion();
 
     private bool isAuthChecked;
     private bool logoutDialogOpen;
@@ -672,6 +683,21 @@
         string GroupHeading,
         int SortOrder,
         string SearchValue);
+
+    private static string ResolveNeoAdminVersion()
+    {
+        Assembly assembly = typeof(LayoutAdmin).Assembly;
+        string? informational = assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion;
+        if (!string.IsNullOrWhiteSpace(informational))
+        {
+            int plusIndex = informational.IndexOf('+');
+            return plusIndex >= 0 ? informational[..plusIndex] : informational;
+        }
+
+        return assembly.GetName().Version?.ToString(3) ?? "unknown";
+    }
 
     private void HandleLogoutAsync()
     {
