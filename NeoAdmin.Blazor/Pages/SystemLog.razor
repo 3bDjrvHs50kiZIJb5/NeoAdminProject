@@ -70,6 +70,18 @@
                            Placeholder="消息 / 异常关键字.."
                            @bind-Value="searchText" />
                     <Button Type="ButtonType.Submit" Variant="ButtonVariant.Outline">搜索</Button>
+                    <Button Type="ButtonType.Button"
+                            Variant="ButtonVariant.Outline"
+                            Disabled="@isLoading"
+                            OnClick="HandleClearInfAsync">
+                        清空 INF
+                    </Button>
+                    <Button Type="ButtonType.Button"
+                            Variant="ButtonVariant.Destructive"
+                            Disabled="@(isLoading || string.IsNullOrWhiteSpace(selectedFile))"
+                            OnClick="HandleDeleteFileAsync">
+                        删除文件
+                    </Button>
                 </form>
             </div>
         </div>
@@ -233,6 +245,79 @@
         appliedSearchText = string.IsNullOrWhiteSpace(searchText) ? null : searchText.Trim();
         pageNumber = 1;
         await LoadAsync();
+    }
+
+    private async Task HandleClearInfAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            SerilogLogClearResult result = await SerilogLogService.ClearInfEntriesAsync(selectedFile);
+            if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
+            {
+                ToastService.Error("清空 INF", result.ErrorMessage);
+                return;
+            }
+
+            if (result.RemovedCount == 0)
+            {
+                ToastService.Warning("清空 INF", $"文件 {result.SelectedFile} 中没有 INF 记录。");
+            }
+            else
+            {
+                ToastService.Success("清空 INF", $"已从 {result.SelectedFile} 删除 {result.RemovedCount} 条 INF 记录。");
+            }
+
+            pageNumber = 1;
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            ToastService.Error("清空 INF", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleDeleteFileAsync()
+    {
+        if (string.IsNullOrWhiteSpace(selectedFile))
+        {
+            ToastService.Warning("删除文件", "请先选择日志文件。");
+            return;
+        }
+
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            SerilogLogDeleteResult result = await SerilogLogService.DeleteFileAsync(selectedFile);
+            if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
+            {
+                ToastService.Error("删除文件", result.ErrorMessage);
+                return;
+            }
+
+            ToastService.Success("删除文件", $"已删除 {result.DeletedFile}。");
+            selectedFile = null;
+            pageNumber = 1;
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            ToastService.Error("删除文件", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
     }
 
     private async Task PrevPage()

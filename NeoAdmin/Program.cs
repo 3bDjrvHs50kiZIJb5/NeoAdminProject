@@ -10,6 +10,11 @@ using NeoUI.Blazor.Primitives.Extensions;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+if (builder.Environment.IsDevelopment())
+{
+    // IDE / dotnet exec 从项目目录启动时，需显式加载 NuGet 静态资源清单，否则会去 wwwroot/_content 找文件导致 404。
+    builder.WebHost.UseStaticWebAssets();
+}
 builder.AddNeoAdminSerilog();
 
 builder.Services.AddNeoUIPrimitives();

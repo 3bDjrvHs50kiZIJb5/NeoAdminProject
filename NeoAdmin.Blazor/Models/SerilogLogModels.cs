@@ -59,3 +59,23 @@ public sealed class SerilogLogPageResult
 
     public string? ErrorMessage { get; init; }
 }
+
+public sealed class SerilogLogClearResult
+{
+    public bool Success { get; init; }
+
+    public string? SelectedFile { get; init; }
+
+    public int RemovedCount { get; init; }
+
+    public string? ErrorMessage { get; init; }
+}
+
+public sealed class SerilogLogDeleteResult
+{
+    public bool Success { get; init; }
+
+    public string? DeletedFile { get; init; }
+
+    public string? ErrorMessage { get; init; }
+}

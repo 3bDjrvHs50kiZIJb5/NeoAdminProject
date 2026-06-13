@@ -61,12 +61,6 @@
         </DataTableColumn>
         <DataTableColumn TData="CrudGridRow<SysFile>"
                          TValue="string"
-                         Property="@(row => row.Item.Extension)"
-                         Header="扩展名"
-                         Sortable="false"
-                         Width="100px" />
-        <DataTableColumn TData="CrudGridRow<SysFile>"
-                         TValue="string"
                          Property="@(row => row.Item.SizeFormat)"
                          Header="大小"
                          Sortable="false"

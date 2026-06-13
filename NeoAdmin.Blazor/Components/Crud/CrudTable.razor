@@ -215,7 +215,7 @@
 @if (CanShowEditor)
 {
     <Dialog Open="@editorOpen" OpenChanged="HandleEditorOpenChanged">
-        <DialogContent Variant="DialogContentVariant.Form" Class="@EditorDialogClass" CloseOnEscape="false">
+        <DialogContent Variant="DialogContentVariant.Form" Class="@EditorDialogClass" CloseOnEscape="@isViewMode">
             @if (EditorDialogMaximizable)
             {
                 <span class="crud-dialog-maximize-trigger opacity-70 transition-opacity hover:opacity-100"
