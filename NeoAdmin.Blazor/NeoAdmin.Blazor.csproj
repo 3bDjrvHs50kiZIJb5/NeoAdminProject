@@ -26,6 +26,8 @@
   <ItemGroup>
     <None Include="logo.png" Pack="true" PackagePath="\" Visible="false" />
     <None Include="README.md" Pack="true" PackagePath="\" />
+    <Content Remove="wwwroot\patches\neoui-input.js" />
+    <EmbeddedResource Include="wwwroot\patches\neoui-input.js" />
   </ItemGroup>
 
   <ItemGroup>

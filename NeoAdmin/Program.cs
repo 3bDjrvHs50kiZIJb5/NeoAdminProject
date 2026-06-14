@@ -42,6 +42,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseNeoAdminSerilogRequestLogging();
 app.UseHttpsRedirection();
+app.UseNeoAdminImeInputPatch();
 // 运行时上传的文件不在 StaticAssets 清单内，需用 StaticFiles 提供
 app.UseStaticFiles();
 app.MapStaticAssets();
