@@ -105,20 +105,22 @@
             </div>
             <div class="space-y-2">
                 <Label For="role-description">备注</Label>
-                <Textarea id="role-description"
-                          Class="min-h-20 w-full"
-                          MaxLength="500"
-                          @bind-Value="item.Description" />
+                <RichTextEditor Id="role-description"
+                                @bind-Value="item.Description"
+                                Toolbar="ToolbarPreset.None"
+                                MinHeight="80px"
+                                Class="w-full" />
             </div>
             <div class="space-y-2">
                 <Label For="role-ip">
                     IP 白名单
                     <span class="text-xs font-normal text-muted-foreground">（登录后台时使用，多个用分号或换行分隔）</span>
                 </Label>
-                <Textarea id="role-ip"
-                          Class="min-h-20 w-full"
-                          MaxLength="500"
-                          @bind-Value="item.IpWhiteList" />
+                <RichTextEditor Id="role-ip"
+                                @bind-Value="item.IpWhiteList"
+                                Toolbar="ToolbarPreset.None"
+                                MinHeight="80px"
+                                Class="w-full" />
                 <p class="text-xs text-muted-foreground">当前 IP：@clientIp</p>
             </div>
         </EditTemplate>

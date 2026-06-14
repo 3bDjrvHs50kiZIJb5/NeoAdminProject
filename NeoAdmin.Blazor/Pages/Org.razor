@@ -158,10 +158,11 @@
 
             <div class="space-y-2">
                 <Label For="org-description">备注</Label>
-                <Textarea Id="org-description"
-                          Class="min-h-24 w-full"
-                          MaxLength="500"
-                          @bind-Value="item.Description" />
+                <RichTextEditor Id="org-description"
+                                @bind-Value="item.Description"
+                                Toolbar="ToolbarPreset.None"
+                                MinHeight="96px"
+                                Class="w-full" />
             </div>
         </EditTemplate>
     </CrudTable>

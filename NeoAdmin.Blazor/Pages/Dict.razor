@@ -62,7 +62,10 @@
                 </div>
                 <div class="space-y-2">
                     <Label>备注</Label>
-                    <Textarea @bind-Value="item.Description" />
+                    <RichTextEditor @bind-Value="item.Description"
+                                    Toolbar="ToolbarPreset.None"
+                                    MinHeight="80px"
+                                    Class="w-full" />
                 </div>
             </EditTemplate>
         </CrudTable>
@@ -180,9 +183,11 @@
                 </div>
                 <div class="space-y-2">
                     <Label>描述</Label>
-                    <Textarea @bind-Value="item.Description"
-                              Class="min-h-20 w-full"
-                              Placeholder="显示名称、说明或分类路径等" />
+                    <RichTextEditor @bind-Value="item.Description"
+                                    Toolbar="ToolbarPreset.None"
+                                    Placeholder="显示名称、说明或分类路径等"
+                                    MinHeight="80px"
+                                    Class="w-full" />
                 </div>
                 <div class="space-y-2">
                     <Label>值1</Label>

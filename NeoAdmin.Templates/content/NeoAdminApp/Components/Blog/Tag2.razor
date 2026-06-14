@@ -122,7 +122,11 @@
             </div>
             <div class="space-y-2">
                 <Label For="tag-remark">备注</Label>
-                <Textarea id="tag-remark" Class="min-h-24 w-full" MaxLength="500" @bind-Value="item.Remark" />
+                <RichTextEditor Id="tag-remark"
+                                @bind-Value="item.Remark"
+                                Toolbar="ToolbarPreset.None"
+                                MinHeight="96px"
+                                Class="w-full" />
             </div>
             <div class="space-y-2">
                 <Label>技术频道</Label>

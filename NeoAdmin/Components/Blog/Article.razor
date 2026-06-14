@@ -102,12 +102,19 @@
                     </div>
                     <div class="space-y-2">
                         <Label For="article-excerpt">摘要</Label>
-                        <Textarea id="article-excerpt" Class="min-h-20 w-full" MaxLength="500"
-                            @bind-Value="item.Excerpt" />
+                        <RichTextEditor Id="article-excerpt"
+                                        @bind-Value="item.Excerpt"
+                                        Toolbar="ToolbarPreset.None"
+                                        MinHeight="80px"
+                                        Class="w-full" />
                     </div>
                     <div class="space-y-2">
                         <Label For="article-content">正文</Label>
-                        <Textarea id="article-content" Class="min-h-48 w-full" @bind-Value="item.Content" />
+                        <RichTextEditor Id="article-content"
+                                        @bind-Value="item.Content"
+                                        Toolbar="ToolbarPreset.None"
+                                        MinHeight="192px"
+                                        Class="w-full" />
                     </div>
                     <div class="space-y-2">
                         <Label For="article-thumb">缩略图</Label>

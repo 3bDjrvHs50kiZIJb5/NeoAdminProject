@@ -186,10 +186,11 @@
             </div>
             <div class="space-y-2">
                 <Label For="param-description">备注</Label>
-                <Textarea Id="param-description"
-                          Class="min-h-24 w-full"
-                          MaxLength="500"
-                          @bind-Value="item.Description" />
+                <RichTextEditor Id="param-description"
+                                @bind-Value="item.Description"
+                                Toolbar="ToolbarPreset.None"
+                                MinHeight="96px"
+                                Class="w-full" />
             </div>
         </EditTemplate>
     </CrudTable>

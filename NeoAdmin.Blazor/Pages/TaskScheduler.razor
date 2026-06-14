@@ -192,7 +192,10 @@
                 </div>
                 <div class="space-y-2">
                     <Label>@(editorTask.Topic == "[系统预留]清理任务数据" ? "清理多久之前的记录(单位:秒)" : "内容")</Label>
-                    <Textarea Class="min-h-28" @bind-Value="editorTask.Body" MaxLength="1024" />
+                    <RichTextEditor @bind-Value="editorTask.Body"
+                                    Toolbar="ToolbarPreset.None"
+                                    MinHeight="112px"
+                                    Class="w-full" />
                 </div>
                 <div class="grid gap-3 sm:grid-cols-3">
                     <div class="space-y-2">

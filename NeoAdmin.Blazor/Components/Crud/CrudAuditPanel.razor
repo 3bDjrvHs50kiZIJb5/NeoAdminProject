@@ -38,12 +38,12 @@ else
                     <Label For="audit-opinion">
                         处理意见 <span class="text-destructive" aria-hidden="true">*</span>
                     </Label>
-                    <Textarea id="audit-opinion"
-                              Class="min-h-20 w-full"
-                              MaxLength="500"
-                              required
-                              @bind-Value="opinion"
-                              @bind-Value:after="ClearOpinionError" />
+                    <RichTextEditor Id="audit-opinion"
+                                    @bind-Value="opinion"
+                                    @bind-Value:after="ClearOpinionError"
+                                    Toolbar="ToolbarPreset.None"
+                                    MinHeight="80px"
+                                    Class="w-full" />
                     @if (!string.IsNullOrEmpty(opinionError))
                     {
                         <p class="text-xs text-destructive">@opinionError</p>

@@ -82,7 +82,11 @@
             </div>
             <div class="space-y-2">
                 <Label For="comment-text">内容</Label>
-                <Textarea id="comment-text" Class="min-h-28 w-full" MaxLength="500" @bind-Value="item.Text" />
+                <RichTextEditor Id="comment-text"
+                                @bind-Value="item.Text"
+                                Toolbar="ToolbarPreset.None"
+                                MinHeight="112px"
+                                Class="w-full" />
             </div>
             <div class="grid gap-4 sm:grid-cols-2">
                 <div class="space-y-2">

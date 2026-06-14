@@ -181,10 +181,12 @@
 
             <div class="space-y-2">
                 <Label For="description">备注</Label>
-                <Textarea Id="description"
-                          Class="min-h-20 w-full"
-                          Placeholder="输入备注"
-                          @bind-Value="item.Description" />
+                <RichTextEditor Id="description"
+                                @bind-Value="item.Description"
+                                Toolbar="ToolbarPreset.None"
+                                Placeholder="输入备注"
+                                MinHeight="80px"
+                                Class="w-full" />
             </div>
 
             <div class="space-y-3 rounded-md border p-3">

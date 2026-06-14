@@ -101,10 +101,11 @@
             </div>
             <div class="space-y-2">
                 <Label For="ip-description">备注</Label>
-                <Textarea id="ip-description"
-                          Class="min-h-24 w-full"
-                          MaxLength="500"
-                          @bind-Value="item.Description" />
+                <RichTextEditor Id="ip-description"
+                                @bind-Value="item.Description"
+                                Toolbar="ToolbarPreset.None"
+                                MinHeight="96px"
+                                Class="w-full" />
             </div>
             <div class="flex items-center gap-2">
                 <Checkbox @bind-Checked="item.IsEnabled" Id="ip-enabled" />
