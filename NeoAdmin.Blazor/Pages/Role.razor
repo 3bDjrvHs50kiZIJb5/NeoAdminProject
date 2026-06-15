@@ -136,8 +136,9 @@
                KeySelector="u => u.Id"
                DisplayText="u => u.Username"
                LoadSelectedKeysAsync="LoadRoleUserKeysAsync"
+               LoadChoicesPagedFunc="LoadRoleUserChoicesPagedAsync"
                OnSaveAsync="SaveRoleUsersAsync"
-               OnQuery="FilterUserAllocQuery"
+               SearchRequiredHint="请输入用户名或昵称后搜索"
                DialogContentSize="CrudDialogContentSize.Sm">
     <RowTemplate Context="user">
         @user.Username
@@ -248,14 +249,8 @@
     private async Task<IReadOnlyCollection<long>> LoadRoleMenuKeysAsync(SysRole role) =>
         await RoleService.GetMenuIdsAsync(role.Id);
 
-    private Task FilterUserAllocQuery(CrudQueryEventArgs<SysUser> args)
-    {
-        args.Select!
-            .WhereIf(!string.IsNullOrWhiteSpace(args.SearchText),
-                u => u.Username.Contains(args.SearchText!) || u.Nickname.Contains(args.SearchText!))
-            .OrderBy(u => u.Username);
-        return Task.CompletedTask;
-    }
+    private Task<NeoAllocChoicesResult<SysUser>> LoadRoleUserChoicesPagedAsync(NeoAllocChoicesRequest request) =>
+        RoleService.GetUsersForAllocPagedAsync(request);
 
     private async Task<List<SysMenu>> LoadMenuChoicesAsync(string? searchText)
     {

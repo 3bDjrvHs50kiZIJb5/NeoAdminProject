@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 using FreeSql;
 using Microsoft.Extensions.Logging;
+using NeoAdmin.Blazor.Components;
 using NeoAdmin.Blazor.Core.Identity;
 using NeoAdmin.Blazor.Entities;
 using NeoAdmin.Blazor.Core.Navigation;
@@ -156,6 +157,26 @@ public sealed class RoleService
                 a => a.Username.Contains(searchText!) || a.Nickname.Contains(searchText!))
             .OrderBy(a => a.Username)
             .ToListAsync();
+
+    public async Task<NeoAllocChoicesResult<SysUser>> GetUsersForAllocPagedAsync(NeoAllocChoicesRequest request)
+    {
+        ISelect<SysUser> select = _freeSql.Select<SysUser>()
+            .WhereIf(!string.IsNullOrWhiteSpace(request.SearchText),
+                u => u.Username.Contains(request.SearchText!) || u.Nickname.Contains(request.SearchText!))
+            .OrderBy(u => u.Username);
+
+        long total = await select.CountAsync();
+        List<SysUser> items = await select
+            .Page(request.PageNumber, request.PageSize)
+            .ToListAsync(u => new SysUser
+            {
+                Id = u.Id,
+                Username = u.Username,
+                Nickname = u.Nickname
+            });
+
+        return new NeoAllocChoicesResult<SysUser> { Items = items, Total = total };
+    }
 
     public async Task<List<SysMenu>> GetMenusForAllocAsync()
     {

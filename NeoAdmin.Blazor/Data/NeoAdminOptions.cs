@@ -12,6 +12,11 @@ public sealed class NeoAdminOptions
 
     public bool AutoSyncStructure { get; set; } = true;
 
+    /// <summary>
+    /// 是否启用业务演示种子数据（组织、人事、博客等）。未配置时默认开启。
+    /// </summary>
+    public bool EnableSeedData { get; set; } = true;
+
     public bool MonitorCommand { get; set; } = true;
 
     public string SeedAdminUserName { get; set; } = "admin";

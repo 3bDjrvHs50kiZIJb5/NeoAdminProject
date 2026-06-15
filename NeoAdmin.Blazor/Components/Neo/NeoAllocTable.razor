@@ -5,6 +5,7 @@
 @using FreeSql
 @using NeoAdmin.Blazor.Utils
 @using Microsoft.Extensions.Logging
+@using Microsoft.AspNetCore.Components.Web.Virtualization
 @inject IFreeSql FreeSql
 @inject IToastService ToastService
 @inject ILoggerFactory LoggerFactory
@@ -25,38 +26,62 @@
           {
             <div class="shrink-0">
               <Input Type="InputType.Search" Placeholder="@SearchPlaceholder" @bind-Value="searchText"
-                @bind-Value:after="LoadChoicesAsync" />
+                @bind-Value:after="HandleSearchTextChangedAsync" />
             </div>
           }
           <div
-            class="max-h-50vh min-h-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto overscroll-contain rounded-md border p-3">
-            @if (choices.Count == 0)
+            class="max-h-50vh min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain rounded-md border p-3">
+            @if (isLoadingChoices)
             {
-              <p class="text-sm text-muted-foreground">暂无可选项</p>
+              <p class="text-sm text-muted-foreground">加载中…</p>
+            }
+            else if (ShowSearchRequiredHint)
+            {
+              <p class="text-sm text-muted-foreground">@SearchRequiredHint</p>
+            }
+            else if (choices.Count == 0)
+            {
+              <p class="text-sm text-muted-foreground">未找到匹配项</p>
             }
             else
             {
-              @foreach (TChild child in choices)
-              {
-                TKey key = KeySelector(child);
-                <div class="flex items-center gap-2" style="@GetIndentStyle(child)">
-                  <Checkbox Checked="@IsSelected(key)" CheckedChanged="@(value => ToggleAsync(key, value))"
-                    Id="@($"neo-alloc-{key}")" />
-                  <Label For="@($"neo-alloc-{key}")" Class="cursor-pointer font-normal">
-                    @if (RowTemplate != null)
-                    {
-                      @RowTemplate(child)
-                    }
-                    else
-                    {
-                      @DisplayText(child)
-                    }
-                  </Label>
-                </div>
-              }
+              <Virtualize Items="choices" Context="child" ItemSize="36" OverscanCount="8">
+                <ItemContent>
+                  @{
+                    TKey key = KeySelector(child);
+                  }
+                  <div class="flex items-center gap-2 py-0.5" style="@GetIndentStyle(child)">
+                    <Checkbox Checked="@IsSelected(key)" CheckedChanged="@(value => ToggleAsync(key, value))"
+                      Id="@GetChoiceElementId(key)" />
+                    <Label For="@GetChoiceElementId(key)" Class="cursor-pointer font-normal">
+                      @if (RowTemplate != null)
+                      {
+                        @RowTemplate(child)
+                      }
+                      else
+                      {
+                        @DisplayText(child)
+                      }
+                    </Label>
+                  </div>
+                </ItemContent>
+              </Virtualize>
             }
           </div>
-          <p class="shrink-0 text-sm text-muted-foreground">已选 @selectedKeys.Count 项</p>
+          @if (ShowChoicesPaging)
+          {
+            <div class="flex shrink-0 flex-wrap items-center justify-start gap-2 text-sm text-muted-foreground">
+              <div class="flex items-center gap-2">
+                <Button Variant="ButtonVariant.Link" Size="ButtonSize.Small" Class="h-auto px-0"
+                  Disabled="@(choicesPageNumber <= 1 || isLoadingChoices)"
+                  OnClick="GoToPreviousChoicesPageAsync">上一页</Button>
+                <span>第 @choicesPageNumber / @ChoicesTotalPages 页（共 @choicesTotal 项）</span>
+                <Button Variant="ButtonVariant.Link" Size="ButtonSize.Small" Class="h-auto px-0"
+                  Disabled="@(choicesPageNumber >= ChoicesTotalPages || isLoadingChoices)"
+                  OnClick="GoToNextChoicesPageAsync">下一页</Button>
+              </div>
+            </div>
+          }
         </div>
         <div class="shrink-0">
           <DialogFooter Class="mt-4 flex flex-wrap justify-between gap-2">
@@ -92,15 +117,42 @@
   [Parameter] public bool IsCascadeSelection { get; set; } = true;
   [Parameter] public RenderFragment<TChild>? RowTemplate { get; set; }
   [Parameter] public EventCallback<CrudQueryEventArgs<TChild>> OnQuery { get; set; }
-  /// <summary>自定义加载可选项（如树形扁平列表）；设置后优先于 OnQuery + FreeSql。</summary>
+  /// <summary>分页加载可选项（支持轻量投影）；优先于 OnQuery + FreeSql。</summary>
+  [Parameter] public Func<NeoAllocChoicesRequest, Task<NeoAllocChoicesResult<TChild>>>? LoadChoicesPagedFunc { get; set; }
+  /// <summary>自定义加载可选项（如树形扁平列表）；设置后优先于 OnQuery + FreeSql，且不分页。</summary>
   [Parameter] public Func<string?, Task<List<TChild>>>? LoadChoicesFunc { get; set; }
   [Parameter] public Func<TItem, Task<IReadOnlyCollection<TKey>>>? LoadSelectedKeysAsync { get; set; }
   [Parameter] public Func<TItem, IReadOnlyCollection<TKey>, Task<bool>>? OnSaveAsync { get; set; }
+  /// <summary>每页可选项数量；树形全量加载（LoadChoicesFunc）时不分页。</summary>
+  [Parameter] public int ChoicesPageSize { get; set; } = 500;
+  /// <summary>
+  /// 打开弹窗时不预加载可选项，需输入搜索词后再查。
+  /// 默认 false：打开弹窗即分页查库；设为 true 时需先搜索。
+  /// </summary>
+  [Parameter] public bool? DeferChoicesUntilSearch { get; set; }
+  [Parameter] public string SearchRequiredHint { get; set; } = "请输入关键词后搜索";
 
   private readonly HashSet<TKey> selectedKeys = new();
   private List<TChild> choices = new();
   private string? searchText;
   private TItem? loadedForItem;
+  private bool isLoadingChoices;
+  private int choicesPageNumber = 1;
+  private long choicesTotal;
+
+  private bool UsesFullChoicesLoad => LoadChoicesFunc != null;
+
+  private bool EffectiveDeferChoicesUntilSearch =>
+    DeferChoicesUntilSearch ?? false;
+
+  private bool ShowSearchRequiredHint =>
+    !isLoadingChoices && EffectiveDeferChoicesUntilSearch && string.IsNullOrWhiteSpace(searchText?.Trim());
+
+  private bool ShowChoicesPaging =>
+    !UsesFullChoicesLoad && choicesTotal > ChoicesPageSize;
+
+  private int ChoicesTotalPages =>
+    choicesTotal <= 0 ? 1 : (int)Math.Ceiling(choicesTotal / (double)ChoicesPageSize);
 
   protected override async Task OnParametersSetAsync()
   {
@@ -109,14 +161,20 @@
       loadedForItem = null;
       choices.Clear();
       selectedKeys.Clear();
+      choicesTotal = 0;
+      choicesPageNumber = 1;
+      isLoadingChoices = false;
       return;
     }
 
     if (!ReferenceEquals(Item, loadedForItem))
     {
       loadedForItem = Item;
-      await LoadSelectedAsync();
-      await LoadChoicesAsync();
+      searchText = null;
+      choicesPageNumber = 1;
+      choices.Clear();
+      choicesTotal = 0;
+      await Task.WhenAll(LoadSelectedAsync(), LoadChoicesAsync());
     }
   }
 
@@ -137,27 +195,94 @@
 
   private async Task LoadChoicesAsync()
   {
-    if (LoadChoicesFunc != null)
+    if (ShouldDeferChoicesLoad())
     {
-      choices = await LoadChoicesFunc(searchText?.Trim());
+      choices = [];
+      choicesTotal = 0;
       return;
     }
 
-    ISelect<TChild> select = FreeSql.Select<TChild>();
-    CrudQueryEventArgs<TChild> args = new(
-    select,
-    searchText?.Trim(),
-    Array.Empty<CrudFilterInfo>(),
-    1,
-    -1);
-
-    if (OnQuery.HasDelegate)
+    isLoadingChoices = true;
+    await InvokeAsync(StateHasChanged);
+    try
     {
-      await OnQuery.InvokeAsync(args);
+      if (LoadChoicesPagedFunc != null)
+      {
+        NeoAllocChoicesResult<TChild> result = await LoadChoicesPagedFunc(BuildChoicesRequest());
+        choices = result.Items;
+        choicesTotal = result.Total;
+        return;
+      }
+
+      if (LoadChoicesFunc != null)
+      {
+        choices = await LoadChoicesFunc(searchText?.Trim());
+        choicesTotal = choices.Count;
+        return;
+      }
+
+      ISelect<TChild> select = FreeSql.Select<TChild>();
+      CrudQueryEventArgs<TChild> args = new(
+        select,
+        searchText?.Trim(),
+        Array.Empty<CrudFilterInfo>(),
+        choicesPageNumber,
+        ChoicesPageSize);
+
+      if (OnQuery.HasDelegate)
+      {
+        await OnQuery.InvokeAsync(args);
+      }
+
+      choicesTotal = await select.CountAsync();
+      choices = await select.Page(choicesPageNumber, ChoicesPageSize).ToListAsync();
+    }
+    finally
+    {
+      isLoadingChoices = false;
+    }
+  }
+
+  private NeoAllocChoicesRequest BuildChoicesRequest() =>
+    new()
+    {
+      SearchText = searchText?.Trim(),
+      PageNumber = choicesPageNumber,
+      PageSize = ChoicesPageSize
+    };
+
+  private bool ShouldDeferChoicesLoad() =>
+    EffectiveDeferChoicesUntilSearch && string.IsNullOrWhiteSpace(searchText?.Trim());
+
+  private async Task HandleSearchTextChangedAsync()
+  {
+    choicesPageNumber = 1;
+    await LoadChoicesAsync();
+  }
+
+  private async Task GoToPreviousChoicesPageAsync()
+  {
+    if (choicesPageNumber <= 1 || isLoadingChoices)
+    {
+      return;
     }
 
-    choices = await select.ToListAsync();
+    choicesPageNumber--;
+    await LoadChoicesAsync();
   }
+
+  private async Task GoToNextChoicesPageAsync()
+  {
+    if (choicesPageNumber >= ChoicesTotalPages || isLoadingChoices)
+    {
+      return;
+    }
+
+    choicesPageNumber++;
+    await LoadChoicesAsync();
+  }
+
+  private string GetChoiceElementId(TKey key) => $"neo-alloc-{key}";
 
   private bool IsSelected(TKey key) => selectedKeys.Contains(key);
 
@@ -265,6 +390,9 @@
     choices.Clear();
     selectedKeys.Clear();
     searchText = null;
+    choicesPageNumber = 1;
+    choicesTotal = 0;
+    isLoadingChoices = false;
     await ItemChanged.InvokeAsync(default);
   }
 

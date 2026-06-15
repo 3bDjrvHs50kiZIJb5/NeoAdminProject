@@ -74,7 +74,8 @@
         <CrudTableSingleSelectShell Enabled="@IsSingleSelect"
                                     Value="@SingleSelectBoundValue"
                                     ValueChanged="HandleSingleSelectValueChanged">
-            <DataTable TData="CrudGridRow<TItem>" Data="@rows" ShowToolbar="false" ShowPagination="false"
+            <DataTable @key="@($"crud-dt-{effectivePageSize}-{pageNumber}")"
+                TData="CrudGridRow<TItem>" Data="@rows" ShowToolbar="false" ShowPagination="false"
                 InitialPageSize="@DataTablePageSize" SelectionMode="@SelectionMode" SelectedItems="@selectedRows"
                 SelectedItemsChanged="@OnSelectedRowsChanged" ColumnsVisibility="false" IsLoading="@isLoading" Dense="true"
                 ColumnSizing="TableColumnSizing.Fixed" AdditionalRowAttributes="GetRowAttributes"
@@ -346,7 +347,7 @@
 
     [Parameter] public string Title { get; set; } = "";
     [Parameter] public int PageSize { get; set; } = 20;
-    [Parameter] public int[] PageSizes { get; set; } = [10, 20, 30, 50, 100];
+    [Parameter] public int[] PageSizes { get; set; } = [10, 20, 30, 50, 200, 500, 1000];
 
     [Parameter] public bool IsSearchText { get; set; } = true;
     [Parameter] public string SearchPlaceholder { get; set; } = "搜索...";
@@ -460,6 +461,7 @@
     private int pageNumber = 1;
     private int maxPageNumber = 1;
     private int effectivePageSize = 20;
+    private int? previousPageSizeParameter;
     private string? searchText;
     private string? appliedSearchText;
     private bool isLoading;
@@ -512,7 +514,7 @@
         };
 
     private bool IsPaged => effectivePageSize > 0;
-    private int DataTablePageSize => IsPaged ? effectivePageSize : int.MaxValue;
+    private int DataTablePageSize => effectivePageSize > 0 ? effectivePageSize : int.MaxValue;
     private bool ShowPager => IsPaged && total > effectivePageSize;
     private long PageRangeStart => total == 0 ? 0 : (pageNumber - 1L) * effectivePageSize + 1;
     private long PageRangeEnd => IsPaged
@@ -541,6 +543,7 @@
         await LoadPermissionFlagsAsync();
 
         effectivePageSize = PageSize;
+        previousPageSizeParameter = PageSize;
         queryInfo.InvokeQueryAsync = async () =>
         {
             pageNumber = 1;
@@ -559,8 +562,9 @@
     {
         await LoadPermissionFlagsAsync();
 
-        if (effectivePageSize != PageSize)
+        if (previousPageSizeParameter != PageSize)
         {
+            previousPageSizeParameter = PageSize;
             effectivePageSize = PageSize;
             pageNumber = 1;
             await LoadAsync();

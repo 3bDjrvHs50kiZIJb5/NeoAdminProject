@@ -90,3 +90,21 @@ public sealed class CrudQueriedEventArgs<TItem>
         Total = total;
     }
 }
+
+/// <summary>NeoAllocTable 分页加载可选项的请求参数。</summary>
+public sealed class NeoAllocChoicesRequest
+{
+    public string? SearchText { get; init; }
+
+    public int PageNumber { get; init; } = 1;
+
+    public int PageSize { get; init; } = 500;
+}
+
+/// <summary>NeoAllocTable 分页加载可选项的查询结果。</summary>
+public sealed class NeoAllocChoicesResult<TChild> where TChild : class
+{
+    public List<TChild> Items { get; init; } = [];
+
+    public long Total { get; init; }
+}
