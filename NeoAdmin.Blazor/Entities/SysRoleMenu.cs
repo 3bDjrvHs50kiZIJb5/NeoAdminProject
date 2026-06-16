@@ -2,6 +2,7 @@ using FreeSql.DataAnnotations;
 
 namespace NeoAdmin.Blazor.Entities;
 
+[Table(Name = "sysrolemenu")]
 public sealed class SysRoleMenu
 {
     [Column(IsPrimary = true)]

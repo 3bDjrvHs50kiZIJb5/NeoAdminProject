@@ -2,6 +2,7 @@ using FreeSql.DataAnnotations;
 
 namespace NeoAdmin.Blazor.Entities;
 
+[Table(Name = "sysuser")]
 public partial class SysUser : Entity
 {
     [Navigate(ManyToMany = typeof(SysRoleUser))]

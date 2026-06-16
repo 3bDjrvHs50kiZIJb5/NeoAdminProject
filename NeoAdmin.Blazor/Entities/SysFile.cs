@@ -5,6 +5,7 @@ namespace NeoAdmin.Blazor.Entities;
 /// <summary>
 /// 系统文件记录。
 /// </summary>
+[Table(Name = "sysfile")]
 public sealed class SysFile : EntityCreated
 {
     /// <summary>

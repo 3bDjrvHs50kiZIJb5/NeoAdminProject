@@ -5,6 +5,7 @@ namespace NeoAdmin.Blazor.Entities;
 /// <summary>
 /// 站点设置（单条记录，非多租户）。
 /// </summary>
+[Table(Name = "syssitesettings")]
 public sealed class SysSiteSettings : EntityCreated
 {
     /// <summary>

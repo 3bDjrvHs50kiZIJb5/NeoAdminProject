@@ -2,6 +2,7 @@ using FreeSql.DataAnnotations;
 
 namespace NeoAdmin.Blazor.Entities;
 
+[Table(Name = "sysdict")]
 public sealed class SysDict : Entity
 {
     public long ParentId { get; set; }

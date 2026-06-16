@@ -20,6 +20,7 @@
 @inject IHostEnvironment HostEnvironment
 @inject MenuService MenuService
 @inject MenuPermissionService MenuPermission
+@inject Microsoft.Extensions.Options.IOptions<NeoAdmin.Blazor.Data.NeoAdminOptions> NeoAdminOptionsAccessor
 
 @implements IAsyncDisposable
 
@@ -35,7 +36,7 @@
                     <SidebarHeader>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <SidebarMenuButton Size="SidebarMenuButtonSize.Large" Href="/Admin">
+                                <SidebarMenuButton Size="SidebarMenuButtonSize.Large" Href="@NeoAdminOptionsAccessor.Value.HomePath">
                                     @if (!string.IsNullOrWhiteSpace(siteSettings?.Logo))
                                     {
                                         <img src="@NavigationManager.ToMediaUrl(siteSettings.Logo)"
@@ -462,9 +463,13 @@
     private async Task UpdatePageTitleAsync()
     {
         string relativePath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Trim('/');
-        if (string.IsNullOrWhiteSpace(relativePath) || relativePath.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+        string homePath = MenuPathHelper.NormalizePagePath(NeoAdminOptionsAccessor.Value.HomePath);
+        string currentPath = string.IsNullOrWhiteSpace(relativePath)
+            ? "/"
+            : MenuPathHelper.NormalizePagePath("/" + relativePath.Split('?', 2)[0]);
+        if (MenuPathHelper.PathsEqual(currentPath, homePath))
         {
-            pageTitle = "控制台";
+            pageTitle = await ResolvePageLabelAsync(homePath);
             return;
         }
 

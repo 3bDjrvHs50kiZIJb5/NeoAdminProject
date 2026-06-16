@@ -2,6 +2,7 @@ using FreeSql.DataAnnotations;
 
 namespace NeoAdmin.Blazor.Entities;
 
+[Table(Name = "sysuserloginlog")]
 public sealed class SysUserLoginLog : Entity
 {
     public enum LogType

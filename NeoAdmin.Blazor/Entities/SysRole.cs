@@ -6,6 +6,7 @@ namespace NeoAdmin.Blazor.Entities;
 /// <summary>
 /// 角色。
 /// </summary>
+[Table(Name = "sysrole")]
 public sealed class SysRole : Entity
 {
     [Required(ErrorMessage = "请输入角色名称")]

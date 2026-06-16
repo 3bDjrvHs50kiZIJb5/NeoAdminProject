@@ -17,6 +17,11 @@ public sealed class NeoAdminOptions
     /// </summary>
     public bool EnableSeedData { get; set; } = true;
 
+    /// <summary>
+    /// 登录后默认跳转路径，以及侧栏 Logo 点击目标（如业务工作台）。
+    /// </summary>
+    public string HomePath { get; set; } = "/Admin";
+
     public bool MonitorCommand { get; set; } = true;
 
     public string SeedAdminUserName { get; set; } = "admin";

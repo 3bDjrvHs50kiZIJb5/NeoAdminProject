@@ -9,6 +9,7 @@
 @inject IToastService ToastService
 @using Microsoft.Extensions.Hosting
 @inject IHostEnvironment HostEnvironment
+@inject Microsoft.Extensions.Options.IOptions<NeoAdmin.Blazor.Data.NeoAdminOptions> NeoAdminOptionsAccessor
 @using NeoAdmin.Blazor.Entities
 @using NeoAdmin.Blazor.Services
 
@@ -219,7 +220,7 @@
       }
     }
 
-    return "/Admin";
+    return NeoAdminOptionsAccessor.Value.HomePath;
   }
 
   private void ShowSessionExpiredToastIfNeeded()

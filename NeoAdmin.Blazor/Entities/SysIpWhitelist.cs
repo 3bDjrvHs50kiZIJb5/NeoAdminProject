@@ -5,6 +5,7 @@ namespace NeoAdmin.Blazor.Entities;
 /// <summary>
 /// IP 白名单
 /// </summary>
+[Table(Name = "sysipwhitelist")]
 public sealed class SysIpWhitelist : Entity
 {
     [Column(StringLength = 300)]

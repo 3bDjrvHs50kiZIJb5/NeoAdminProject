@@ -6,6 +6,7 @@ namespace NeoAdmin.Blazor.Entities;
 /// <summary>
 /// 组织结构。
 /// </summary>
+[Table(Name = "sysorg")]
 public sealed class SysOrg : Entity
 {
     [Navigate(nameof(ParentId))]

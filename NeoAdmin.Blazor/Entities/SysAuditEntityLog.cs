@@ -5,6 +5,7 @@ namespace NeoAdmin.Blazor.Entities;
 /// <summary>
 /// 实体变更审计日志（增删改快照）。
 /// </summary>
+[Table(Name = "sysauditentitylog")]
 public class SysAuditEntityLog : EntityCreated
 {
     [Column(StringLength = 50)]

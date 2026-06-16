@@ -3,6 +3,7 @@ using FreeSql.DataAnnotations;
 
 namespace NeoAdmin.Blazor.Entities;
 
+[Table(Name = "sysmenu")]
 public sealed class SysMenu : Entity
 {
     [Navigate(nameof(ParentId))]

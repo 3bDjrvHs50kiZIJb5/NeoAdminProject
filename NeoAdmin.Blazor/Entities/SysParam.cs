@@ -2,6 +2,7 @@ using FreeSql.DataAnnotations;
 
 namespace NeoAdmin.Blazor.Entities;
 
+[Table(Name = "sysparam")]
 public sealed class SysParam : Entity
 {
     [Column(StringLength = 50)]
