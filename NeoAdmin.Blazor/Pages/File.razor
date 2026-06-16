@@ -157,7 +157,7 @@
 </div>
 
 @code {
-    private const long MaxUploadBytes = 104_857_600;
+    private const long MaxUploadBytes = 5 * 1024 * 1024;
 
     private static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
