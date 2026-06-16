@@ -267,22 +267,7 @@
             return;
         }
 
-        if (!await EnsureAuthenticatedAsync())
-        {
-            return;
-        }
-
-        siteSettings = await SiteSettingsService.GetAsync();
-        await LoadPageSearchEntriesAsync();
-        if (!await EnsurePagePermissionAsync())
-        {
-            return;
-        }
-
-        isAuthChecked = true;
-        StartSessionWatch();
-        await UpdatePageTitleAsync();
-        StateHasChanged();
+        await TryCompleteInitialAuthAsync();
     }
 
     protected override void OnInitialized()
@@ -306,6 +291,7 @@
         {
             if (!isAuthChecked)
             {
+                await TryCompleteInitialAuthAsync();
                 return;
             }
 
@@ -322,6 +308,31 @@
             await UpdatePageTitleAsync();
             StateHasChanged();
         });
+    }
+
+    private async Task TryCompleteInitialAuthAsync()
+    {
+        if (isAuthChecked)
+        {
+            return;
+        }
+
+        if (!await EnsureAuthenticatedAsync())
+        {
+            return;
+        }
+
+        siteSettings = await SiteSettingsService.GetAsync();
+        await LoadPageSearchEntriesAsync();
+        if (!await EnsurePagePermissionAsync())
+        {
+            return;
+        }
+
+        isAuthChecked = true;
+        StartSessionWatch();
+        await UpdatePageTitleAsync();
+        StateHasChanged();
     }
 
     private void StartSessionWatch()

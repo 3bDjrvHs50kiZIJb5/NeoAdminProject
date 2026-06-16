@@ -239,8 +239,18 @@ public sealed class MenuPermissionService
     return result;
   }
 
-  private static SysMenu? FindMenuByPath(IReadOnlyList<SysMenu> menus, string path) =>
-    menus.FirstOrDefault(menu => MenuPathHelper.PathsEqual(menu.Path, path));
+  private static SysMenu? FindMenuByPath(IReadOnlyList<SysMenu> menus, string path)
+  {
+    string normalized = MenuPathHelper.NormalizePagePath(path);
+    SysMenu? exact = menus.FirstOrDefault(menu =>
+      string.Equals(MenuPathHelper.NormalizePagePath(menu.Path), normalized, StringComparison.Ordinal));
+    if (exact is not null)
+    {
+      return exact;
+    }
+
+    return menus.FirstOrDefault(menu => MenuPathHelper.PathsEqual(menu.Path, path));
+  }
 
   private static bool IsPageMenuType(SysMenuType type) =>
     type is SysMenuType.菜单 or SysMenuType.增删改查 or SysMenuType.外部连接;
