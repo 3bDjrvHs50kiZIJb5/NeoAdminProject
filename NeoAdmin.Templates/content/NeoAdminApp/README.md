@@ -125,12 +125,13 @@ NeoAdmin/
 | `AnimationDemo.razor` | 动画 |
 | `DictParamDemo.razor` | 字典 / 参数 |
 | `FileCacheDemo.razor` | 文件缓存 |
+| `FileUploadDemo.razor` | NeoFileUpload 单文件/多文件上传 |
 | `NeoSelectComponentsDemo.razor` | NeoSelect 组件 |
 | `NovaButtonDemo.razor` | Nova 按钮 |
 | `PermissionGuideDemo.razor` | 权限引导 |
 | `TransactionalDemo.razor` | 事务 |
 
-`Snippets/`：`AnimationDemoSnippets.cs`、`DictParamDemoSnippets.cs`、`FileCacheDemoSnippets.cs`、`NeoSelectComponentsDemoSnippets.cs`、`NovaButtonDemoSnippets.cs`、`PermissionGuideDemoSnippets.cs`、`TransactionalDemoSnippets.cs`
+`Snippets/`：`AnimationDemoSnippets.cs`、`DictParamDemoSnippets.cs`、`FileCacheDemoSnippets.cs`、`FileUploadDemoSnippets.cs`、`NeoSelectComponentsDemoSnippets.cs`、`NovaButtonDemoSnippets.cs`、`PermissionGuideDemoSnippets.cs`、`TransactionalDemoSnippets.cs`
 
 系统管理页面（用户、角色、菜单、字典、定时任务等）在 **`NeoAdmin.Blazor/Pages/`**，路由形如 `/admin/user`，由类库提供。
 
@@ -207,3 +208,5 @@ npm run watch:css
 ```
 
 默认访问 <http://localhost:5050>。
+
+经 Nginx 等反向代理对外暴露时，须开启 **WebSocket** 转发（Blazor Server / SignalR）。示例见 [NeoAdmin.Blazor/README.md](../NeoAdmin.Blazor/README.md#部署注意反向代理--websocket)。

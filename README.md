@@ -6,7 +6,7 @@
 
 基于 **ASP.NET Core Blazor Server** 的现代化后台管理框架。UI 使用 [NeoUI.Blazor](https://neoui.io)，数据访问使用 **FreeSql**，开箱即用 SQLite。
 
-- **`NeoAdmin.Blazor`**：可复用的管理端核心（NuGet 包，当前 `1.0.15`）
+- **`NeoAdmin.Blazor`**：可复用的管理端核心（NuGet 包，当前 `1.0.30`）
 - **`NeoAdmin`**：宿主 Web 项目，演示如何扩展业务模块（博客 CRUD、REST API、定时任务、审批流等）
 - **`NeoAdmin.Templates`**：`dotnet new neoadmin` 项目模板
 
@@ -31,17 +31,20 @@
 
 - **Blazor 交互式服务端**：`InteractiveServer` 渲染，组件化开发体验
 - **NeoUI 组件库**：侧边栏布局（参照 NeoUI Blocks dashboard-02 / dashboard-11）、主题切换、表单/表格/弹层等完整 UI 能力
-- **通用 CRUD**：`CrudTable` 组件 + FreeSql，支持搜索、筛选、分页、批量删除、弹窗编辑
-- **RBAC 基础能力**：用户、角色、菜单、组织（树形）、角色-菜单/用户关联
-- **系统配置**：数据字典、系统参数、站点设置（标题/Logo 等）
-- **安全与运维**：登录鉴权（DataProtection Token）、登录日志、IP 白名单中间件、文件上传管理
-- **结构化日志**：Serilog 控制台 + 滚动文件日志，后台「系统日志」页可在线浏览
+- **通用 CRUD**：`CrudTable` 组件 + FreeSql，支持搜索、筛选、分页、批量删除、弹窗编辑；保存/删除成功自动 Toast 反馈
+- **RBAC 基础能力**：用户、角色、菜单、组织（树形）、角色-菜单/用户关联；用户管理可查看登录日志
+- **系统配置**：数据字典、系统参数、站点设置（标题/Logo 等）；多行备注使用 NeoUI `RichTextEditor`（无工具栏模式）
+- **文件上传**：`NeoFileUpload` 封装单文件/多文件上传，系统「文件管理」与站点 LOGO 等已接入
+- **安全与运维**：登录鉴权（DataProtection Token）、登录日志（数据库 + 用户页弹窗）、IP 白名单中间件
+- **结构化日志**：Serilog 控制台 + 滚动文件日志；后台「系统日志」支持筛选、自动刷新、清空 INF、删除文件；自动过滤 Blazor Circuit 断开噪声
+- **SQL 监控**：`MonitorCommand: true` 时记录失败或超过 2 秒的慢 SQL（写入日志，可在系统日志页筛选 ERR）
 - **REST API + Swagger**：`AddNeoAdminApi` 注册控制器，开发/生产可按 `IsSwagger` 开关文档 UI
 - **定时任务**：集成 [FreeScheduler](https://github.com/2881099/FreeScheduler)，支持 Cron 表达式
 - **审批流**：CRUD 页面可挂载提交/一审/拒绝/反审等按钮（博客「文章」已接入示例）
 - **雪花 ID**：Yitter.IdGenerator，多实例部署可配置 `WorkId`
 - **种子数据**：首次启动自动建表并初始化管理员、菜单、字典、参数等
-- **NeoDemo**：内置 NeoUI 组件演示页，便于对照文档与选型
+- **NeoDemo**：内置 NeoUI 组件演示页，便于对照文档与选型（含 `NeoFileUpload` 演示 `/neo-demo/comp/file-upload`）
+- **侧边栏版本**：后台侧边栏底部 Badge 显示当前 `NeoAdmin.Blazor` 框架版本
 - **Docker 部署**：多阶段镜像 + compose 卷挂载（数据库、日志、上传目录、DataProtection keys）
 
 ## 技术栈
@@ -120,6 +123,25 @@ dotnet watch run
 - 持久化卷：`neoadmin.db`、`Logs/`、`wwwroot/uploads`、`wwwroot/avatars`、`keys/`（DataProtection）
 - 访问：<http://localhost:5050>
 
+### 反向代理与 WebSocket
+
+Blazor Server 依赖 **WebSocket**（SignalR，路径 `/_blazor`）。经 Nginx 等反向代理对外暴露时，须开启 WebSocket 转发：
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:5050;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_read_timeout 3600s;
+}
+```
+
+未配置时常见现象：页面能打开但交互失效、频繁提示连接断开。多实例部署还需会话保持（sticky session）。详见 [NeoAdmin.Blazor/README.md](NeoAdmin.Blazor/README.md#部署注意反向代理--websocket)。
+
 ### 本地验证模板（维护者）
 
 修改 `NeoAdmin/` 宿主后，先同步到模板再打包验证：
@@ -138,16 +160,16 @@ dotnet new install ./NeoAdmin.Templates --force
 |------|------|------|
 | 控制台 | `/`、`/Admin` | 管理首页（基础设施监控仪表盘，宿主 `Admin.razor`） |
 | 菜单管理 | `/admin/menu` | 动态菜单、权限类型（菜单/按钮/接口/CRUD） |
-| 用户管理 | `/admin/user` | 用户 CRUD、启用状态 |
-| 角色管理 | `/admin/role` | 角色与菜单、用户绑定 |
+| 用户管理 | `/admin/user` | 用户 CRUD、启用状态、登录日志弹窗 |
+| 角色管理 | `/admin/role` | 角色与菜单、用户绑定（分配用户支持分页加载） |
 | 组织 | `/admin/org` | 树形组织结构 |
 | 字典管理 | `/admin/dict` | 字典类型与字典项 |
 | 参数配置 | `/admin/param` | 系统键值参数 |
 | 站点设置 | `/admin/site-settings` | 站点标题、Logo 等 |
 | IP 白名单 | `/admin/ip-whitelist` | 访问 IP 控制 |
-| 文件管理 | `/admin/file` | 上传文件记录与下载 |
+| 文件管理 | `/admin/file` | 上传文件记录、批量上传、下载 |
 | 定时任务 | `/admin/task-scheduler` | Cron 任务管理 |
-| 系统日志 | `/admin/system-log` | 浏览 Serilog 滚动文件，支持筛选与自动刷新 |
+| 系统日志 | `/admin/system-log` | 浏览 Serilog 滚动文件，支持级别/关键词筛选、自动刷新、清空 INF、删除日志文件 |
 | 登录 | `/login` | 登录页 |
 | NeoDemo | `/neo-demo/*` | NeoUI 组件示例（`/neo-demo/ui/*`、`/neo-demo/comp/*`） |
 | 宿主占位 | `/Home` | 预留给宿主项目自定义页面 |
@@ -175,7 +197,8 @@ dotnet new install ./NeoAdmin.Templates --force
     "DataType": "Sqlite",
     "ConnectionString": "Data Source=neoadmin.db",
     "AutoSyncStructure": true,
-    "MonitorCommand": false,
+    "MonitorCommand": true,
+    "EnableSeedData": true,
     "SeedAdminUserName": "admin",
     "SeedAdminPassword": "admin",
     "WorkId": 1,
@@ -198,7 +221,8 @@ dotnet new install ./NeoAdmin.Templates --force
 |--------|------|
 | `DataType` / `ConnectionString` | FreeSql 数据库类型与连接串（可换 MySQL、PostgreSQL 等 Provider） |
 | `AutoSyncStructure` | 是否自动同步表结构 |
-| `MonitorCommand` | 是否在控制台打印 SQL |
+| `MonitorCommand` | 是否启用 SQL 监控：失败或耗时超过 2 秒的 SQL 以 Error 级别写入日志（默认 `true`） |
+| `EnableSeedData` | 是否写入业务演示种子（组织、人事、博客等；默认 `true`） |
 | `WorkId` | 雪花算法机器号（0–63，多实例需不同） |
 | `EnableIpWhitelist` | 是否启用 IP 白名单（默认 `true`；无任何启用记录时不拦截） |
 | `IsSwagger` | 是否启用 Swagger UI；未配置时开发环境开、其它环境关 |
@@ -324,10 +348,12 @@ python3 NeoAdmin.Templates/sync-from-neoadmin.py
 
 ### UI 组件
 
-- **`CrudTable<TItem>`**：基于 FreeSql 的增删改查表格，支持列定义、筛选器、搜索、弹窗编辑模板
+- **`CrudTable<TItem>`**：基于 FreeSql 的增删改查表格，支持列定义、筛选器、搜索、弹窗编辑模板；内置保存/删除 Toast
+- **`NeoFileUpload`**：单文件/多文件上传，绑定相对路径，图片预览与非图片文件名展示
+- **`NeoAllocTable`**：主从分配弹窗，大数据量可选项支持分页与虚拟滚动
 - **`SplitPane`**：左右分栏布局（如字典管理）
 - **`NeoSelectDict` / `NeoParamText`**：字典下拉、参数文本展示
-- **`LayoutAdmin`**：带侧边栏、用户菜单的后台主布局
+- **`LayoutAdmin`**：带侧边栏、用户菜单、框架版本 Badge 的后台主布局
 
 ### Core 模块（`NeoAdmin.Blazor/Core/`）
 
@@ -383,12 +409,12 @@ NeoAdmin/
 
 ## 发布到 NuGet（GitHub Actions）
 
-仓库已配置 [`.github/workflows/publish-nuget.yml`](.github/workflows/publish-nuget.yml)：推送 **`v*` 标签**（如 `v1.0.15`）时，会自动打包并推送 **NeoAdmin.Blazor** 与 **NeoAdmin.Templates** 到 [nuget.org](https://www.nuget.org)。流水线用**标签号**作为 NuGet 版本（`v1.0.15` → `1.0.15`），但建议仓库内下列位置与标签保持一致，避免本地打包与模板引用错乱。
+仓库已配置 [`.github/workflows/publish-nuget.yml`](.github/workflows/publish-nuget.yml)：推送 **`v*` 标签**（如 `v1.0.30`）时，会自动打包并推送 **NeoAdmin.Blazor** 与 **NeoAdmin.Templates** 到 [nuget.org](https://www.nuget.org)。流水线用**标签号**作为 NuGet 版本（`v1.0.30` → `1.0.30`），但建议仓库内下列位置与标签保持一致，避免本地打包与模板引用错乱。
 
 **发布新版本**
 
 1. 执行 `python3 NeoAdmin.Templates/sync-from-neoadmin.py` 同步宿主到模板。
-2. 将下表 **4 处** 改为同一版本号（示例：`1.0.16` / `v1.0.16`）。
+2. 将下表 **4 处** 改为同一版本号（示例：`1.0.31` / `v1.0.31`）。
 3. 提交并推送 `main`，再打标签触发 NuGet 发布。
 
 | 位置 | 字段 |
@@ -396,19 +422,19 @@ NeoAdmin/
 | `NeoAdmin.Blazor/NeoAdmin.Blazor.csproj` | `<Version>`（建议在 `PropertyGroup` 首行） |
 | `NeoAdmin.Templates/NeoAdmin.Templates.csproj` | `<Version>` |
 | `NeoAdmin.Templates/content/NeoAdminApp/NeoAdminApp.csproj` | `PackageReference` → `NeoAdmin.Blazor` 的 `Version` |
-| Git 标签 | `v*`（如 `v1.0.16`，数字与上表一致） |
+| Git 标签 | `v*`（如 `v1.0.31`，数字与上表一致） |
 
 ```bash
 git push origin main
-git tag v1.0.16
-git push origin v1.0.16
+git tag v1.0.31
+git push origin v1.0.31
 ```
 
 在 **Actions** 页查看流水线；成功后安装：
 
 ```bash
 dotnet new install NeoAdmin.Templates
-# 或锁定版本：dotnet new install NeoAdmin.Templates --version 1.0.16
+# 或锁定版本：dotnet new install NeoAdmin.Templates --version 1.0.30
 mkdir MyApp && cd MyApp
 dotnet new neoadmin -n MyApp -o .
 cd MyApp && dotnet watch run
