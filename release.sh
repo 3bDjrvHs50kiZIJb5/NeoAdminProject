@@ -245,9 +245,13 @@ sync_and_bump_versions() {
 
   [[ -f "${SYNC_SCRIPT}" ]] || die "未找到同步脚本: ${SYNC_SCRIPT}"
 
-  bump_csproj_version "${BLAZOR_CSPROJ}" "${ver}"
-  bump_csproj_version "${TEMPLATES_CSPROJ}" "${ver}"
-  say "已更新 NeoAdmin.Blazor / NeoAdmin.Templates 版本为 ${ver}"
+  if [[ "${DRY_RUN}" == true ]]; then
+    say "[dry-run] 将更新 NeoAdmin.Blazor / NeoAdmin.Templates 版本为 ${ver}"
+  else
+    bump_csproj_version "${BLAZOR_CSPROJ}" "${ver}"
+    bump_csproj_version "${TEMPLATES_CSPROJ}" "${ver}"
+    say "已更新 NeoAdmin.Blazor / NeoAdmin.Templates 版本为 ${ver}"
+  fi
 
   run python3 "${SYNC_SCRIPT}"
 }
