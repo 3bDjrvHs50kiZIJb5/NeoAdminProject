@@ -411,11 +411,23 @@ NeoAdmin/
 
 仓库已配置 [`.github/workflows/publish-nuget.yml`](.github/workflows/publish-nuget.yml)：推送 **`v*` 标签**（如 `v1.0.30`）时，会自动打包并推送 **NeoAdmin.Blazor** 与 **NeoAdmin.Templates** 到 [nuget.org](https://www.nuget.org)。流水线用**标签号**作为 NuGet 版本（`v1.0.30` → `1.0.30`），但建议仓库内下列位置与标签保持一致，避免本地打包与模板引用错乱。
 
-**发布新版本**
+**发布新版本（推荐）**
+
+在仓库根目录执行 `./release.sh`（自动 patch +1、同步模板、E2E、预构建、推送 main 并打 `v*` 标签）。详见脚本内 `./release.sh --help`。
+
+```bash
+./release.sh              # 自动 patch +1（如 v1.0.34 → v1.0.35）
+./release.sh --bump minor # minor +1
+./release.sh --dry-run    # 预览步骤
+```
+
+推送 `v*` 标签后会同时触发 **NuGet**（[publish-nuget.yml](.github/workflows/publish-nuget.yml)）与 **Docker**（[publish-docker.yml](.github/workflows/publish-docker.yml)）。
+
+**手动发布**
 
 1. 执行 `python3 NeoAdmin.Templates/sync-from-neoadmin.py` 同步宿主到模板。
 2. 将下表 **4 处** 改为同一版本号（示例：`1.0.31` / `v1.0.31`）。
-3. 提交并推送 `main`，再打标签触发 NuGet 发布。
+3. 提交并推送 `main`，再打标签触发发布。
 
 | 位置 | 字段 |
 |------|------|
