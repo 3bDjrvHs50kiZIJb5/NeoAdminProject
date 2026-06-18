@@ -25,4 +25,28 @@ test.describe('后台导航', () => {
     await expect(page).toHaveURL(/\/Blog\/Article/);
     await expectCrudPage(page, '随笔文章');
   });
+
+  test('侧边栏可进入用户管理页', async ({ page }) => {
+    await page.goto('/Admin');
+    await openSidebarPage(page, '用户管理');
+
+    await expect(page).toHaveURL(/\/admin\/user/);
+    await expectCrudPage(page, '用户管理');
+  });
+
+  test('侧边栏可进入角色管理页', async ({ page }) => {
+    await page.goto('/Admin');
+    await openSidebarPage(page, '角色管理');
+
+    await expect(page).toHaveURL(/\/admin\/role/);
+    await expectCrudPage(page, '角色管理');
+  });
+
+  test('侧边栏可进入字典管理页', async ({ page }) => {
+    await page.goto('/Admin');
+    await openSidebarPage(page, '字典管理');
+
+    await expect(page).toHaveURL(/\/admin\/dict/);
+    await expectCrudPage(page, '字典分类');
+  });
 });

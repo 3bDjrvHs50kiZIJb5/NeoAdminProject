@@ -3,7 +3,7 @@ import { expect, type Page } from '@playwright/test';
 /** 等待 CrudTable 页面标题与工具栏就绪 */
 export async function expectCrudPage(page: Page, title: string) {
   await expect(page.getByRole('heading', { name: title, level: 2 })).toBeVisible();
-  await expect(page.getByRole('button', { name: '新增' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '新增' }).first()).toBeVisible();
 }
 
 /** 在 CrudTable 搜索框输入关键词并提交，等待分页信息更新 */

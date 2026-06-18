@@ -57,6 +57,22 @@ NeoAdmin 将 Token 存在浏览器 `localStorage`（`neoadmin:token`），且与
 
 未登录用例（首页、登录页等）在 spec 文件顶部调用 `configureGuestTests()`，使用空 `storageState` 与管理员态隔离。
 
+## 主要用例
+
+| 文件 | 路由 | 说明 |
+|------|------|------|
+| `login.spec.ts` | `/login` | 登录表单、校验与错误密码 |
+| `home.spec.ts` | `/` | 首页与进入后台 |
+| `admin.spec.ts` | `/Admin` | 后台首页监控卡片 |
+| `navigation.spec.ts` | 侧边栏 | 博客与系统管理导航 |
+| `crud-classify.spec.ts` | `/Blog/Classify` | 专栏列表与搜索 |
+| `crud-channel.spec.ts` | `/Blog/Channel` | 频道列表与搜索 |
+| `crud-article.spec.ts` | `/Blog/Article` | 文章列表与搜索 |
+| `admin-user.spec.ts` | `/admin/user` | 用户 CRUD、默认备注、登录日志 |
+| `admin-system-log.spec.ts` | `/admin/system-log` | 系统日志页 |
+
+单步断言超时默认 5 秒（`stepTimeout`），避免 Blazor 交互卡死。
+
 ## 版本管理说明
 
 本目录与 NeoAdmin 宿主应用同属一个 Git 仓库，随应用代码一起提交与发布。

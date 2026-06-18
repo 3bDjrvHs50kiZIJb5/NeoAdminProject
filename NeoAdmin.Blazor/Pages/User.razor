@@ -266,6 +266,11 @@ new CrudFilterInfo("用户名", "Username", CrudFilterType.Text, 2),
         e.Item.Username = e.Item.Username.Trim();
         e.Item.Nickname = e.Item.Nickname?.Trim() ?? string.Empty;
         e.Item.Description = e.Item.Description?.Trim() ?? string.Empty;
+
+        if (e.Item.Id == 0 && string.IsNullOrWhiteSpace(e.Item.Description))
+        {
+            e.Item.Description = "手动添加";
+        }
     }
 
     private async Task OpenLoginLogDialog(SysUser user)
