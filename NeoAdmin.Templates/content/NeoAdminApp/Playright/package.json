@@ -1,0 +1,13 @@
+{
+  "name": "neoadmin-playright",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "report": "playwright show-report output/playwright/report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0"
+  }
+}
