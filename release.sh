@@ -102,9 +102,9 @@ version_without_v() {
 }
 
 latest_semver_tag() {
-  # grep 无匹配时在 pipefail 下会返回 1，需容错
+  # grep 无匹配时在 pipefail 下会返回 1，需用 {} 包住 grep || true，避免 || 抢占管道优先级
   git -C "${REPO_ROOT}" tag -l 'v*' --sort=-v:refname \
-    | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true \
+    | { grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true; } \
     | head -n 1
 }
 
