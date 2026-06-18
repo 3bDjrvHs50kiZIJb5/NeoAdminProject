@@ -6,7 +6,8 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5040';
 
 /** 通过环境变量覆盖 NeoAdmin 配置，避免在应用项目内放置 E2E 专用 appsettings。 */
 const neoAdminE2eEnv: Record<string, string> = {
-  ASPNETCORE_ENVIRONMENT: 'Production',
+  // Development：dotnet run 即可提供 _framework 静态资源；Production 需先 publish
+  ASPNETCORE_ENVIRONMENT: 'Development',
   ASPNETCORE_URLS: baseURL,
   NeoAdmin__DataType: 'Sqlite',
   NeoAdmin__ConnectionString: 'Data Source=neoadmin.e2e.db',

@@ -8,15 +8,15 @@ test.describe('技术频道', () => {
   });
 
   test('列表展示种子频道数据', async ({ page }) => {
-    await expect(page.getByText('.NET')).toBeVisible();
-    await expect(page.getByText('前端')).toBeVisible();
-    await expect(page.getByText('数据库')).toBeVisible();
+    await expect(page.getByRole('cell', { name: '.NET', exact: true })).toBeVisible();
+    await expect(page.getByRole('cell', { name: '前端', exact: true })).toBeVisible();
+    await expect(page.getByRole('cell', { name: '数据库', exact: true })).toBeVisible();
   });
 
   test('可按频道名称搜索', async ({ page }) => {
     await searchCrudTable(page, /频道名称/, '数据库');
 
-    await expect(page.getByText('数据库')).toBeVisible();
-    await expect(page.getByText('.NET')).not.toBeVisible();
+    await expect(page.getByRole('cell', { name: '数据库', exact: true })).toBeVisible();
+    await expect(page.getByRole('cell', { name: '.NET', exact: true })).not.toBeVisible();
   });
 });

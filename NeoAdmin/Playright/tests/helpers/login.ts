@@ -3,7 +3,7 @@ import { expect, type Page } from '@playwright/test';
 /** 等待登录页 Blazor 表单就绪 */
 export async function gotoLoginPage(page: Page) {
   await page.goto('/login');
-  await expect(page.getByText('欢迎回来')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '欢迎回来' })).toBeVisible();
   await expect(page.locator('#userName')).toBeVisible();
 }
 

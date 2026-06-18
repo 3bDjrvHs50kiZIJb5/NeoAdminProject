@@ -8,7 +8,7 @@ test.describe('登录页', () => {
   test('展示登录表单', async ({ page }) => {
     await page.goto('/login');
 
-    await expect(page.getByText('欢迎回来')).toBeVisible();
+    await expect(page.getByRole('heading', { name: '欢迎回来' })).toBeVisible();
     await expect(page.locator('#userName')).toBeVisible();
     await expect(page.locator('#password')).toBeVisible();
     await expect(page.getByRole('button', { name: '登录' })).toBeVisible();

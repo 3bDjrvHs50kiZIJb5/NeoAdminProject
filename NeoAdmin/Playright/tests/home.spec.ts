@@ -17,6 +17,6 @@ test.describe('首页', () => {
     await page.getByRole('link', { name: '进入后台' }).click();
 
     await expect(page).toHaveURL(/\/login/);
-    await expect(page.getByText('欢迎回来')).toBeVisible();
+    await expect(page.getByRole('heading', { name: '欢迎回来' })).toBeVisible();
   });
 });

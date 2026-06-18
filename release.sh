@@ -102,8 +102,9 @@ version_without_v() {
 }
 
 latest_semver_tag() {
+  # grep 无匹配时在 pipefail 下会返回 1，需容错
   git -C "${REPO_ROOT}" tag -l 'v*' --sort=-v:refname \
-    | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+    | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true \
     | head -n 1
 }
 
@@ -201,8 +202,17 @@ check_git_state() {
     fi
   fi
 
-  if [[ -n "$(git -C "${REPO_ROOT}" status --porcelain)" ]]; then
-    die "工作区有未提交改动，请先 commit 后再发布"
+  if [[ -n "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)" ]]; then
+    say "错误：以下已跟踪文件有未提交改动，请先 commit 后再发布：" >&2
+    git -C "${REPO_ROOT}" status --short --untracked-files=no >&2
+    exit 1
+  fi
+
+  local untracked
+  untracked="$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=normal | grep '^??' || true)"
+  if [[ -n "${untracked}" ]]; then
+    say "提示：工作区有未跟踪文件（不影响发布）："
+    say "${untracked}"
   fi
 
   local tag="${1}"

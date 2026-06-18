@@ -5,7 +5,7 @@ const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? 'admin';
 
 export async function loginAsAdmin(page: Page) {
   await page.goto('/login');
-  await expect(page.getByText('欢迎回来')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '欢迎回来' })).toBeVisible();
 
   await page.locator('#userName').fill(adminUsername);
   await page.locator('#password').fill(adminPassword);
