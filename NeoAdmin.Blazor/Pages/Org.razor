@@ -5,23 +5,11 @@
 @using NeoAdmin.Blazor.Entities
 @using NeoAdmin.Blazor.Services
 @inject OrgService OrgService
+@inject IToastService ToastService
 
 <PageTitle>组织结构</PageTitle>
 
 <div class="flex flex-col flex-1 min-h-0 overflow-hidden">
-    @if (!string.IsNullOrWhiteSpace(message))
-    {
-        <Alert Variant="@messageVariant" AccentBorder="true" Class="mb-3 shrink-0">
-            <Icon>
-                <LucideIcon Name="@GetMessageIcon()" Class="h-4 w-4" />
-            </Icon>
-            <ChildContent>
-                <AlertTitle>@GetMessageTitle()</AlertTitle>
-                <AlertDescription>@message</AlertDescription>
-            </ChildContent>
-        </Alert>
-    }
-
     <CrudTable @ref="table"
                TItem="SysOrg"
                Title="组织结构"
@@ -172,8 +160,6 @@
     private CrudTable<SysOrg> table = default!;
     private List<SysOrg> flatOrgs = new();
     private Dictionary<long, int> orgLevels = new();
-    private string? message;
-    private AlertVariant messageVariant = AlertVariant.Default;
 
     private Task InitQuery(CrudQueryInfo e)
     {
@@ -216,11 +202,10 @@
         ApiResult<SysOrg> result = await OrgService.SaveAsync(item);
         if (!result.Succeeded)
         {
-            ShowError(result.Message);
+            ToastService.Error("保存失败", result.Message);
             return false;
         }
 
-        ShowSuccess(result.Message);
         if (result.Data is not null)
         {
             item.Id = result.Data.Id;
@@ -234,11 +219,10 @@
         ApiResult result = await OrgService.DeleteAsync(item.Id);
         if (!result.Succeeded)
         {
-            ShowError(result.Message);
+            ToastService.Error("删除失败", result.Message);
             return false;
         }
 
-        ShowSuccess(result.Message);
         return true;
     }
 
@@ -260,7 +244,6 @@
             item.Sort = GetNextSortLocal(item.ParentId);
         }
 
-        ClearMessage();
         return Task.CompletedTask;
     }
 
@@ -333,26 +316,6 @@
         Walk(orgs);
         return rows;
     }
-
-    private void ShowSuccess(string value)
-    {
-        message = value;
-        messageVariant = AlertVariant.Success;
-    }
-
-    private void ShowError(string value)
-    {
-        message = value;
-        messageVariant = AlertVariant.Destructive;
-    }
-
-    private string GetMessageTitle() =>
-        messageVariant == AlertVariant.Success ? "操作成功" : "操作失败";
-
-    private string GetMessageIcon() =>
-        messageVariant == AlertVariant.Success ? "circle-check" : "circle-x";
-
-    private void ClearMessage() => message = null;
 
     private int GetOrgLevel(SysOrg org) => orgLevels.GetValueOrDefault(org.Id);
 }

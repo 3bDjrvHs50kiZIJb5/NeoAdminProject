@@ -15,19 +15,6 @@
 <PageTitle>角色管理</PageTitle>
 
 <div class="flex flex-col flex-1 min-h-0 overflow-hidden">
-    @if (!string.IsNullOrWhiteSpace(message))
-    {
-        <Alert Variant="@messageVariant" AccentBorder="true" Class="mb-3 shrink-0">
-            <Icon>
-                <LucideIcon Name="@GetMessageIcon()" Class="h-4 w-4" />
-            </Icon>
-            <ChildContent>
-                <AlertTitle>@GetMessageTitle()</AlertTitle>
-                <AlertDescription>@message</AlertDescription>
-            </ChildContent>
-        </Alert>
-    }
-
     <CrudTable @ref="table"
                TItem="SysRole"
                Title="角色管理"
@@ -170,8 +157,6 @@
 
 @code {
     private CrudTable<SysRole> table = default!;
-    private string? message;
-    private AlertVariant messageVariant = AlertVariant.Default;
     private string clientIp = "-";
 
     private SysRole? allocUserRole;
@@ -198,11 +183,10 @@
         ApiResult<SysRole> result = await RoleService.SaveAsync(item);
         if (!result.Succeeded)
         {
-            ShowError(result.Message);
+            ToastService.Error("保存失败", result.Message);
             return false;
         }
 
-        ShowSuccess(result.Message);
         if (result.Data is not null)
         {
             item.Id = result.Data.Id;
@@ -216,11 +200,10 @@
         ApiResult result = await RoleService.DeleteAsync(item.Id);
         if (!result.Succeeded)
         {
-            ShowError(result.Message);
+            ToastService.Error("删除失败", result.Message);
             return false;
         }
 
-        ShowSuccess(result.Message);
         return true;
     }
 
@@ -229,7 +212,7 @@
         if (e.Items.Any(a => a.IsAdministrator))
         {
             e.Cancel = true;
-            ShowError("不能删除系统角色");
+            ToastService.Error("删除失败", "不能删除系统角色");
             return;
         }
     }
@@ -306,22 +289,4 @@
         Walk(menus, 0);
         return result;
     }
-
-    private void ShowSuccess(string value)
-    {
-        message = value;
-        messageVariant = AlertVariant.Success;
-    }
-
-    private void ShowError(string value)
-    {
-        message = value;
-        messageVariant = AlertVariant.Destructive;
-    }
-
-    private string GetMessageTitle() =>
-        messageVariant == AlertVariant.Success ? "操作成功" : "操作失败";
-
-    private string GetMessageIcon() =>
-        messageVariant == AlertVariant.Success ? "circle-check" : "circle-x";
 }

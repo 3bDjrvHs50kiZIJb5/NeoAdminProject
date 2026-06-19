@@ -11,19 +11,6 @@
 <PageTitle>菜单管理</PageTitle>
 
 <div class="flex flex-col flex-1 min-h-0 overflow-hidden">
-    @if (!string.IsNullOrWhiteSpace(message))
-    {
-        <Alert Variant="@messageVariant" AccentBorder="true" Class="mb-3 shrink-0">
-            <Icon>
-                <LucideIcon Name="@GetMessageIcon()" Class="h-4 w-4" />
-            </Icon>
-            <ChildContent>
-                <AlertTitle>@GetMessageTitle()</AlertTitle>
-                <AlertDescription>@message</AlertDescription>
-            </ChildContent>
-        </Alert>
-    }
-
     <CrudTable @ref="table"
                TItem="SysMenu"
                Title="菜单管理"
@@ -223,9 +210,6 @@
     private readonly List<AuditButtonOption> auditButtonOptions = AuditMenuDefinitions.CreateAuditButtons()
         .Select(button => new AuditButtonOption(button.Path, button.Label))
         .ToList();
-    private string? message;
-    private AlertVariant messageVariant = AlertVariant.Default;
-
     private Task InitQuery(CrudQueryInfo e)
     {
         e.Filters =
@@ -324,11 +308,10 @@
         ApiResult<SysMenu> result = await MenuService.SaveAsync(model);
         if (!result.Succeeded)
         {
-            ShowError(result.Message);
+            ToastService.Error("保存失败", result.Message);
             return false;
         }
 
-        ShowSuccess(result.Message);
         if (result.Data is not null)
         {
             item.Id = result.Data.Id;
@@ -341,12 +324,10 @@
         ApiResult result = await MenuService.DeleteAsync(item.Id);
         if (!result.Succeeded)
         {
-            ShowError(result.Message);
             ToastService.Error("删除失败", result.Message);
             return false;
         }
 
-        ShowSuccess(result.Message);
         return true;
     }
 
@@ -387,7 +368,6 @@
             LoadAuditButtonSelection(item.Id);
         }
 
-        ClearMessage();
         return Task.CompletedTask;
     }
 
@@ -509,41 +489,5 @@
 
         Walk(menus);
         return rows;
-    }
-
-    private void ShowSuccess(string value)
-    {
-        message = value;
-        messageVariant = AlertVariant.Success;
-    }
-
-    private void ShowError(string value)
-    {
-        message = value;
-        messageVariant = AlertVariant.Destructive;
-    }
-
-    private string GetMessageTitle()
-    {
-        return messageVariant == AlertVariant.Success ? "操作成功" : "操作失败";
-    }
-
-    private string GetMessageIcon()
-    {
-        return messageVariant == AlertVariant.Success ? "circle-check" : "circle-x";
-    }
-
-    private void ClearMessage()
-    {
-        message = null;
-    }
-
-    private async Task CreateRootMenu()
-    {
-        SysMenu root = new()
-        {
-            Icon = "circle"
-        };
-        await table.EditItemAsync(root);
     }
 }
