@@ -74,9 +74,9 @@ public sealed class MenuService
                 .ExecuteAffrowsAsync();
         }
 
-        if (model.GenerateCrudButtons || model.Type == SysMenuType.增删改查)
+        if (model.Type == SysMenuType.增删改查)
         {
-            await EnsureCrudButtonsAsync(menu.Id);
+            SyncCrudButtons(freeSql, menu.Id, model.GenerateCrudButtons);
         }
 
         SyncAuditButtons(freeSql, menu.Id, model.AuditButtonPaths);
@@ -156,6 +156,59 @@ public sealed class MenuService
         return path.StartsWith('/') ? path : "/" + path;
     }
 
+    public static void SyncCrudButtons(IFreeSql freeSql, long parentId, bool generate)
+    {
+        if (generate)
+        {
+            bool isSystem = freeSql.Select<SysMenu>().Where(a => a.Id == parentId).First(a => a.IsSystem);
+            foreach (SysMenu template in CreateCrudButtonTemplates(parentId, isSystem))
+            {
+                EnsureCrudButton(freeSql, parentId, template, isSystem);
+            }
+
+            return;
+        }
+
+        List<long> removeIds = freeSql.Select<SysMenu>()
+            .Where(menu => menu.ParentId == parentId && CrudButtonPaths.Contains(menu.Path))
+            .ToList(menu => menu.Id);
+
+        if (removeIds.Count == 0)
+        {
+            return;
+        }
+
+        freeSql.Delete<SysRoleMenu>().Where(link => removeIds.Contains(link.MenuId)).ExecuteAffrows();
+        freeSql.Delete<SysMenu>().Where(menu => removeIds.Contains(menu.Id)).ExecuteAffrows();
+    }
+
+    private static readonly string[] CrudButtonPaths = ["add", "edit", "remove"];
+
+    private static SysMenu[] CreateCrudButtonTemplates(long parentId, bool isSystem) =>
+    [
+        NewButton(parentId, "添加", "add", 301, isSystem),
+        NewButton(parentId, "编辑", "edit", 302, isSystem),
+        NewButton(parentId, "删除", "remove", 303, isSystem)
+    ];
+
+    private static void EnsureCrudButton(IFreeSql freeSql, long parentId, SysMenu template, bool isSystem)
+    {
+        SysMenu? existing = freeSql.Select<SysMenu>()
+            .Where(menu => menu.ParentId == parentId && menu.Path == template.Path)
+            .First();
+        if (existing is null)
+        {
+            freeSql.Insert(template).ExecuteAffrows();
+        }
+        else if (existing.IsSystem != isSystem)
+        {
+            freeSql.Update<SysMenu>()
+                .Where(menu => menu.Id == existing.Id)
+                .Set(menu => menu.IsSystem, isSystem)
+                .ExecuteAffrows();
+        }
+    }
+
     public static void EnsureAuditButtons(IFreeSql freeSql, long parentId) =>
         EnsureAuditButtons(
             freeSql,
@@ -214,27 +267,6 @@ public sealed class MenuService
                 .Where(menu => menu.Id == existing.Id)
                 .Set(menu => menu.IsSystem, isSystem)
                 .ExecuteAffrows();
-        }
-    }
-
-    private async Task EnsureCrudButtonsAsync(long parentId)
-    {
-        bool isSystem = await freeSql.Select<SysMenu>().Where(a => a.Id == parentId).FirstAsync(a => a.IsSystem);
-        SysMenu[] buttons =
-        [
-            NewButton(parentId, "添加", "add", 301, isSystem),
-            NewButton(parentId, "编辑", "edit", 302, isSystem),
-            NewButton(parentId, "删除", "remove", 303, isSystem)
-        ];
-
-        foreach (SysMenu button in buttons)
-        {
-            bool exists = await freeSql.Select<SysMenu>()
-                .AnyAsync(a => a.ParentId == parentId && a.Path == button.Path);
-            if (!exists)
-            {
-                await freeSql.Insert(button).ExecuteAffrowsAsync();
-            }
         }
     }
 

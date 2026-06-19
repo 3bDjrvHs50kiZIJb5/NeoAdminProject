@@ -332,7 +332,7 @@ string.Join(",", tags.Select(a => a.Id))),
 
         if (!AuditWorkflowRules.CanEdit(e.Item))
         {
-            ToastService.Error("保存失败", "正在审批中，无法修改！");
+            ToastService.Error("保存失败", AuditWorkflowRules.GetEditBlockedMessage(e.Item) ?? "当前审批状态不允许修改。");
             e.Cancel = true;
         }
 

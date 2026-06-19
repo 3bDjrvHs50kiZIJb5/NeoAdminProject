@@ -82,14 +82,13 @@
                         <th class="px-2 py-2 text-left">错误</th>
                         <th class="px-2 py-2 text-left">最后运行</th>
                         <th class="px-2 py-2 text-left">下次运行</th>
-                        <th class="px-2 py-2 text-left">创建时间</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (pageResult is null || pageResult.Tasks.Count == 0)
                     {
                         <tr>
-                            <td colspan="11" class="px-4 py-10 text-center text-muted-foreground">
+                            <td colspan="10" class="px-4 py-10 text-center text-muted-foreground">
                                 @(isLoaded ? "暂无数据" : "加载中...")
                             </td>
                         </tr>
@@ -145,7 +144,6 @@
                                 <td class="px-2 py-2">@item.ErrorTimes</td>
                                 <td class="px-2 py-2">@item.LastRunTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
                                 <td class="px-2 py-2">@(nextTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")</td>
-                                <td class="px-2 py-2">@item.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
                             </tr>
                         }
                     }

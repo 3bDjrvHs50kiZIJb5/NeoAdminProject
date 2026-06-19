@@ -6,9 +6,20 @@ namespace NeoAdmin.Blazor.SeedData;
 
 public static class MenuSeedData
 {
+    private const string SeedVersionKey = "NeoAdmin.Blazor.MenuSeedVersion";
+
+    /// <summary>系统菜单迁移逻辑变更时递增，触发一次全量同步。</summary>
+    private const string CurrentSeedVersion = "1";
+
     public static void Ensure(IFreeSql freeSql)
     {
+        if (StartupSeedVersion.IsApplied(freeSql, SeedVersionKey, CurrentSeedVersion))
+        {
+            return;
+        }
+
         EnsureMenus(freeSql, CreateMenus());
+        StartupSeedVersion.MarkApplied(freeSql, SeedVersionKey, CurrentSeedVersion);
     }
 
     public static void EnsureMenus(IFreeSql freeSql, IEnumerable<SysMenu> menus)
@@ -28,7 +39,8 @@ public static class MenuSeedData
                         && a.Type == target.Type)
             .First();
 
-        if (current is null)
+        bool isNewInsert = current is null;
+        if (isNewInsert)
         {
             current = Copy(target, parentId);
             freeSql.Insert(current).ExecuteAffrows();
@@ -36,7 +48,13 @@ public static class MenuSeedData
 
         foreach (SysMenu child in target.Children)
         {
-            EnsureRecursive(freeSql, child, current.Id);
+            // 已有菜单：不再自动补按钮/接口等权限点子节点，避免覆盖菜单管理里的勾选结果
+            if (!isNewInsert && child.Type.IsPermissionNode())
+            {
+                continue;
+            }
+
+            EnsureRecursive(freeSql, child, current!.Id);
         }
     }
 

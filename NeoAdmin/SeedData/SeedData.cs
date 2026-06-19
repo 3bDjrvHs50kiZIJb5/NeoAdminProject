@@ -79,6 +79,18 @@ public static class SeedData
         {
             InsertUserLikes(freeSql, adminUserId, adminUsername);
         }
+
+        EnsureDemoApprovedArticle(freeSql);
+    }
+
+    /// <summary>演示用：固定一篇已通过审批的文章，便于 E2E 与审批流 UI 验证。</summary>
+    private static void EnsureDemoApprovedArticle(IFreeSql freeSql)
+    {
+        freeSql.Update<Article>()
+            .Where(a => a.Id == ArticleIdBase + 50)
+            .Set(a => a.AuditStatus, SysAuditStatus.通过)
+            .Set(a => a.AuditStep, string.Empty)
+            .ExecuteAffrows();
     }
 
     private static void InsertClassifies(IFreeSql freeSql, long adminUserId, string adminUsername)

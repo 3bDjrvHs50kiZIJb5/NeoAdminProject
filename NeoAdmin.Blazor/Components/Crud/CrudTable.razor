@@ -242,9 +242,11 @@
                     }
                     else if (EditTemplate != null)
                     {
-                        <fieldset disabled class="space-y-4 opacity-90">
-                            @EditTemplate(editor)
-                        </fieldset>
+                        <CascadingValue Value="true" Name="IsCrudViewMode">
+                            <div class="crud-editor-readonly space-y-4">
+                                @EditTemplate(editor)
+                            </div>
+                        </CascadingValue>
                     }
                 </div>
                 <DialogFooter Class="@(EditorDialogIsFullScreen ? "mt-4 shrink-0" : "mt-4")">
@@ -532,6 +534,32 @@
     (IsRowView && IsView && (ViewTemplate != null || EditTemplate != null));
     private bool ShowToolbarRemove => IsRemove && (IsMultiSelect || IsSingleSelect);
     private bool HasSelectedRows => selectedRows.Count > 0;
+
+    /// <summary>
+    /// 重置勾选行。须分配新列表实例，不可 <c>Clear()</c> 原地清空，
+    /// 否则 NeoUI DataTable 因 <c>SelectedItems</c> 引用未变而不会同步内部勾选状态。
+    /// </summary>
+    private void ResetSelectedRows() => selectedRows = new List<CrudGridRow<TItem>>();
+
+    private async Task ResetSelectedKeysAsync()
+    {
+        if (SelectionKey is null || SelectedKeys is not { Count: > 0 })
+        {
+            return;
+        }
+
+        SelectedKeys = new HashSet<object>();
+        if (SelectedKeysChanged.HasDelegate)
+        {
+            await SelectedKeysChanged.InvokeAsync(SelectedKeys);
+        }
+    }
+
+    private async Task ClearSelectionAsync()
+    {
+        ResetSelectedRows();
+        await ResetSelectedKeysAsync();
+    }
     private bool UseCascadeSelection => IsCascadeSelection && LevelSelector != null;
     private DataTableSelectionMode SelectionMode =>
         IsSingleSelect ? DataTableSelectionMode.None :
@@ -709,7 +737,7 @@
 
     public void ClearSelection()
     {
-        selectedRows.Clear();
+        ResetSelectedRows();
         StateHasChanged();
     }
 
@@ -814,7 +842,7 @@
         }
         else if (!KeepSelectionOnPaging)
         {
-            selectedRows.Clear();
+            ResetSelectedRows();
         }
     }
 
@@ -845,7 +873,7 @@
 
         if (IsWorkflowAudit && editor is EntityAudited auditedEditor && !AuditWorkflowRules.CanEdit(auditedEditor))
         {
-            ToastService.Error("保存失败", "正在审批中，无法修改！");
+            ToastService.Error("保存失败", AuditWorkflowRules.GetEditBlockedMessage(auditedEditor) ?? "当前审批状态不允许修改。");
             return;
         }
 
@@ -919,9 +947,9 @@
         if (IsWorkflowAudit)
         {
             TItem? locked = items.FirstOrDefault(item => item is EntityAudited audited && !AuditWorkflowRules.CanEdit(audited));
-            if (locked is not null)
+            if (locked is EntityAudited auditedLocked)
             {
-                ToastService.Error(RemoveText, "正在审批中，无法删除！");
+                ToastService.Error(RemoveText, AuditWorkflowRules.GetEditBlockedMessage(auditedLocked) ?? "当前审批状态不允许删除。");
                 return false;
             }
         }
@@ -978,7 +1006,7 @@
             : $"已成功删除 {items.Count} 条{Title}记录";
         ToastService.Success(RemoveText, deleteToastMessage);
 
-        selectedRows.Clear();
+        await ClearSelectionAsync();
         await LoadAsync();
         return true;
     }
@@ -1064,6 +1092,12 @@
 
     public async Task EditItemAsync(TItem item)
     {
+        if (IsWorkflowAudit && item is EntityAudited audited && !AuditWorkflowRules.CanEdit(audited))
+        {
+            await ViewItemAsync(item);
+            return;
+        }
+
         editor = CloneItem(item);
         isNewItem = false;
         isViewMode = false;
@@ -1472,7 +1506,7 @@
     {
         if (string.IsNullOrEmpty(value))
         {
-            selectedRows.Clear();
+            ResetSelectedRows();
         }
         else
         {

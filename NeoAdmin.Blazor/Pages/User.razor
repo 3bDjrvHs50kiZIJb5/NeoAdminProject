@@ -64,12 +64,6 @@
                 @(row.Item.LoginTime == default ? "-" : row.Item.LoginTime.ToString("yyyy-MM-dd HH:mm"))
             </CellTemplate>
         </DataTableColumn>
-        <DataTableColumn TData="CrudGridRow<SysUser>" TValue="string" Property="@(row => row.Item.Description)"
-            Header="备注">
-            <CellTemplate Context="row">
-                <span class="block truncate" title="@row.Item.Description">@row.Item.Description</span>
-            </CellTemplate>
-        </DataTableColumn>
         <DataTableColumn TData="CrudGridRow<SysUser>" TValue="string" Property="@(_ => string.Empty)"
             Header="创建时间" Sortable="false" Width="160px">
             <CellTemplate Context="row">@row.Item.CreatedTime.ToString("yyyy-MM-dd HH:mm:ss")</CellTemplate>

@@ -46,6 +46,37 @@
   word-break: break-all;
 }
 
+/**
+ * 查看模式（审核中/已通过等不可编辑记录）：Tab 可切换，审批面板可操作，其余表单只读。
+ * 替代 fieldset[disabled]，避免 Tab 与审批按钮被一并禁用。
+ */
+.crud-editor-readonly [role="tablist"],
+.crud-editor-readonly [role="tab"] {
+  pointer-events: auto;
+}
+
+.crud-editor-readonly [role="tabpanel"] {
+  pointer-events: none;
+  user-select: none;
+}
+
+.crud-editor-readonly [role="tabpanel"] .crud-audit-panel,
+.crud-editor-readonly [role="tabpanel"] .crud-audit-panel * {
+  pointer-events: auto;
+  user-select: auto;
+}
+
+.crud-editor-readonly:not(:has([role="tablist"])) > * {
+  pointer-events: none;
+  user-select: none;
+}
+
+.crud-editor-readonly:not(:has([role="tablist"])) .crud-audit-panel,
+.crud-editor-readonly:not(:has([role="tablist"])) .crud-audit-panel * {
+  pointer-events: auto;
+  user-select: auto;
+}
+
 /* 列表纵向滚动时固定表头（滚动容器为 DataTable 的 overflow-y-auto 外层） */
 .crud-table [data-keyboard-nav] thead th {
   position: sticky;

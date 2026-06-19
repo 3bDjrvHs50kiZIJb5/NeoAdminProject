@@ -383,7 +383,7 @@
         }
         else
         {
-            generateCrudButtons = item.Type == SysMenuType.增删改查;
+            LoadCrudButtonSelection(item.Id);
             LoadAuditButtonSelection(item.Id);
         }
 
@@ -397,6 +397,12 @@
         {
             option.Selected = false;
         }
+    }
+
+    private void LoadCrudButtonSelection(long menuId)
+    {
+        generateCrudButtons = flatMenus.Any(menu =>
+            menu.ParentId == menuId && menu.Path is "add" or "edit" or "remove");
     }
 
     private void LoadAuditButtonSelection(long menuId)

@@ -2,6 +2,7 @@ using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -19,6 +20,7 @@ using NeoAdmin.Blazor.Core.Scheduling;
 using NeoAdmin.Blazor.SeedData;
 using NeoAdmin.Blazor.Services;
 using NeoAdmin.Blazor.Swagger;
+using NeoUI.Blazor;
 using FreeScheduler;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -45,6 +47,10 @@ public static class NeoAdminExtensions
         {
             services.Configure(configureOptions);
         }
+
+        // NeoUI 默认 Singleton，多用户会互相看到 Toast；按 Blazor Circuit 隔离为当前客户端
+        services.RemoveAll<IToastService>();
+        services.AddScoped<IToastService, ToastService>();
 
         services.AddSingleton(serviceProvider =>
         {

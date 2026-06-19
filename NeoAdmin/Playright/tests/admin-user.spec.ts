@@ -1,5 +1,10 @@
 import { test, expect } from './fixtures';
-import { expectCrudPage } from './helpers/page';
+import {
+  expectApiLoginFailure,
+  expectApiLoginSuccess,
+  registerViaApi,
+} from './helpers/api-login';
+import { expectCrudPage, searchCrudTable } from './helpers/page';
 import { uniqueUsername } from './helpers/user';
 
 const stepTimeout = 5_000;
@@ -43,5 +48,30 @@ test.describe('用户管理', () => {
     await expect(logDialog).toBeVisible({ timeout: stepTimeout });
     await expect(logDialog.getByText(/共 \d+ 条记录/)).toBeVisible({ timeout: stepTimeout });
     await expect(logDialog.getByRole('columnheader', { name: '时间' })).toBeVisible({ timeout: stepTimeout });
+  });
+
+  test('API 登录会写入登录日志', async ({ page, request }) => {
+    const username = uniqueUsername();
+    const password = 'Test1234';
+
+    await registerViaApi(request, username, password);
+    await expectApiLoginSuccess(request, username, password);
+    await expectApiLoginFailure(request, username, 'wrong-password');
+
+    await page.goto('/admin/user');
+    await expectCrudPage(page, '用户管理');
+    await searchCrudTable(page, '账号/姓名..', username);
+
+    const row = page.getByRole('row').filter({ hasText: username }).first();
+    await expect(row).toBeVisible({ timeout: stepTimeout });
+    await row.getByRole('button', { name: '日志' }).click();
+
+    const logDialog = page.getByRole('dialog').filter({ hasText: '登录日志' });
+    await expect(logDialog).toBeVisible({ timeout: stepTimeout });
+    await expect(logDialog.getByText(/共 [1-9]\d* 条记录/)).toBeVisible({ timeout: stepTimeout });
+    await expect(logDialog.getByText('登陆成功').first()).toBeVisible({ timeout: stepTimeout });
+    await expect(logDialog.getByText('登陆失败').first()).toBeVisible({ timeout: stepTimeout });
+    await expect(logDialog.getByText('API register')).toBeVisible({ timeout: stepTimeout });
+    await expect(logDialog.getByText(/failed:\d+/).first()).toBeVisible({ timeout: stepTimeout });
   });
 });
