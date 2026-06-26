@@ -57,6 +57,9 @@ appsettings.*.local.json
 # Node
 node_modules/
 
+# 更新日志：dotnet build 时 scripts/generate_git_changelog.py 会刷新 Data/git-changelog.json，入库作为生产环境兜底
+# NeoAdmin/Data/git-changelog.json 与 NeoAdmin/scripts/generate_git_changelog.py 须纳入版本管理
+
 # Cursor / local AI（根目录个人配置不上传；宿主与模板 rules 纳入版本管理）
 .claude/
 .cursor/

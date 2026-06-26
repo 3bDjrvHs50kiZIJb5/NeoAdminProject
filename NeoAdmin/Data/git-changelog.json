@@ -1,5 +1,11 @@
 [
   {
+    "shortHash": "4d86441",
+    "committedAt": "2026-06-26T20:43:00+08:00",
+    "subject": "发布 v1.0.37：更新日志、语音输入与站点品牌默认图",
+    "body": "新增 NeoUpdateLog/NeoVoiceInput 组件及演示页，站点设置与登录页支持默认品牌图，移除 StartupSeedVersion 种子机制，并修复用户管理 E2E 断言。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
     "shortHash": "091bebe",
     "committedAt": "2026-06-19T21:14:04+08:00",
     "subject": "chore: 发布 v1.0.36",
@@ -292,11 +298,5 @@
     "committedAt": "2026-06-10T10:21:40+08:00",
     "subject": "chore: 发布 v1.0.20",
     "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "9756812",
-    "committedAt": "2026-06-10T10:09:52+08:00",
-    "subject": "更新 Timeline 演示为交替布局与图标组合式 API",
-    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
   }
 ]
