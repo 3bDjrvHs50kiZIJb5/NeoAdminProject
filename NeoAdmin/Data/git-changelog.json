@@ -1,5 +1,11 @@
 [
   {
+    "shortHash": "0bcada6",
+    "committedAt": "2026-06-26T21:00:45+08:00",
+    "subject": "更新 Git 更新日志并同步模板",
+    "body": ""
+  },
+  {
     "shortHash": "4d86441",
     "committedAt": "2026-06-26T20:43:00+08:00",
     "subject": "发布 v1.0.37：更新日志、语音输入与站点品牌默认图",
@@ -292,11 +298,5 @@
     "committedAt": "2026-06-10T19:33:16+08:00",
     "subject": "添加 GitHub Actions Docker 镜像发布流水线",
     "body": "推送 v* 标签时构建 NeoAdmin 镜像并发布到 GHCR。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "6ef50cf",
-    "committedAt": "2026-06-10T10:21:40+08:00",
-    "subject": "chore: 发布 v1.0.20",
-    "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
   }
 ]
