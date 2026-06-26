@@ -5,17 +5,17 @@ using BlazorMenuSeedData = NeoAdmin.Blazor.SeedData.MenuSeedData;
 namespace NeoAdmin.SeedData;
 
 /// <summary>
-/// NeoDemo 演示菜单种子（宿主专用）：清理旧数据并写入菜单树。
+/// NeoDemo 演示菜单种子（宿主专用）：迁移旧菜单并增量写入菜单树。
 /// </summary>
 public static class DemoMenuSeedData
 {
     public static void Ensure(IFreeSql freeSql)
     {
-        Clear(freeSql);
+        MigrateLegacy(freeSql);
         BlazorMenuSeedData.EnsureMenus(freeSql, CreateMenus());
     }
 
-    private static void Clear(IFreeSql freeSql)
+    private static void MigrateLegacy(IFreeSql freeSql)
     {
         RemoveLegacyDemoRoots(freeSql);
         RemoveMovedBusinessDemoMenus(freeSql);
@@ -30,17 +30,6 @@ public static class DemoMenuSeedData
                         && !a.Path.StartsWith("/neo-demo/comp/")
                         && !a.Path.StartsWith("/neo-demo/ui/"))
             .ExecuteAffrows();
-
-        long? neoDemoId = freeSql.Select<SysMenu>()
-            .Where(a => a.ParentId == 0 && a.IsSystem && a.Label == "NeoDemo")
-            .First(a => (long?)a.Id);
-
-        if (neoDemoId is not null)
-        {
-            freeSql.Delete<SysMenu>()
-                .Where(a => a.ParentId == neoDemoId && a.IsSystem && a.Path.StartsWith("/neo-demo/"))
-                .ExecuteAffrows();
-        }
     }
 
     private static void RemoveLegacyDemoRoots(IFreeSql freeSql)
@@ -129,6 +118,8 @@ public static class DemoMenuSeedData
                 BlazorMenuSeedData.Page("字典和参数", "/neo-demo/comp/dict-param", 402, "sliders-horizontal"),
                 BlazorMenuSeedData.Page("权限说明", "/neo-demo/comp/permission-guide", 407, "book-open"),
                 BlazorMenuSeedData.Page("上传组件", "/neo-demo/comp/file-upload", 408, "upload"),
+                BlazorMenuSeedData.Page("语音输入", "/neo-demo/comp/voice-input", 409, "mic"),
+                BlazorMenuSeedData.Page("更新日志", "/neo-demo/comp/update-log", 410, "scroll-text"),
                 BlazorMenuSeedData.Menu("按钮权限", "shield", "/neo-demo/comp/nova-button", 403, children:
                 [
                     BlazorMenuSeedData.Button("允许演示", "check", "demo_allow", 301),

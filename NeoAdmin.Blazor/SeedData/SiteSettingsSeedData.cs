@@ -18,8 +18,6 @@ public static class SiteSettingsSeedData
             Host = "localhost",
             Host2 = "127.0.0.1",
             Description = "NeoAdmin 管理后台",
-            Logo = "/_content/NeoAdmin.Blazor/images/logo.png",
-            LoginImage = "/_content/NeoAdmin.Blazor/images/login_bg.png",
             IsEnabled = true
         }).ExecuteAffrows();
     }

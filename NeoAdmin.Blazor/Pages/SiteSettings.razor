@@ -1,6 +1,7 @@
 @page "/admin/site-settings"
 @layout LayoutAdmin
 @using NeoAdmin.Blazor.Core.Identity
+@using NeoAdmin.Blazor.Data
 @using NeoAdmin.Blazor.Entities
 @using NeoAdmin.Blazor.Services
 @inject SiteSettingsService SiteSettingsService
@@ -58,11 +59,10 @@
                     </div>
                     <div class="space-y-2">
                         <Label For="site-description">说明</Label>
-                        <RichTextEditor Id="site-description"
-                                        @bind-Value="model.Description"
-                                        Toolbar="ToolbarPreset.None"
-                                        MinHeight="96px"
-                                        Class="w-full" />
+                        <Textarea Id="site-description"
+                                  Class="min-h-24 w-full"
+                                  MaxLength="500"
+                                  @bind-Value="model.Description" />
                     </div>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="space-y-2">
@@ -99,8 +99,9 @@
                                        UploadDirectory="site"
                                        Accept="image/*"
                                        MaxFileSize="5242880"
+                                       DefaultPreviewUrl="@NeoAdminSiteDefaults.LogoPath"
                                        PreviewLabel="当前已设置"
-                                       EmptyHint="尚未设置 LOGO，选择图片后将自动上传。"
+                                       EmptyHint="尚未上传自定义 LOGO，留空则使用默认 LOGO。"
                                        ClearButtonText="清除 LOGO"
                                        ImageAlt="LOGO 预览"
                                        ShowToastOnSuccess="false"
@@ -114,8 +115,9 @@
                                        UploadDirectory="site"
                                        Accept="image/*"
                                        MaxFileSize="5242880"
+                                       DefaultPreviewUrl="@NeoAdminSiteDefaults.LoginImagePath"
                                        PreviewLabel="当前已设置"
-                                       EmptyHint="尚未设置登录页配图，选择图片后将自动上传。"
+                                       EmptyHint="尚未上传自定义登录页配图，留空则使用默认配图。"
                                        ClearButtonText="清除登录图"
                                        ImageAlt="登录页预览"
                                        ShowToastOnSuccess="false"

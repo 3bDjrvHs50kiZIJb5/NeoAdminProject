@@ -10,38 +10,26 @@
 @using Microsoft.Extensions.Hosting
 @inject IHostEnvironment HostEnvironment
 @inject Microsoft.Extensions.Options.IOptions<NeoAdmin.Blazor.Data.NeoAdminOptions> NeoAdminOptionsAccessor
+@using NeoAdmin.Blazor.Data
 @using NeoAdmin.Blazor.Entities
 @using NeoAdmin.Blazor.Services
 
 @{
-    var hasLoginImage = !string.IsNullOrWhiteSpace(siteSettings?.LoginImage);
+    var loginImageUrl = NavigationManager.ToMediaUrl(
+        NeoAdminSiteDefaults.ResolveLoginImage(siteSettings?.LoginImage));
+    var logoUrl = NavigationManager.ToMediaUrl(
+        NeoAdminSiteDefaults.ResolveLogo(siteSettings?.Logo));
 }
-<div class="@(hasLoginImage
-         ? "relative w-full max-w-5xl min-h-[26rem] overflow-hidden rounded-xl"
-         : "w-full max-w-sm")">
-    @if (hasLoginImage)
-    {
-        <img src="@NavigationManager.ToMediaUrl(siteSettings!.LoginImage)" alt=""
-            class="absolute inset-0 h-full w-full object-cover" />
-    }
-    <div class="@(hasLoginImage
-             ? "relative z-10 flex min-h-[inherit] items-center justify-end sm:p-6 md:p-10 lg:p-12"
-             : "flex items-center justify-center")">
+<div class="relative w-full max-w-5xl min-h-[26rem] overflow-hidden rounded-xl">
+    <img src="@loginImageUrl" alt=""
+        class="absolute inset-0 h-full w-full object-cover" />
+    <div class="relative z-10 flex min-h-[inherit] items-center justify-end sm:p-6 md:p-10 lg:p-12">
         <div class="w-full" style="max-width: 24rem;">
-            <Card Class="@(hasLoginImage ? "@container shadow-lg" : "@container")">
+            <Card Class="@@container shadow-lg">
                 <CardHeader Class="space-y-1 pb-4">
                     <div class="mb-2 flex items-center justify-center">
-                        @if (!string.IsNullOrWhiteSpace(siteSettings?.Logo))
-                        {
-                            <img src="@NavigationManager.ToMediaUrl(siteSettings.Logo)" alt=""
-                                class="size-10 rounded-xl object-cover" />
-                        }
-                        else
-                        {
-                            <div class="flex size-10 items-center justify-center rounded-xl bg-foreground">
-                                <LucideIcon Name="layers" Size="18" Class="text-background" />
-                            </div>
-                        }
+                        <img src="@logoUrl" alt=""
+                            class="size-10 rounded-xl object-cover" />
                     </div>
                     <CardTitle Class="text-center text-xl font-semibold">欢迎回来</CardTitle>
                     <CardDescription Class="text-center">登录 @(siteSettings?.Title ?? "NeoAdmin") 管理后台</CardDescription>

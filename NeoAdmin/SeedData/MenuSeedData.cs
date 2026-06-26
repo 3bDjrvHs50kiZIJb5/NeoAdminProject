@@ -1,4 +1,5 @@
 using FreeSql;
+using NeoAdmin.Blazor.Data;
 using NeoAdmin.Blazor.Entities;
 using NeoAdmin.Blazor.SeedData;
 using BlazorMenuSeedData = NeoAdmin.Blazor.SeedData.MenuSeedData;
@@ -10,24 +11,13 @@ namespace NeoAdmin.SeedData;
 /// </summary>
 public static class MenuSeedData
 {
-    private const string SeedVersionKey = "NeoAdmin.MenuSeedVersion";
-
-    /// <summary>菜单迁移逻辑变更时递增，触发一次全量同步。</summary>
-    private const string CurrentSeedVersion = "1";
-
-    public static void Ensure(IFreeSql freeSql)
+    public static void Ensure(IFreeSql freeSql, NeoAdminOptions options)
     {
-        if (StartupSeedVersion.IsApplied(freeSql, SeedVersionKey, CurrentSeedVersion))
+        if (!options.EnableSeedData)
         {
             return;
         }
 
-        EnsureCore(freeSql);
-        StartupSeedVersion.MarkApplied(freeSql, SeedVersionKey, CurrentSeedVersion);
-    }
-
-    private static void EnsureCore(IFreeSql freeSql)
-    {
         DemoMenuSeedData.Ensure(freeSql);
         BlazorMenuSeedData.EnsureMenus(freeSql, CreateMenus());
     }

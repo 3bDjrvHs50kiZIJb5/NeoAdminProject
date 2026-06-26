@@ -1,0 +1,62 @@
+@page "/neo-demo/comp/voice-input"
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Components
+@inject ILogger<VoiceInputDemo> Logger
+
+<PageTitle>语音输入</PageTitle>
+
+<div class="neo-admin-page-scroll flex min-h-0 flex-1 flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">NeoVoiceInput 语音输入</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                多行文本 + 麦克风按钮，基于 DashScope Paraformer 实时语音识别。宿主需在
+                <code class="rounded bg-muted px-1 py-0.5 text-xs">appsettings.json</code> 配置
+                <code class="rounded bg-muted px-1 py-0.5 text-xs">DashScope:ApiKey</code>，
+                并在 <code class="rounded bg-muted px-1 py-0.5 text-xs">App.razor</code> 引入 SignalR 与
+                <code class="rounded bg-muted px-1 py-0.5 text-xs">_content/NeoAdmin.Blazor/js/voice-input.js</code>。
+            </p>
+        </div>
+
+        <div class="space-y-6 p-4">
+            <DemoSection Title="基础用法"
+                         Description="点击麦克风开始口述，再次点击结束；识别结果实时写入文本框。"
+                         Code="@BasicSnippet">
+                <div class="max-w-2xl">
+                    <NeoVoiceInput @bind-Value="_notes"
+                                   Label="备注内容"
+                                   Placeholder="点击右侧麦克风开始口述……" />
+                </div>
+            </DemoSection>
+
+            <DemoSection Title="绑定值"
+                         Description="当前文本框内容可用于表单提交或保存。"
+                         Code="@ValueSnippet">
+                <p class="text-sm text-muted-foreground">
+                    当前值：@(string.IsNullOrWhiteSpace(_notes) ? "（空）" : _notes)
+                </p>
+            </DemoSection>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string _notes = string.Empty;
+
+    private const string BasicSnippet = """
+<NeoVoiceInput @bind-Value="notes"
+               Label="备注内容"
+               Placeholder="点击右侧麦克风开始口述……" />
+""";
+
+    private const string ValueSnippet = """
+@code {
+    private string notes = string.Empty;
+}
+""";
+
+    protected override void OnInitialized()
+    {
+        Logger.LogInformation("NeoVoiceInput 演示页加载完成");
+    }
+}

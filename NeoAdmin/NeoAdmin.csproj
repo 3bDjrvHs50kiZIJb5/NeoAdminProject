@@ -45,4 +45,12 @@
   <Target Name="BuildTailwindCss" BeforeTargets="ResolveProjectStaticWebAssets" Condition="'$(BuildTailwind)' == 'true' and Exists('$(ProjectDir)package.json')">
     <Exec Command="npm run build:css" WorkingDirectory="$(ProjectDir)" />
   </Target>
+
+  <ItemGroup>
+    <Content Update="Data/git-changelog.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Condition="Exists('$(ProjectDir)Data/git-changelog.json')" />
+  </ItemGroup>
+
+  <Target Name="GenerateGitChangelog" BeforeTargets="BeforeBuild">
+    <Exec Command="python3 &quot;$(ProjectDir)scripts/generate_git_changelog.py&quot; &quot;$(ProjectDir)Data/git-changelog.json&quot; 50" IgnoreExitCode="true" WorkingDirectory="$(ProjectDir)" />
+  </Target>
 </Project>

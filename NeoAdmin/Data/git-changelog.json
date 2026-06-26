@@ -1,0 +1,302 @@
+[
+  {
+    "shortHash": "091bebe",
+    "committedAt": "2026-06-19T21:14:04+08:00",
+    "subject": "chore: 发布 v1.0.36",
+    "body": "移除菜单/角色/组织页与 CrudTable Toast 重复的 Alert 通知，失败提示统一走 Toast。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "07793c4",
+    "committedAt": "2026-06-19T20:17:11+08:00",
+    "subject": "修复审批流查看模式与菜单权限种子覆盖问题",
+    "body": "- 不可编辑审批记录双击改为查看模式，优化阻断提示与只读弹窗样式\n- 引入 StartupSeedVersion，菜单 CRUD/审批勾选持久化不再被每次启动覆盖\n- Toast 按 Blazor Circuit 隔离；CrudTable 勾选重置；用户/定时任务列表列调整\n- 补充 E2E 与演示已通过文章种子数据，同步模板\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "7c72753",
+    "committedAt": "2026-06-18T17:50:13+08:00",
+    "subject": "补充 Playwright E2E 用例并为用户管理添加默认备注",
+    "body": "新增文章、用户管理、系统日志等 E2E 测试，扩展系统管理导航覆盖；新建用户未填备注时默认写入「手动添加」。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "58d2d82",
+    "committedAt": "2026-06-18T16:56:26+08:00",
+    "subject": "修复 release.sh 中 latest_semver_tag 管道优先级问题",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "355a639",
+    "committedAt": "2026-06-18T16:55:33+08:00",
+    "subject": "修复 E2E：Development 环境启动与 Playwright 选择器歧义",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "7ef547d",
+    "committedAt": "2026-06-18T16:50:31+08:00",
+    "subject": "release: v1.0.35",
+    "body": ""
+  },
+  {
+    "shortHash": "0ed513a",
+    "committedAt": "2026-06-18T16:50:27+08:00",
+    "subject": "修复 release.sh dry-run 仍会修改 csproj 版本号的问题",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "02b4780",
+    "committedAt": "2026-06-18T16:49:57+08:00",
+    "subject": "添加 release.sh 发布脚本与 Playwright E2E 测试",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "640c075",
+    "committedAt": "2026-06-16T20:08:03+08:00",
+    "subject": "将文件管理页单文件上传上限调整为 5MB",
+    "body": "与 NeoFileUpload 默认限制及其他页面保持一致。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "678bd86",
+    "committedAt": "2026-06-16T15:37:21+08:00",
+    "subject": "chore: 发布 v1.0.34",
+    "body": "- 新增 NeoAdminOptions.HomePath，登录跳转与侧栏 Logo 可配置\n- 系统实体显式指定 [Table] 小写表名，兼容 SQLite\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "6c1bf6d",
+    "committedAt": "2026-06-16T15:04:39+08:00",
+    "subject": "chore: 发布 v1.0.33",
+    "body": "修复 LayoutAdmin 首屏鉴权竞态与带 query 参数的菜单路径匹配问题。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "36c3bda",
+    "committedAt": "2026-06-16T14:27:16+08:00",
+    "subject": "chore: 发布 v1.0.32",
+    "body": "登录页提交按钮改为默认实心样式；同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "bc518f2",
+    "committedAt": "2026-06-16T09:14:12+08:00",
+    "subject": "chore: 发布 v1.0.31",
+    "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号；含 v1.0.30 后文档更新（WebSocket 反向代理部署指南等）。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "13ead02",
+    "committedAt": "2026-06-16T09:08:05+08:00",
+    "subject": "更新说明文档至 v1.0.30，补充 WebSocket 反向代理部署指南",
+    "body": "同步近期功能说明（NeoFileUpload、登录日志、SQL 监控等），并在各 README 与开发上手文档中说明 Blazor Server 部署须开启 WebSocket 转发。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "e5f744a",
+    "committedAt": "2026-06-15T21:40:38+08:00",
+    "subject": "chore: 发布 v1.0.30",
+    "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "be41311",
+    "committedAt": "2026-06-15T21:35:34+08:00",
+    "subject": "优化分配表可选项分页加载",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "692595c",
+    "committedAt": "2026-06-14T15:41:06+08:00",
+    "subject": "用无工具栏 RichTextEditor 替换 Textarea，并移除 IME 输入补丁",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "e836e54",
+    "committedAt": "2026-06-14T10:58:15+08:00",
+    "subject": "chore: 发布 v1.0.29",
+    "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "77cf960",
+    "committedAt": "2026-06-14T10:42:33+08:00",
+    "subject": "新增 NeoFileUpload 组件并重构文件上传相关页面",
+    "body": "封装单文件/多文件上传、预览与清除逻辑，统一 File 管理、站点设置与演示页用法，并同步模板。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "1001c9c",
+    "committedAt": "2026-06-14T08:54:09+08:00",
+    "subject": "chore: 发布 v1.0.28",
+    "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "5e9173f",
+    "committedAt": "2026-06-14T08:45:55+08:00",
+    "subject": "修复 MapStaticAssets 指纹文件名绕过 IME input.js 补丁",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "e7f890a",
+    "committedAt": "2026-06-14T08:16:39+08:00",
+    "subject": "修复中文 IME 输入时拼音残留，运行时替换 NeoUI input.js",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "7bbe0b9",
+    "committedAt": "2026-06-13T23:57:01+08:00",
+    "subject": "增强系统日志管理并优化 SQL 监控与开发静态资源加载",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "391c32f",
+    "committedAt": "2026-06-13T23:33:20+08:00",
+    "subject": "增强 CrudTable 操作反馈、文件管理与用户登录日志，过滤 Blazor 断开日志噪声",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "756dd88",
+    "committedAt": "2026-06-13T22:43:05+08:00",
+    "subject": "增强随笔专栏与 SQL 监控，同步模板至 v1.0.27",
+    "body": "- FreeSql CommandAfter 记录 SQL 耗时，MonitorCommand 默认开启\n- 随笔专栏支持多选删除与封面图上传预览\n- 随笔文章移除标题筛选器\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "e1c9ad1",
+    "committedAt": "2026-06-13T16:43:33+08:00",
+    "subject": "更新工作区配置并纳入模板项目",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "0e01363",
+    "committedAt": "2026-06-13T16:42:06+08:00",
+    "subject": "提交宿主 Tailwind CSS 修复 Docker 构建",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "a4625b1",
+    "committedAt": "2026-06-13T16:33:05+08:00",
+    "subject": "chore: 发布 v1.0.26",
+    "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "27920c8",
+    "committedAt": "2026-06-13T16:30:42+08:00",
+    "subject": "调整 Tailwind 构建开关并同步模板",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "3fb10d6",
+    "committedAt": "2026-06-13T15:30:54+08:00",
+    "subject": "修复 Docker/CI 构建时 Tailwind CSS 未生成导致线上 404",
+    "body": "镜像内安装 Node 并在 publish 前编译 CSS；调整 csproj 静态资源纳入时机并移除 SkipTailwindBuild。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "c1ff760",
+    "committedAt": "2026-06-13T15:14:06+08:00",
+    "subject": "chore: 发布 v1.0.25",
+    "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "ab0bdb5",
+    "committedAt": "2026-06-13T15:13:24+08:00",
+    "subject": "侧边栏底部以 Badge 显示 NeoAdmin.Blazor 框架版本",
+    "body": "从程序集 InformationalVersion 读取版本号，折叠侧边栏时自动隐藏。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "0af6712",
+    "committedAt": "2026-06-13T15:05:52+08:00",
+    "subject": "chore: 发布 v1.0.24",
+    "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "042f1fc",
+    "committedAt": "2026-06-13T15:04:36+08:00",
+    "subject": "添加 VS Code 多根工作区配置",
+    "body": "便于同时打开 NeoAdmin 宿主与 NeoAdmin.Blazor 框架项目。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "daed437",
+    "committedAt": "2026-06-13T14:54:57+08:00",
+    "subject": "修复 LayoutAdmin 侧栏账户菜单会话检查竞态导致的空引用",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "45245a6",
+    "committedAt": "2026-06-13T14:28:02+08:00",
+    "subject": "Docker 发布跳过 Tailwind 构建，支持 SkipTailwindBuild 参数",
+    "body": "镜像内不再安装 Node.js，发布时直接复用源码中的 tailwind.css。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "00ad5cd",
+    "committedAt": "2026-06-13T13:00:17+08:00",
+    "subject": "修复系统日志页表格区域滚动布局",
+    "body": "改用 flex 填满可用高度，表头筛选与分页固定，仅日志列表内部滚动。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "3684379",
+    "committedAt": "2026-06-13T12:47:09+08:00",
+    "subject": "chore: 发布 v1.0.23",
+    "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "0ea03f7",
+    "committedAt": "2026-06-13T12:46:18+08:00",
+    "subject": "补充 Serilog 日志开发文档与 Cursor 规则，移除根目录重复上手文档",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "4df9e6a",
+    "committedAt": "2026-06-13T09:53:59+08:00",
+    "subject": "IP 白名单校验覆盖 /login 页面",
+    "body": "移除 /login 路径的豁免，启用白名单后登录页同样受 IP 限制。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "5ec354d",
+    "committedAt": "2026-06-12T11:05:38+08:00",
+    "subject": "chore: 发布 v1.0.22",
+    "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号；含 SysTask Status/Interval 列映射修复。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "06ee61f",
+    "committedAt": "2026-06-12T10:53:03+08:00",
+    "subject": "修复 SysTask 的 Status/Interval 列映射与 FreeScheduler 一致",
+    "body": "NeoAdmin 先于 FreeScheduler 执行 SyncStructure 时未将枚举映射为字符串，导致 PostgreSQL 建成 int 列；现与 FreeSqlHandler 对齐为 varchar。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "aeac4aa",
+    "committedAt": "2026-06-12T09:21:05+08:00",
+    "subject": "chore: 发布 v1.0.21",
+    "body": "移除审计与站点设置实体的自定义表名，统一 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "8153c05",
+    "committedAt": "2026-06-12T08:56:56+08:00",
+    "subject": "用户关联组织、优化侧栏与 CrudTable 布局，登录页改用 Toast",
+    "body": "- SysUser 增加 OrgId 与 SysOrg 多对一关系，用户管理页支持组织选择与展示\n- 侧栏菜单悬停/选中样式统一加深，CrudTable 工具栏与表头保持单行\n- 登录成功/失败及会话失效改用 Toast 提示\n- 同步模板 tailwind 构建产物\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "00d6346",
+    "committedAt": "2026-06-11T20:29:17+08:00",
+    "subject": "添加开发上手指南并同步到宿主与模板项目",
+    "body": "在 monorepo 根目录、NeoAdmin 宿主及 dotnet 模板中纳入 NEOADMIN开发上手.md，\n并扩展 sync-from-neoadmin.py 支持文档同步与 NeoAdminApp 命名空间转换。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "f6826ba",
+    "committedAt": "2026-06-11T19:32:55+08:00",
+    "subject": "为宿主与 dotnet 模板添加 Cursor 开发规则",
+    "body": "dotnet new 创建的项目将自带 NeoAdmin 开发约定；同步脚本支持 rules 模板化转换。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "d291a52",
+    "committedAt": "2026-06-10T19:34:49+08:00",
+    "subject": "推送到 main 时自动构建并发布 Docker 镜像",
+    "body": "每次 main 分支提交推送 latest、main 与短 commit SHA 标签。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "fc31fd6",
+    "committedAt": "2026-06-10T19:33:16+08:00",
+    "subject": "添加 GitHub Actions Docker 镜像发布流水线",
+    "body": "推送 v* 标签时构建 NeoAdmin 镜像并发布到 GHCR。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "6ef50cf",
+    "committedAt": "2026-06-10T10:21:40+08:00",
+    "subject": "chore: 发布 v1.0.20",
+    "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "9756812",
+    "committedAt": "2026-06-10T10:09:52+08:00",
+    "subject": "更新 Timeline 演示为交替布局与图标组合式 API",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  }
+]

@@ -6,21 +6,22 @@ namespace NeoAdmin.Blazor.SeedData;
 
 public static class MenuSeedData
 {
-    private const string SeedVersionKey = "NeoAdmin.Blazor.MenuSeedVersion";
-
-    /// <summary>系统菜单迁移逻辑变更时递增，触发一次全量同步。</summary>
-    private const string CurrentSeedVersion = "1";
-
+    /// <summary>
+    /// 仅在系统菜单尚未初始化时写入框架 /admin 菜单种子，不受 <see cref="Data.NeoAdminOptions.EnableSeedData"/> 影响。
+    /// </summary>
     public static void Ensure(IFreeSql freeSql)
     {
-        if (StartupSeedVersion.IsApplied(freeSql, SeedVersionKey, CurrentSeedVersion))
+        if (!NeedsInitialSystemMenus(freeSql))
         {
             return;
         }
 
         EnsureMenus(freeSql, CreateMenus());
-        StartupSeedVersion.MarkApplied(freeSql, SeedVersionKey, CurrentSeedVersion);
     }
+
+    /// <summary>库中尚无 /admin/menu 时表示系统菜单未初始化。</summary>
+    private static bool NeedsInitialSystemMenus(IFreeSql freeSql) =>
+        !freeSql.Select<SysMenu>().Any(a => a.Path == "/admin/menu");
 
     public static void EnsureMenus(IFreeSql freeSql, IEnumerable<SysMenu> menus)
     {

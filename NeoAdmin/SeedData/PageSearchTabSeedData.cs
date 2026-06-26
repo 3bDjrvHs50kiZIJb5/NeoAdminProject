@@ -21,6 +21,8 @@ public static class PageSearchTabSeedData
         new("/neo-demo/comp/permission-guide", "nova-api", "权限-NovaButton与API"),
         new("/neo-demo/comp/file-upload", "image", "上传组件-图片"),
         new("/neo-demo/comp/file-upload", "file", "上传组件-文件"),
+        new("/neo-demo/comp/voice-input", "basic", "NeoVoiceInput"),
+        new("/neo-demo/comp/update-log", "file", "NeoUpdateLog JSON 文件"),
         new("/neo-demo/comp/select-components", "select-dict", "NeoSelectDict"),
         new("/neo-demo/comp/select-components", "select-enum", "NeoSelectEnum"),
         new("/neo-demo/comp/select-components", "select-entity", "NeoSelectEntity"),

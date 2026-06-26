@@ -7,7 +7,7 @@ namespace NeoAdmin.Blazor.SeedData;
 
 /// <summary>
 /// 为指定页面菜单补齐审批流按钮权限点。
-/// 仅在菜单版本迁移（<see cref="StartupSeedVersion"/> 递增后的 EnsureCore）中调用一次；
+/// 仅在旧库升级、且该页尚无审批按钮时手动调用一次；
 /// 不要放在 <c>DataSetup.Initialize</c> 里每次启动执行，否则会覆盖用户在菜单管理里取消勾选的审批按钮。
 /// </summary>
 public static class AuditMenuSeedData

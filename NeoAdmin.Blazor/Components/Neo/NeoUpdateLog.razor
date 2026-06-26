@@ -1,0 +1,154 @@
+@namespace NeoAdmin.Blazor.Components
+@using NeoAdmin.Blazor.Data
+
+@{
+    IReadOnlyList<NeoUpdateLogEntry> items = Entries?.ToList() ?? [];
+}
+
+@if (ShowCard)
+{
+    <Card>
+        <CardHeader>
+            <CardTitle>@Title</CardTitle>
+            @if (!string.IsNullOrWhiteSpace(Description))
+            {
+                <CardDescription>@Description</CardDescription>
+            }
+        </CardHeader>
+        <CardContent class="w-full p-4 pt-0">
+            @RenderTimeline(items)
+        </CardContent>
+    </Card>
+}
+else
+{
+    @RenderTimeline(items)
+}
+
+@code {
+    /// <summary>更新记录数组，直接引用即可展示。</summary>
+    [Parameter, EditorRequired]
+    public IEnumerable<NeoUpdateLogEntry> Entries { get; set; } = [];
+
+    [Parameter]
+    public string Title { get; set; } = "更新日志";
+
+    [Parameter]
+    public string? Description { get; set; } = "最近版本更新记录";
+
+    [Parameter]
+    public bool ShowCard { get; set; } = true;
+
+    [Parameter]
+    public string EmptyText { get; set; } = "暂无更新记录。";
+
+    [Parameter]
+    public string Icon { get; set; } = "tag";
+
+    [Parameter]
+    public string DateFormat { get; set; } = "yyyy-MM-dd";
+
+    [Parameter]
+    public string DetailHeading { get; set; } = "更新内容";
+
+    private RenderFragment RenderTimeline(IReadOnlyList<NeoUpdateLogEntry> items) => __builder =>
+    {
+        if (items.Count == 0)
+        {
+            __builder.OpenElement(0, "p");
+            __builder.AddAttribute(1, "class", "py-4 text-sm text-muted-foreground");
+            __builder.AddContent(2, EmptyText);
+            __builder.CloseElement();
+            return;
+        }
+
+        __builder.OpenComponent<Timeline>(3);
+        __builder.AddAttribute(4, "Align", TimelineAlign.Left);
+        __builder.AddAttribute(5, "Class", "w-full");
+        __builder.AddAttribute(6, "ChildContent", (RenderFragment)(timelineBuilder =>
+        {
+            for (int i = 0; i < items.Count; i++)
+            {
+                NeoUpdateLogEntry entry = items[i];
+                IReadOnlyList<string> detailLines = entry.GetDetailLines();
+                bool showConnector = i < items.Count - 1;
+                int seq = i * 100;
+
+                timelineBuilder.OpenComponent<TimelineItem>(seq);
+                timelineBuilder.AddAttribute(seq + 1, "Status", TimelineStatus.Completed);
+                timelineBuilder.AddAttribute(seq + 2, "ShowConnector", showConnector);
+                if (detailLines.Count > 0)
+                {
+                    timelineBuilder.AddAttribute(seq + 3, "IsCollapsible", true);
+                }
+
+                timelineBuilder.AddAttribute(seq + 4, "IconContent", (RenderFragment)(iconBuilder =>
+                {
+                    iconBuilder.OpenComponent<TimelineIcon>(seq + 10);
+                    iconBuilder.AddAttribute(seq + 11, "Color", TimelineColor.Primary);
+                    iconBuilder.AddAttribute(seq + 12, "ChildContent", (RenderFragment)(inner =>
+                    {
+                        inner.OpenComponent<LucideIcon>(seq + 13);
+                        inner.AddAttribute(seq + 14, "Name", Icon);
+                        inner.AddAttribute(seq + 15, "Size", 16);
+                        inner.CloseComponent();
+                    }));
+                    iconBuilder.CloseComponent();
+                }));
+
+                timelineBuilder.AddAttribute(seq + 5, "ChildContent", (RenderFragment)(contentBuilder =>
+                {
+                    contentBuilder.OpenComponent<TimelineContent>(seq + 20);
+                    contentBuilder.AddAttribute(seq + 21, "Class", "w-full min-w-0");
+                    contentBuilder.AddAttribute(seq + 22, "ChildContent", (RenderFragment)(headerBuilder =>
+                    {
+                        headerBuilder.OpenComponent<TimelineHeader>(seq + 23);
+                        headerBuilder.AddAttribute(seq + 24, "ChildContent", (RenderFragment)(titleBuilder =>
+                        {
+                            titleBuilder.OpenComponent<TimelineTitle>(seq + 25);
+                            titleBuilder.AddAttribute(seq + 26, "ChildContent", (RenderFragment)(__ => __.AddContent(0, entry.Title)));
+                            titleBuilder.CloseComponent();
+
+                            titleBuilder.OpenComponent<TimelineTime>(seq + 27);
+                            titleBuilder.AddAttribute(seq + 28, "ChildContent", (RenderFragment)(__ => __.AddContent(0, entry.Date.ToString(DateFormat))));
+                            titleBuilder.CloseComponent();
+                        }));
+                        headerBuilder.CloseComponent();
+                    }));
+                    contentBuilder.CloseComponent();
+                }));
+
+                if (detailLines.Count > 0)
+                {
+                    timelineBuilder.AddAttribute(seq + 6, "DetailContent", (RenderFragment)(detailBuilder =>
+                    {
+                        detailBuilder.OpenComponent<TimelineContent>(seq + 30);
+                        detailBuilder.AddAttribute(seq + 31, "Class", "mt-2 w-full min-w-0 space-y-2 rounded-md border bg-muted/30 p-4 text-sm");
+                        detailBuilder.AddAttribute(seq + 32, "ChildContent", (RenderFragment)(detailInnerBuilder =>
+                        {
+                            detailInnerBuilder.OpenElement(seq + 33, "p");
+                            detailInnerBuilder.AddAttribute(seq + 34, "class", "font-semibold");
+                            detailInnerBuilder.AddContent(seq + 35, DetailHeading);
+                            detailInnerBuilder.CloseElement();
+
+                            detailInnerBuilder.OpenElement(seq + 36, "ul");
+                            detailInnerBuilder.AddAttribute(seq + 37, "class", "list-inside list-disc space-y-1 text-muted-foreground");
+                            int lineSeq = seq + 38;
+                            foreach (string line in detailLines)
+                            {
+                                detailInnerBuilder.OpenElement(lineSeq++, "li");
+                                detailInnerBuilder.AddContent(lineSeq++, line);
+                                detailInnerBuilder.CloseElement();
+                            }
+                            detailInnerBuilder.CloseElement();
+                        }));
+                        detailBuilder.CloseComponent();
+                    }));
+                }
+
+                timelineBuilder.CloseComponent();
+            }
+        }));
+        __builder.CloseComponent();
+    };
+}

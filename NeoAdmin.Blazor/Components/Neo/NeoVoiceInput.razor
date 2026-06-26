@@ -1,0 +1,242 @@
+@namespace NeoAdmin.Blazor.Components
+@using Microsoft.JSInterop
+@using NeoAdmin.Blazor.Services.Voice
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject ILogger<NeoVoiceInput> Logger
+
+<div class="space-y-2">
+    @if (!string.IsNullOrWhiteSpace(Label))
+    {
+        <Label For="@fieldId">@Label</Label>
+    }
+
+    <div class="relative @GetContainerClass()">
+        <Textarea Id="@fieldId"
+                  Rows="@Rows"
+                  Class="@GetTextareaClass()"
+                  Placeholder="@Placeholder"
+                  Disabled="@IsFieldDisabled"
+                  @bind-Value="Value"
+                  @bind-Value:after="NotifyValueChangedAsync" />
+
+        <div class="absolute right-3 top-3 flex size-10 items-center justify-center">
+            @if (_isRecording)
+            {
+                <span class="absolute -inset-1.5 animate-spin rounded-full border-2 border-destructive/15 border-t-destructive border-r-destructive/50"
+                      aria-hidden="true"></span>
+                <span class="absolute inset-0 rounded-full bg-destructive/20 animate-ping"
+                      aria-hidden="true"></span>
+            }
+
+            <Button Type="ButtonType.Button"
+                    Variant="@(_isRecording ? ButtonVariant.Destructive : ButtonVariant.Secondary)"
+                    Size="ButtonSize.Icon"
+                    Class="@GetMicButtonClass()"
+                    Title="@(_isRecording ? "点击结束识别" : "点击开始语音录入")"
+                    Disabled="@IsMicDisabled"
+                    OnClick="ToggleVoiceAsync">
+                @if (_isConnecting)
+                {
+                    <LucideIcon Name="loader-circle" Size="20" Class="animate-spin" />
+                    <span class="sr-only">连接中</span>
+                }
+                else if (_isRecording)
+                {
+                    <LucideIcon Name="square" Size="18" />
+                    <span class="sr-only">结束语音录入</span>
+                }
+                else
+                {
+                    <LucideIcon Name="mic" Size="20" />
+                    <span class="sr-only">开始语音录入</span>
+                }
+            </Button>
+        </div>
+    </div>
+
+    @if (_isConnecting)
+    {
+        <p class="text-sm text-muted-foreground">正在连接语音识别服务……</p>
+    }
+    else if (_isRecording)
+    {
+        <p class="flex items-center gap-2 text-sm text-primary">
+            <LucideIcon Name="loader-circle" Size="14" Class="shrink-0 animate-spin" />
+            <span class="relative flex size-2">
+                <span class="absolute inline-flex size-full animate-ping rounded-full bg-primary/60 opacity-75" aria-hidden="true"></span>
+                <span class="relative inline-flex size-2 rounded-full bg-primary" aria-hidden="true"></span>
+            </span>
+            正在聆听，请口述内容……再次点击麦克风结束录入。
+        </p>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <p class="text-sm text-destructive">@_errorMessage</p>
+    }
+
+    @if (ChildContent is not null)
+    {
+        @ChildContent
+    }
+</div>
+
+@code {
+    private readonly string fieldId;
+    private bool _isRecording;
+    private bool _isConnecting;
+    private string? _errorMessage;
+    private DotNetObjectReference<NeoVoiceInput>? _dotNetRef;
+
+    public NeoVoiceInput()
+    {
+        fieldId = $"neo-voice-{Guid.NewGuid():N}";
+    }
+
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnValueChanged { get; set; }
+
+    [Parameter]
+    public string? Label { get; set; }
+
+    [Parameter]
+    public string Placeholder { get; set; } = "点击右侧麦克风开始口述，系统将实时转写为文字；再次点击结束录入。";
+
+    [Parameter]
+    public int Rows { get; set; } = 5;
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    [Parameter]
+    public string HubUrl { get; set; } = NeoAdminVoiceDefaults.HubPath;
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private bool IsFieldDisabled => Disabled || _isConnecting;
+    private bool IsMicDisabled => Disabled || _isConnecting;
+
+    private string GetTextareaClass()
+    {
+        const string baseClass = "min-h-24 w-full resize-y pr-14 transition-shadow duration-300";
+        var recordingClass = _isRecording ? " ring-2 ring-destructive/30 ring-offset-2" : string.Empty;
+        var customClass = string.IsNullOrWhiteSpace(Class) ? string.Empty : $" {Class}";
+        return baseClass + recordingClass + customClass;
+    }
+
+    private string GetContainerClass() =>
+        _isRecording ? "rounded-md transition-all duration-300" : string.Empty;
+
+    private string GetMicButtonClass()
+    {
+        const string baseClass = "relative z-10 size-10 rounded-full shadow-sm transition-transform duration-200 hover:scale-105 active:scale-95";
+        return _isRecording ? $"{baseClass} shadow-md shadow-destructive/30" : baseClass;
+    }
+
+    private async Task NotifyValueChangedAsync()
+    {
+        await ValueChanged.InvokeAsync(Value);
+        await OnValueChanged.InvokeAsync(Value);
+    }
+
+    private async Task ToggleVoiceAsync()
+    {
+        _errorMessage = null;
+
+        try
+        {
+            if (!_isRecording)
+            {
+                _isConnecting = true;
+                StateHasChanged();
+
+                _dotNetRef?.Dispose();
+                _dotNetRef = DotNetObjectReference.Create(this);
+
+                Logger.LogInformation("NeoVoiceInput 开始语音录入，FieldId={FieldId}", fieldId);
+                await JS.InvokeVoidAsync("neoVoiceInput.init", _dotNetRef, Value, fieldId, HubUrl);
+                await JS.InvokeVoidAsync("neoVoiceInput.startRealtime");
+
+                _isRecording = true;
+                return;
+            }
+
+            Logger.LogInformation("NeoVoiceInput 结束语音录入，FieldId={FieldId}", fieldId);
+            var finalText = await JS.InvokeAsync<string>("neoVoiceInput.stopRealtime");
+            Value = finalText ?? Value;
+            await NotifyValueChangedAsync();
+            _isRecording = false;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+            Logger.LogError(ex, "NeoVoiceInput 语音录入失败，FieldId={FieldId}", fieldId);
+            _isRecording = false;
+            await StopVoiceSafelyAsync();
+        }
+        finally
+        {
+            _isConnecting = false;
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public async Task SyncDisplayText(string display)
+    {
+        Value = display;
+        await ValueChanged.InvokeAsync(Value);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public Task OnRecognitionError(string message)
+    {
+        _errorMessage = message;
+        Logger.LogWarning("NeoVoiceInput 实时语音识别错误，FieldId={FieldId}, Message={Message}", fieldId, message);
+        _isRecording = false;
+        _isConnecting = false;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private async Task StopVoiceSafelyAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("neoVoiceInput.stopRealtime");
+        }
+        catch (JSDisconnectedException)
+        {
+            // 页面关闭时 circuit 可能已断开
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _dotNetRef?.Dispose();
+
+        try
+        {
+            await JS.InvokeVoidAsync("neoVoiceInput.stopStream");
+            if (_isRecording)
+            {
+                await StopVoiceSafelyAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // 页面关闭时 circuit 可能已断开
+        }
+    }
+}

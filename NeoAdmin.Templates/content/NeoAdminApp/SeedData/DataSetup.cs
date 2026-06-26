@@ -23,10 +23,13 @@ public static class DataSetup
             SyncStructure(freeSql);
         }
 
-        MenuSeedData.Ensure(freeSql);
-        PageSearchTabSeedData.Ensure();
-        // 审批按钮由 MenuSeedData 中 PageWithAudit 在首次种子时创建；勿在此每次启动 EnsureButtons，否则会覆盖菜单管理里取消勾选的审批权限点。
-        SeedData.Ensure(freeSql, options);
+        if (options.EnableSeedData)
+        {
+            MenuSeedData.Ensure(freeSql, options);
+            PageSearchTabSeedData.Ensure();
+            // 审批按钮由 MenuSeedData 中 PageWithAudit 在首次种子时创建；勿在此每次启动 EnsureButtons，否则会覆盖菜单管理里取消勾选的审批权限点。
+            SeedData.Ensure(freeSql, options);
+        }
     }
 
     public static void SyncStructure(IFreeSql freeSql)

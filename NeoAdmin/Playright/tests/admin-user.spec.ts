@@ -38,7 +38,12 @@ test.describe('用户管理', () => {
 
     const row = page.getByRole('row').filter({ hasText: username }).first();
     await expect(row).toBeVisible({ timeout: stepTimeout });
-    await expect(row).toContainText('手动添加', { timeout: stepTimeout });
+
+    await row.getByRole('button', { name: '编辑' }).click();
+    const editDialog = page.getByRole('dialog');
+    await expect(editDialog).toBeVisible({ timeout: stepTimeout });
+    await expect(editDialog.getByText('手动添加')).toBeVisible({ timeout: stepTimeout });
+    await editDialog.getByRole('button', { name: '取消' }).click();
   });
 
   test('登录日志按钮打开弹窗', async ({ page }) => {

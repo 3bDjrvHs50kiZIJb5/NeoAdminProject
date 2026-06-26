@@ -10,7 +10,7 @@ alwaysApply: false
 
 1. 实体继承 `EntityAudited`
 2. `CrudTable` 设置 `IsWorkflowAudit="true"` 和 `WorkflowAuditMenuPath`（与 `@page` 一致）
-3. 菜单种子：`PageWithAudit`（首次安装创建审批按钮）；旧库升级时在 `MenuSeedData.EnsureCore` 版本迁移里**一次性**调用 `AuditMenuSeedData.EnsureButtons`，勿在 `DataSetup` 每次启动调用
+3. 菜单种子：`PageWithAudit`（首次安装创建审批按钮）；旧库升级时**手动一次性**调用 `AuditMenuSeedData.EnsureButtons`，勿在 `DataSetup` 每次启动调用
 
 ```razor
 <CrudTable TItem="BlogArticle" IsWorkflowAudit="true"

@@ -109,6 +109,7 @@ public static class NeoAdminExtensions
         services.AddScoped<AuditWorkflowService>();
         services.AddScoped<NeoPickerOverlayService>();
         services.AddNeoAdminScheduler();
+        services.AddNeoAdminVoice(configuration);
         return services;
     }
 
@@ -185,6 +186,7 @@ public static class NeoAdminExtensions
         });
 
         app.MapControllers();
+        app.MapNeoAdminVoiceHub();
         return app;
     }
 
@@ -239,11 +241,15 @@ public static class NeoAdminExtensions
         }
 
         MenuSeedData.Ensure(freeSql);
-        OrgSeedData.Ensure(freeSql);
         RoleSeedData.Ensure(freeSql, options);
         DictSeedData.Ensure(freeSql);
         ParamSeedData.Ensure(freeSql);
         SiteSettingsSeedData.Ensure(freeSql);
-        UserSeedData.Ensure(freeSql);
+
+        if (options.EnableSeedData)
+        {
+            OrgSeedData.Ensure(freeSql);
+            UserSeedData.Ensure(freeSql);
+        }
     }
 }

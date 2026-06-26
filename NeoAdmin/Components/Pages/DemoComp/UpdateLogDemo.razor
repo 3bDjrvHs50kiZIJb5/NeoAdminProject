@@ -1,0 +1,52 @@
+@page "/neo-demo/comp/update-log"
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Components
+@using NeoAdmin.Blazor.Data
+@inject IWebHostEnvironment Environment
+@inject ILogger<UpdateLogDemo> Logger
+
+<PageTitle>更新日志</PageTitle>
+
+<div class="neo-admin-page-scroll flex min-h-0 flex-1 flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">NeoUpdateLog 更新日志</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                <code class="rounded bg-muted px-1 py-0.5 text-xs">dotnet build</code> 时写入
+                <code class="rounded bg-muted px-1 py-0.5 text-xs">Data/git-changelog.json</code>，
+                页面直接读取该文件并绑定 <code class="rounded bg-muted px-1 py-0.5 text-xs">NeoUpdateLog</code>。
+            </p>
+        </div>
+
+        <div class="p-4">
+            <DemoSection Title="读取 JSON 文件"
+                         Description="NeoUpdateLogJsonFile.LoadFromEnvironment 读取构建时生成的更新日志。"
+                         Code="@FileLoadSnippet">
+                <NeoUpdateLog Entries="_entries"
+                              Title="更新日志"
+                              Description="最近提交（最多 15 条）" />
+            </DemoSection>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<NeoUpdateLogEntry> _entries = [];
+
+    private const string FileLoadSnippet = """
+// dotnet build 时 scripts/generate_git_changelog.py 生成 Data/git-changelog.json
+
+@inject IWebHostEnvironment Environment
+
+_entries = NeoUpdateLogJsonFile.LoadFromEnvironment(Environment, 15).ToList();
+
+<NeoUpdateLog Entries="_entries" />
+""";
+
+    protected override void OnInitialized()
+    {
+        Logger.LogInformation("NeoUpdateLog 演示页加载");
+        _entries = NeoUpdateLogJsonFile.LoadFromEnvironment(Environment, 15).ToList();
+        Logger.LogInformation("从 JSON 读取更新日志，Count={Count}", _entries.Count);
+    }
+}

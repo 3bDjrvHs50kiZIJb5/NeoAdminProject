@@ -9,6 +9,7 @@
 @inject SiteSettingsService SiteSettingsService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@using NeoAdmin.Blazor.Data
 @using NeoAdmin.Blazor.Entities
 @using NeoAdmin.Blazor.Core.Navigation
 @using NeoAdmin.Blazor.SeedData
@@ -37,18 +38,9 @@
                         <SidebarMenu>
                             <SidebarMenuItem>
                                 <SidebarMenuButton Size="SidebarMenuButtonSize.Large" Href="@NeoAdminOptionsAccessor.Value.HomePath">
-                                    @if (!string.IsNullOrWhiteSpace(siteSettings?.Logo))
-                                    {
-                                        <img src="@NavigationManager.ToMediaUrl(siteSettings.Logo)"
-                                             alt=""
-                                             class="size-8 shrink-0 rounded-lg object-cover" />
-                                    }
-                                    else
-                                    {
-                                        <div class="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                                            <LucideIcon Name="command" Size="16" />
-                                        </div>
-                                    }
+                                    <img src="@NavigationManager.ToMediaUrl(NeoAdminSiteDefaults.ResolveLogo(siteSettings?.Logo))"
+                                         alt=""
+                                         class="size-8 shrink-0 rounded-lg object-cover" />
                                     <SidebarHeaderInfo>
                                         <span class="truncate font-semibold">@(siteSettings?.Title ?? "NeoAdmin")</span>
                                         <span class="truncate text-xs text-muted-foreground">@(string.IsNullOrWhiteSpace(siteSettings?.Description) ? "Management" : siteSettings.Description.Trim())</span>

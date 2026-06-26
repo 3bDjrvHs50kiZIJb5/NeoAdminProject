@@ -13,7 +13,10 @@ public sealed class NeoAdminOptions
     public bool AutoSyncStructure { get; set; } = true;
 
     /// <summary>
-    /// 是否启用业务演示种子数据（组织、人事、博客等）。未配置时默认开启。
+    /// 启动时是否同步宿主种子数据：业务/Demo 菜单增量插入、演示组织/用户、博客演示数据等。
+    /// 开发环境建议 <c>true</c>；生产环境建议 <c>false</c>，避免每次启动写库。
+    /// 升级业务菜单或演示数据后，可临时设为 <c>true</c> 并重启以补齐缺失项。
+    /// 管理员账号、角色、字典等基础数据不受此开关影响；框架 /admin 系统菜单仅在库中尚无时会初始化一次。
     /// </summary>
     public bool EnableSeedData { get; set; } = true;
 

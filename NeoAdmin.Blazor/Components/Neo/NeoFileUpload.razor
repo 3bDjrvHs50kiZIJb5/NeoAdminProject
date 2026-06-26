@@ -9,16 +9,16 @@
 @inject ILogger<NeoFileUpload> Logger
 
 <div class="space-y-2">
-    @if (ShowUploadedState)
+    @if (ShowPreviewState)
     {
         <div class="rounded-lg border bg-muted/30 p-3">
-            @if (!string.IsNullOrWhiteSpace(PreviewLabel))
+            @if (!string.IsNullOrWhiteSpace(EffectivePreviewLabel))
             {
-                <p class="mb-2 text-xs text-muted-foreground">@PreviewLabel</p>
+                <p class="mb-2 text-xs text-muted-foreground">@EffectivePreviewLabel</p>
             }
-            @if (IsImagePath(Value))
+            @if (IsImagePath(EffectivePreviewUrl))
             {
-                <img src="@NavigationManager.ToMediaUrl(Value!)"
+                <img src="@NavigationManager.ToMediaUrl(EffectivePreviewUrl!)"
                      alt="@ImageAlt"
                      class="@PreviewImageClass" />
             }
@@ -26,7 +26,7 @@
             {
                 <div class="flex items-center gap-2 text-sm">
                     <LucideIcon Name="file" Size="16" Class="shrink-0 text-muted-foreground" />
-                    <a href="@NavigationManager.ToMediaUrl(Value!)"
+                    <a href="@NavigationManager.ToMediaUrl(EffectivePreviewUrl!)"
                        target="_blank"
                        rel="noopener noreferrer"
                        class="truncate text-primary underline-offset-4 hover:underline">
@@ -35,7 +35,7 @@
                 </div>
             }
         </div>
-        @if (!Disabled)
+        @if (ShowClearButton)
         {
             <Button Type="ButtonType.Button"
                     Variant="ButtonVariant.Ghost"
@@ -45,7 +45,7 @@
             </Button>
         }
     }
-    else
+    @if (ShowUploadArea)
     {
         @if (!string.IsNullOrWhiteSpace(EmptyHint))
         {
@@ -147,6 +147,10 @@
     [Parameter]
     public EventCallback<NeoFileUploadBatchResult> OnAllUploaded { get; set; }
 
+    /// <summary>未上传自定义文件时用于预览的默认地址（如框架内置 LOGO）。</summary>
+    [Parameter]
+    public string? DefaultPreviewUrl { get; set; }
+
     private FileUpload? fileUpload;
     private List<IBrowserFile> files = [];
     private bool isUploading;
@@ -154,15 +158,30 @@
     private int processedFileCount;
     private bool suppressFilesChanged;
 
-    private bool ShowUploadedState =>
-        !Multiple && !string.IsNullOrWhiteSpace(Value);
+    private bool ShowPreviewState =>
+        !Multiple && !string.IsNullOrWhiteSpace(EffectivePreviewUrl);
+
+    private bool IsUsingDefaultPreview =>
+        string.IsNullOrWhiteSpace(Value) && !string.IsNullOrWhiteSpace(DefaultPreviewUrl);
+
+    private bool ShowUploadArea =>
+        Multiple || string.IsNullOrWhiteSpace(Value);
+
+    private bool ShowClearButton =>
+        !Disabled && !string.IsNullOrWhiteSpace(Value);
+
+    private string? EffectivePreviewUrl =>
+        !string.IsNullOrWhiteSpace(Value) ? Value : DefaultPreviewUrl;
+
+    private string? EffectivePreviewLabel =>
+        IsUsingDefaultPreview ? "当前使用默认" : PreviewLabel;
 
     private string EffectiveDisplayName =>
         !string.IsNullOrWhiteSpace(DisplayName)
             ? DisplayName
             : !string.IsNullOrWhiteSpace(lastUploadedName)
                 ? lastUploadedName
-                : Path.GetFileName(Value ?? string.Empty);
+                : Path.GetFileName(EffectivePreviewUrl ?? string.Empty);
 
     /// <summary>重置多文件上传状态（对话框关闭时调用）。</summary>
     public bool IsUploading => isUploading;
