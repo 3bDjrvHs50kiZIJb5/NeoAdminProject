@@ -1,0 +1,179 @@
+@page "/neo-demo/comp/file-upload-api"
+@layout LayoutAdmin
+@using Microsoft.AspNetCore.Components.Forms
+@using NeoAdmin.Blazor.Api.Dto
+@using NeoAdmin.Blazor.Components
+@using NeoAdmin.Blazor.Core.Identity
+@using NeoAdmin.Blazor.Extensions
+@using NeoAdminApp.Components.Pages.DemoComp.Snippets
+@using NeoAdminApp.Services
+@inject FileApiClient FileApiClient
+@inject IToastService ToastService
+@inject NavigationManager NavigationManager
+@inject ILogger<FileUploadApiDemo> Logger
+
+<PageTitle>API 上传示例</PageTitle>
+
+<div class="neo-admin-page-scroll flex min-h-0 flex-1 flex-col gap-4 p-1">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="border-b px-4 py-3">
+            <strong class="text-base font-semibold">文件上传 API 调用示例</strong>
+            <p class="mt-1 text-sm text-muted-foreground">
+                页面内通过 <code class="rounded bg-muted px-1 py-0.5 text-xs">FileApiClient</code> 调用与 API 相同的
+                <code class="rounded bg-muted px-1 py-0.5 text-xs">FileService</code>（OSS 启用时自动走阿里云）；
+                外部应用请用下方 curl / fetch 请求 <code class="rounded bg-muted px-1 py-0.5 text-xs">POST /api/file/@@Upload</code>。
+            </p>
+        </div>
+
+        <div class="space-y-4 p-4">
+            <DemoSection Title="在线试用"
+                         Description="选择文件后点击上传。Blazor Server 页面内走 FileService；移动端 / 脚本请用下方 HTTP 示例。"
+                         Code="@FileUploadApiDemoSnippets.CSharp">
+                <div class="max-w-lg space-y-3">
+                    <FileUpload Files="selectedFiles"
+                                FilesChanged="OnFilesChangedAsync"
+                                Accept="image/*"
+                                MaxFileSize="5242880"
+                                ShowPreview="true"
+                                Disabled="isUploading" />
+                    <div class="flex flex-wrap items-center gap-2">
+                        <Button Type="ButtonType.Button"
+                                OnClick="UploadViaApiAsync"
+                                Disabled="@(isUploading || selectedFiles.Count == 0)">
+                            @(isUploading ? "上传中…" : "调用 API 上传")
+                        </Button>
+                        @if (lastUpload is not null)
+                        {
+                            <Button Type="ButtonType.Button"
+                                    Variant="ButtonVariant.Outline"
+                                    OnClick="DeleteLastAsync"
+                                    Disabled="isUploading">
+                                删除上次上传
+                            </Button>
+                        }
+                    </div>
+                    @if (lastUpload is not null)
+                    {
+                        <div class="space-y-2 rounded-lg border bg-muted/30 p-3 text-sm">
+                            <p><span class="text-muted-foreground">Id：</span>@lastUpload.Id</p>
+                            <p><span class="text-muted-foreground">文件名：</span>@lastUpload.OriginFileName</p>
+                            <p><span class="text-muted-foreground">存储：</span>@(string.IsNullOrWhiteSpace(lastUpload.Provider) ? "本地" : lastUpload.Provider)</p>
+                            <p class="break-all">
+                                <span class="text-muted-foreground">地址：</span>
+                                <a href="@NavigationManager.ToMediaUrl(lastUpload.LinkUrl)"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="text-primary underline-offset-4 hover:underline">
+                                    @lastUpload.LinkUrl
+                                </a>
+                            </p>
+                            @if (!string.IsNullOrWhiteSpace(lastUpload.LinkUrl)
+                                 && lastUpload.LinkUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <img src="@NavigationManager.ToMediaUrl(lastUpload.LinkUrl)"
+                                     alt="上传预览"
+                                     class="h-32 max-w-full rounded-md border bg-background object-cover" />
+                            }
+                        </div>
+                    }
+                </div>
+            </DemoSection>
+
+            <DemoSection Title="curl"
+                         Description="适合脚本、Postman 或移动端直连后台。"
+                         Code="@FileUploadApiDemoSnippets.Curl" />
+
+            <DemoSection Title="fetch（浏览器）"
+                         Description="Token 与 Blazor 登录页共用 localStorage 中的 neoAdminToken。"
+                         Code="@FileUploadApiDemoSnippets.Fetch" />
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<IBrowserFile> selectedFiles = [];
+    private FileUploadResponse? lastUpload;
+    private bool isUploading;
+
+    protected override void OnInitialized()
+    {
+        DemoPageLog.Enter(Logger, "API 上传示例");
+    }
+
+    private Task OnFilesChangedAsync(List<IBrowserFile> files)
+    {
+        selectedFiles = files;
+        return Task.CompletedTask;
+    }
+
+    private async Task UploadViaApiAsync()
+    {
+        if (selectedFiles.Count == 0 || isUploading)
+        {
+            return;
+        }
+
+        IBrowserFile file = selectedFiles[0];
+        isUploading = true;
+        Logger.LogInformation("演示页 API 上传开始，FileName={FileName}", file.Name);
+
+        try
+        {
+            ApiResult<FileUploadResponse> result = await FileApiClient.UploadAsync(
+                file,
+                directory: "demo/api-upload");
+
+            if (!result.Succeeded || result.Data is null)
+            {
+                ToastService.Error("API 上传失败", result.Message);
+                Logger.LogWarning("演示页 API 上传失败，Message={Message}", result.Message);
+                return;
+            }
+
+            lastUpload = result.Data;
+            ToastService.Success("API 上传", "上传成功");
+            Logger.LogInformation("演示页 API 上传成功，Url={Url}", result.Data.LinkUrl);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "演示页 API 上传异常");
+            ToastService.Error("API 上传失败", ex.Message);
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
+
+    private async Task DeleteLastAsync()
+    {
+        if (lastUpload is null || isUploading)
+        {
+            return;
+        }
+
+        isUploading = true;
+        try
+        {
+            ApiResult result = await FileApiClient.DeleteAsync(lastUpload.Id);
+            if (!result.Succeeded)
+            {
+                ToastService.Error("删除失败", result.Message);
+                return;
+            }
+
+            lastUpload = null;
+            selectedFiles = [];
+            ToastService.Success("删除", "已删除");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "演示页 API 删除异常，Id={Id}", lastUpload?.Id);
+            ToastService.Error("删除失败", ex.Message);
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
+}

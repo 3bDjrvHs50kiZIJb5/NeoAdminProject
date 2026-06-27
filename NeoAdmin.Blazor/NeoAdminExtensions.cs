@@ -98,6 +98,7 @@ public static class NeoAdminExtensions
         services.AddSingleton<LoginRateLimiter>();
         services.AddScoped<NeoAdminAuthService>();
         services.AddScoped<MenuService>();
+        services.AddSingleton<AliyunOssStorageService>();
         services.AddScoped<FileService>();
         services.AddScoped<OrgService>();
         services.AddScoped<RoleService>();
@@ -241,6 +242,7 @@ public static class NeoAdminExtensions
         }
 
         MenuSeedData.Ensure(freeSql);
+        FileApiMenuSeedData.Ensure(freeSql);
         RoleSeedData.Ensure(freeSql, options);
         DictSeedData.Ensure(freeSql);
         ParamSeedData.Ensure(freeSql);

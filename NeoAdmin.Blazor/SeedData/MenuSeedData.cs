@@ -31,6 +31,12 @@ public static class MenuSeedData
         }
     }
 
+    /// <summary>
+    /// 在指定父节点下增量补齐菜单（用于旧库升级时新增 Api 分组等）。
+    /// </summary>
+    public static void EnsureMenuUnderParent(IFreeSql freeSql, SysMenu target, long parentId) =>
+        EnsureRecursive(freeSql, target, parentId);
+
     private static void EnsureRecursive(IFreeSql freeSql, SysMenu target, long parentId)
     {
         SysMenu? current = freeSql.Select<SysMenu>()

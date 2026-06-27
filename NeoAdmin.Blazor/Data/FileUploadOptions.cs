@@ -28,4 +28,9 @@ public sealed class FileUploadOptions
     public string[] IncludeExtension { get; set; } = [];
 
     public string[] ExcludeExtension { get; set; } = [".exe", ".dll", ".jar"];
+
+    /// <summary>
+    /// 阿里云 OSS；Endpoint、AccessKeyId、AccessKeySecret、BucketName 均填写后启用。
+    /// </summary>
+    public OssOptions Oss { get; set; } = new();
 }

@@ -1,5 +1,23 @@
 [
   {
+    "shortHash": "8d7c6fe",
+    "committedAt": "2026-06-28T01:29:25+08:00",
+    "subject": "release: v1.0.39",
+    "body": ""
+  },
+  {
+    "shortHash": "5ba97da",
+    "committedAt": "2026-06-28T01:28:56+08:00",
+    "subject": "feat(DefaultLogin): 支持 Development 环境预填账号参数",
+    "body": "宿主可通过 DevelopmentDefaultUsername/Password 覆盖默认 admin 预填值。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "c3208a8",
+    "committedAt": "2026-06-26T21:05:11+08:00",
+    "subject": "release: v1.0.38",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
     "shortHash": "0bcada6",
     "committedAt": "2026-06-26T21:00:45+08:00",
     "subject": "更新 Git 更新日志并同步模板",
@@ -280,23 +298,5 @@
     "committedAt": "2026-06-11T20:29:17+08:00",
     "subject": "添加开发上手指南并同步到宿主与模板项目",
     "body": "在 monorepo 根目录、NeoAdmin 宿主及 dotnet 模板中纳入 NEOADMIN开发上手.md，\n并扩展 sync-from-neoadmin.py 支持文档同步与 NeoAdminApp 命名空间转换。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "f6826ba",
-    "committedAt": "2026-06-11T19:32:55+08:00",
-    "subject": "为宿主与 dotnet 模板添加 Cursor 开发规则",
-    "body": "dotnet new 创建的项目将自带 NeoAdmin 开发约定；同步脚本支持 rules 模板化转换。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "d291a52",
-    "committedAt": "2026-06-10T19:34:49+08:00",
-    "subject": "推送到 main 时自动构建并发布 Docker 镜像",
-    "body": "每次 main 分支提交推送 latest、main 与短 commit SHA 标签。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "fc31fd6",
-    "committedAt": "2026-06-10T19:33:16+08:00",
-    "subject": "添加 GitHub Actions Docker 镜像发布流水线",
-    "body": "推送 v* 标签时构建 NeoAdmin 镜像并发布到 GHCR。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
   }
 ]

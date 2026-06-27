@@ -12,7 +12,6 @@ namespace NeoAdmin.Blazor.Api;
 /// API 控制器基类，提供 FreeSql、鉴权与常用 HTTP 辅助方法。
 /// </summary>
 [ApiController]
-[Consumes("application/json")]
 [Produces("application/json")]
 public abstract class BaseApiController : ControllerBase
 {

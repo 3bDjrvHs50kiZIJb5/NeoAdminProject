@@ -118,8 +118,9 @@ public static class DemoMenuSeedData
                 BlazorMenuSeedData.Page("字典和参数", "/neo-demo/comp/dict-param", 402, "sliders-horizontal"),
                 BlazorMenuSeedData.Page("权限说明", "/neo-demo/comp/permission-guide", 407, "book-open"),
                 BlazorMenuSeedData.Page("上传组件", "/neo-demo/comp/file-upload", 408, "upload"),
-                BlazorMenuSeedData.Page("语音输入", "/neo-demo/comp/voice-input", 409, "mic"),
-                BlazorMenuSeedData.Page("更新日志", "/neo-demo/comp/update-log", 410, "scroll-text"),
+                BlazorMenuSeedData.Page("API 上传", "/neo-demo/comp/file-upload-api", 409, "cloud-upload"),
+                BlazorMenuSeedData.Page("语音输入", "/neo-demo/comp/voice-input", 410, "mic"),
+                BlazorMenuSeedData.Page("更新日志", "/neo-demo/comp/update-log", 411, "scroll-text"),
                 BlazorMenuSeedData.Menu("按钮权限", "shield", "/neo-demo/comp/nova-button", 403, children:
                 [
                     BlazorMenuSeedData.Button("允许演示", "check", "demo_allow", 301),

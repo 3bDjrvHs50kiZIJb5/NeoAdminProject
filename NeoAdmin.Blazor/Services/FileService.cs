@@ -17,6 +17,7 @@ public sealed class FileService
     private readonly IFreeSql _freeSql;
     private readonly IWebHostEnvironment _webHostEnvironment;
     private readonly FileUploadOptions _uploadOptions;
+    private readonly AliyunOssStorageService _ossStorage;
     private readonly NeoAdminAuthService _authService;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IJSRuntime _jsRuntime;
@@ -26,6 +27,7 @@ public sealed class FileService
         IFreeSql freeSql,
         IWebHostEnvironment webHostEnvironment,
         IOptions<NeoAdminOptions> options,
+        AliyunOssStorageService ossStorage,
         NeoAdminAuthService authService,
         IHttpContextAccessor httpContextAccessor,
         IJSRuntime jsRuntime,
@@ -34,6 +36,7 @@ public sealed class FileService
         _freeSql = freeSql;
         _webHostEnvironment = webHostEnvironment;
         _uploadOptions = options.Value.FileUpload;
+        _ossStorage = ossStorage;
         _authService = authService;
         _httpContextAccessor = httpContextAccessor;
         _jsRuntime = jsRuntime;
@@ -64,6 +67,36 @@ public sealed class FileService
         await stream.CopyToAsync(buffer, cancellationToken);
         return await UploadBytesAsync(
             file.Name,
+            buffer.ToArray(),
+            fileDirectory,
+            isRename,
+            cancellationToken);
+    }
+
+    public async Task<SysFile> UploadFormFileAsync(
+        IFormFile file,
+        string fileDirectory = "",
+        bool isRename = true,
+        long maxSizeLimit = 0,
+        CancellationToken cancellationToken = default)
+    {
+        if (file.Length <= 0)
+        {
+            _logger.LogWarning("上传文件失败：文件内容为空，文件名={FileName}", file.FileName);
+            throw new InvalidOperationException("文件内容不能为空。");
+        }
+
+        long limit = maxSizeLimit > 0 ? maxSizeLimit : _uploadOptions.MaxSize;
+        if (limit > 0 && file.Length > limit)
+        {
+            throw new InvalidOperationException($"文件大小不能超过 {FileSizeFormat.Format(limit)}");
+        }
+
+        await using Stream stream = file.OpenReadStream();
+        using MemoryStream buffer = new();
+        await stream.CopyToAsync(buffer, cancellationToken);
+        return await UploadBytesAsync(
+            file.FileName,
             buffer.ToArray(),
             fileDirectory,
             isRename,
@@ -121,6 +154,21 @@ public sealed class FileService
         Guid fileGuid = Guid.NewGuid();
         string saveFileName = isRename ? fileGuid.ToString("N") : Path.GetFileNameWithoutExtension(fileName);
         string fileNameOnDisk = saveFileName + extension;
+
+        if (_ossStorage.IsEnabled)
+        {
+            return await UploadToOssAsync(
+                fileName,
+                fileBytes,
+                extension,
+                md5,
+                relativeDirectory,
+                fileGuid,
+                saveFileName,
+                fileNameOnDisk,
+                cancellationToken);
+        }
+
         string relativePath = Path.Combine(relativeDirectory, fileNameOnDisk).Replace('\\', '/');
 
         string physicalDirectory = Path.Combine(_webHostEnvironment.WebRootPath, relativeDirectory);
@@ -157,6 +205,56 @@ public sealed class FileService
         return fileEntity;
     }
 
+    private async Task<SysFile> UploadToOssAsync(
+        string fileName,
+        byte[] fileBytes,
+        string extension,
+        string md5,
+        string relativeDirectory,
+        Guid fileGuid,
+        string saveFileName,
+        string fileNameOnDisk,
+        CancellationToken cancellationToken)
+    {
+        string objectKey = _ossStorage.BuildObjectKey(relativeDirectory, fileNameOnDisk);
+        string publicUrl = _ossStorage.BuildPublicUrl(objectKey);
+
+        await _ossStorage.UploadAsync(
+            objectKey,
+            fileBytes,
+            ResolveContentType(extension),
+            cancellationToken);
+
+        SysFile fileEntity = new()
+        {
+            FileGuid = fileGuid,
+            Provider = AliyunOssStorageService.ProviderName,
+            BucketName = _ossStorage.BucketName,
+            OriginFileName = fileName,
+            Extension = extension,
+            FileDirectory = relativeDirectory.Replace('\\', '/'),
+            Size = fileBytes.LongLength,
+            SizeFormat = FileSizeFormat.Format(fileBytes.LongLength),
+            Md5 = md5,
+            SaveFileName = saveFileName,
+            LinkUrl = publicUrl,
+            CreatedTime = DateTime.Now
+        };
+
+        if (await _freeSql.Select<SysFile>().AnyAsync(a => a.OriginFileName == fileEntity.OriginFileName, cancellationToken))
+        {
+            fileEntity.OriginFileName = fileEntity.OriginFileName.Replace(
+                ".",
+                "_" + Random.Shared.Next(1000, 9999) + ".",
+                StringComparison.Ordinal);
+        }
+
+        await FillCreatedUserAsync(fileEntity, cancellationToken);
+        await _freeSql.Insert(fileEntity).ExecuteAffrowsAsync(cancellationToken);
+        _logger.LogInformation("OSS 上传文件成功：{EntityDesc}，原始文件名={OriginFileName}", EntityLogHelper.Describe(fileEntity), fileName);
+        return fileEntity;
+    }
+
     public async Task DeleteAsync(long id, CancellationToken cancellationToken = default)
     {
         SysFile? file = await _freeSql.Select<SysFile>().Where(a => a.Id == id).FirstAsync(cancellationToken);
@@ -166,7 +264,12 @@ public sealed class FileService
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(file.Provider))
+        if (string.Equals(file.Provider, AliyunOssStorageService.ProviderName, StringComparison.OrdinalIgnoreCase))
+        {
+            string objectKey = _ossStorage.BuildObjectKeyFromFile(file);
+            await _ossStorage.DeleteAsync(objectKey, cancellationToken);
+        }
+        else if (string.IsNullOrWhiteSpace(file.Provider))
         {
             string physicalPath = Path.Combine(
                 _webHostEnvironment.WebRootPath,
@@ -182,6 +285,22 @@ public sealed class FileService
         await _freeSql.Delete<SysFile>().Where(a => a.Id == id).ExecuteAffrowsAsync(cancellationToken);
         _logger.LogInformation("删除文件成功：{EntityDesc}", EntityLogHelper.Describe(file));
     }
+
+    private static string? ResolveContentType(string extension) =>
+        extension.ToLowerInvariant() switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            ".webp" => "image/webp",
+            ".bmp" => "image/bmp",
+            ".svg" => "image/svg+xml",
+            ".pdf" => "application/pdf",
+            ".txt" => "text/plain",
+            ".json" => "application/json",
+            ".zip" => "application/zip",
+            _ => "application/octet-stream"
+        };
 
     private string BuildRelativeDirectory(string fileDirectory)
     {

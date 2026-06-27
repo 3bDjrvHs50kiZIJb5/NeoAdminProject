@@ -20,6 +20,15 @@ public static class MenuSeedData
 
         DemoMenuSeedData.Ensure(freeSql);
         BlazorMenuSeedData.EnsureMenus(freeSql, CreateMenus());
+        MigrateInvalidMenuIcons(freeSql);
+    }
+
+    private static void MigrateInvalidMenuIcons(IFreeSql freeSql)
+    {
+        freeSql.Update<SysMenu>()
+            .Set(a => a.Icon, "lock-open")
+            .Where(a => a.Path == "ResetPassword" && a.Icon == "unlock-keyhole")
+            .ExecuteAffrows();
     }
 
     private static List<SysMenu> CreateMenus() =>
@@ -50,7 +59,7 @@ public static class MenuSeedData
                 BlazorMenuSeedData.Api("UploadAvatar", "image", "UploadAvatar", 109, isSystem: false),
                 BlazorMenuSeedData.Api("UploadBadgePhoto", "badge", "UploadBadgePhoto", 110, isSystem: false),
                 BlazorMenuSeedData.Api("SendResetPasswordCode", "mail", "SendResetPasswordCode", 111, isSystem: false),
-                BlazorMenuSeedData.Api("ResetPassword", "unlock-keyhole", "ResetPassword", 112, isSystem: false),
+                BlazorMenuSeedData.Api("ResetPassword", "lock-open", "ResetPassword", 112, isSystem: false),
                 BlazorMenuSeedData.Api("SetAIAlarmLevel", "bot", "SetAIAlarmLevel", 113, isSystem: false)
             ], type: SysMenuType.接口, isSystem: false),
             BlazorMenuSeedData.Menu("Article", "newspaper", "article", 200, children:

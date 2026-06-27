@@ -2,6 +2,7 @@ using System.Reflection;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using NeoAdmin.SeedData;
+using NeoAdmin.Services;
 using NeoAdmin.Blazor.Extensions;
 using NeoAdmin.Blazor.Components;
 using NeoAdmin.Jobs;
@@ -28,6 +29,8 @@ builder.Services.AddNeoAdmin(builder.Configuration, options =>
     options.SchedulerAssemblies = [Assembly.GetExecutingAssembly()];
 });
 builder.Services.AddNeoAdminApi(Assembly.GetExecutingAssembly());
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<FileApiClient>();
 
 var app = builder.Build();
 
