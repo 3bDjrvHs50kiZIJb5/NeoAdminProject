@@ -117,6 +117,18 @@
   [Parameter]
   public string UsernameLengthMessage { get; set; } = "用户名不能超过 50 个字符";
 
+  /// <summary>
+  /// Development 环境下预填的用户名；未设置时默认为 admin。
+  /// </summary>
+  [Parameter]
+  public string? DevelopmentDefaultUsername { get; set; }
+
+  /// <summary>
+  /// Development 环境下预填的密码；未设置时默认为 admin。
+  /// </summary>
+  [Parameter]
+  public string? DevelopmentDefaultPassword { get; set; }
+
   private LoginModel loginModel = null!;
   private SysSiteSettings? siteSettings;
 
@@ -129,15 +141,18 @@
     loginModel = new LoginModel(UsernameRequiredMessage, UsernameLengthMessage);
   }
 
+  protected override void OnParametersSet()
+  {
+    if (HostEnvironment.IsDevelopment())
+    {
+      loginModel.Username = DevelopmentDefaultUsername ?? "admin";
+      loginModel.Password = DevelopmentDefaultPassword ?? "admin";
+    }
+  }
+
   protected override async Task OnInitializedAsync()
   {
     siteSettings = await SiteSettingsService.GetAsync();
-
-    if (HostEnvironment.IsDevelopment())
-    {
-      loginModel.Username = "admin";
-      loginModel.Password = "admin";
-    }
   }
 
   protected override async Task OnAfterRenderAsync(bool firstRender)
