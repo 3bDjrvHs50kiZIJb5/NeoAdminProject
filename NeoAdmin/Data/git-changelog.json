@@ -1,5 +1,17 @@
 [
   {
+    "shortHash": "478f41c",
+    "committedAt": "2026-06-30T14:11:26+08:00",
+    "subject": "feat(Identity): 支持宿主自定义未开通账号登录提示文案",
+    "body": "新增 IDisabledAccountLoginMessageResolver，NeoAdminAuthService 在未开通账号登录时优先使用宿主解析的提示信息。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "0b1bd68",
+    "committedAt": "2026-06-28T02:39:28+08:00",
+    "subject": "发布 v1.0.40：支持阿里云 OSS 上传与文件 API。",
+    "body": "新增 OSS 配置与 AliyunOssStorageService，FileService/NeoFileUpload/FileController 统一走 OSS 或本地上传；补充 File API 权限种子、FileApiClient 与演示页。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
     "shortHash": "8d7c6fe",
     "committedAt": "2026-06-28T01:29:25+08:00",
     "subject": "release: v1.0.39",
@@ -286,17 +298,5 @@
     "committedAt": "2026-06-12T09:21:05+08:00",
     "subject": "chore: 发布 v1.0.21",
     "body": "移除审计与站点设置实体的自定义表名，统一 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "8153c05",
-    "committedAt": "2026-06-12T08:56:56+08:00",
-    "subject": "用户关联组织、优化侧栏与 CrudTable 布局，登录页改用 Toast",
-    "body": "- SysUser 增加 OrgId 与 SysOrg 多对一关系，用户管理页支持组织选择与展示\n- 侧栏菜单悬停/选中样式统一加深，CrudTable 工具栏与表头保持单行\n- 登录成功/失败及会话失效改用 Toast 提示\n- 同步模板 tailwind 构建产物\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "00d6346",
-    "committedAt": "2026-06-11T20:29:17+08:00",
-    "subject": "添加开发上手指南并同步到宿主与模板项目",
-    "body": "在 monorepo 根目录、NeoAdmin 宿主及 dotnet 模板中纳入 NEOADMIN开发上手.md，\n并扩展 sync-from-neoadmin.py 支持文档同步与 NeoAdminApp 命名空间转换。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
   }
 ]
