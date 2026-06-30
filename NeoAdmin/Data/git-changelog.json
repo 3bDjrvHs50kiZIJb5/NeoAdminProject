@@ -1,5 +1,11 @@
 [
   {
+    "shortHash": "080ab76",
+    "committedAt": "2026-06-30T23:16:23+08:00",
+    "subject": "release: v1.0.42",
+    "body": "重构种子数据：合并 DemoMenuSeedData 至 MenuSeedData，SeedData 重命名为 BlogSeedData；\n新增 E2E 种子接口与 Playwright 用例。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
     "shortHash": "554e379",
     "committedAt": "2026-06-30T14:13:05+08:00",
     "subject": "release: v1.0.41",
@@ -292,11 +298,5 @@
     "committedAt": "2026-06-12T11:05:38+08:00",
     "subject": "chore: 发布 v1.0.22",
     "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号；含 SysTask Status/Interval 列映射修复。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "06ee61f",
-    "committedAt": "2026-06-12T10:53:03+08:00",
-    "subject": "修复 SysTask 的 Status/Interval 列映射与 FreeScheduler 一致",
-    "body": "NeoAdmin 先于 FreeScheduler 执行 SyncStructure 时未将枚举映射为字符串，导致 PostgreSQL 建成 int 列；现与 FreeSqlHandler 对齐为 varchar。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
   }
 ]

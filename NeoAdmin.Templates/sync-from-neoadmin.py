@@ -11,6 +11,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "NeoAdmin"
 TARGET = Path(__file__).resolve().parent / "content" / "NeoAdminApp"
+CURSOR_RULES = ROOT / ".cursor" / "rules"
+# monorepo 根规则中不同步到 dotnet new 模板的条目（其他项目专用）
+SKIP_CURSOR_RULES = {"novolab-seed-core.mdc"}
 BLAZOR_CSPROJ = ROOT / "NeoAdmin.Blazor" / "NeoAdmin.Blazor.csproj"
 
 # 从 NeoAdmin 同步到模板时跳过的文件名（模板保留自己的版本）
@@ -93,7 +96,7 @@ def transform_dev_guide(text: str) -> str:
 
 
 def transform_cursor_rule(text: str) -> str:
-    """宿主 .cursor/rules → 模板项目（NeoAdminApp、NuGet 消费者）。"""
+    """monorepo 根 .cursor/rules → 模板项目（NeoAdminApp、NuGet 消费者）。"""
     text = transform_text(text)
     text = text.replace(
         "（monorepo 为 `../NeoAdmin.Blazor/`，模板项目为 NuGet）",
@@ -176,6 +179,28 @@ def remove_stale(target_rel: Path, source_files: set[Path]) -> None:
         full.unlink()
 
 
+def sync_cursor_rules() -> int:
+    """将 monorepo 根 .cursor/rules 同步到模板（排除 NovoLab 等专用规则）。"""
+    if not CURSOR_RULES.is_dir():
+        return 0
+
+    dst_dir = TARGET / ".cursor" / "rules"
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    synced: set[str] = set()
+    for src in sorted(CURSOR_RULES.glob("*.mdc")):
+        if src.name in SKIP_CURSOR_RULES:
+            continue
+        raw = transform_cursor_rule(src.read_text(encoding="utf-8"))
+        (dst_dir / src.name).write_text(raw, encoding="utf-8")
+        synced.add(src.name)
+
+    for dst in dst_dir.glob("*.mdc"):
+        if dst.name not in synced:
+            dst.unlink()
+
+    return len(synced)
+
+
 def main() -> int:
     if not SOURCE.is_dir():
         print(f"源目录不存在: {SOURCE}", file=sys.stderr)
@@ -203,9 +228,13 @@ def main() -> int:
             if rel.as_posix() not in copied:
                 dst.unlink()
 
+    rule_count = sync_cursor_rules()
+
     version = read_blazor_version()
     patch_csproj_package_version(version)
     print(f"已同步 {len(copied)} 个文件 → {TARGET}")
+    if rule_count:
+        print(f"已同步 {rule_count} 条 Cursor 规则 → {TARGET / '.cursor' / 'rules'}")
     print(f"NeoAdmin.Blazor PackageReference 版本: {version}")
     return 0
 

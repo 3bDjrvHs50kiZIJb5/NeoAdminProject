@@ -70,33 +70,6 @@ public static class MenuSeedData
             BlazorMenuSeedData.Page("收藏", "/Blog/Collection", 457, "bookmark", isSystem: false),
         ],
         isSystem: false),
-
-        BlazorMenuSeedData.Menu("Api", "code", string.Empty, 0, SysMenuSidebarStyle.收起,
-        [
-            BlazorMenuSeedData.Menu("Login", "log-in", "login", 100, SysMenuSidebarStyle.收起,
-            [
-                BlazorMenuSeedData.Api("Register", "user-plus", "Register", 101, isSystem: false),
-                BlazorMenuSeedData.Api("GetWhoIsUsingList", "users", "GetWhoIsUsingList", 102, isSystem: false),
-                BlazorMenuSeedData.Api("Login", "log-in", "Login", 103, isSystem: false),
-                BlazorMenuSeedData.Api("Logout", "log-out", "Logout", 104, isSystem: false),
-                BlazorMenuSeedData.Api("Check", "circle-check", "Check", 105, isSystem: false),
-                BlazorMenuSeedData.Api("UpdateMemberInfo", "user-pen", "UpdateMemberInfo", 106, isSystem: false),
-                BlazorMenuSeedData.Api("ChangePassword", "key-round", "ChangePassword", 107, isSystem: false),
-                BlazorMenuSeedData.Api("DeleteAccount", "user-x", "DeleteAccount", 108, isSystem: false),
-                BlazorMenuSeedData.Api("UploadAvatar", "image", "UploadAvatar", 109, isSystem: false),
-                BlazorMenuSeedData.Api("UploadBadgePhoto", "badge", "UploadBadgePhoto", 110, isSystem: false),
-                BlazorMenuSeedData.Api("SendResetPasswordCode", "mail", "SendResetPasswordCode", 111, isSystem: false),
-                BlazorMenuSeedData.Api("ResetPassword", "lock-open", "ResetPassword", 112, isSystem: false),
-                BlazorMenuSeedData.Api("SetAIAlarmLevel", "bot", "SetAIAlarmLevel", 113, isSystem: false),
-            ],
-            type: SysMenuType.接口, isSystem: false),
-            BlazorMenuSeedData.Menu("Article", "newspaper", "article", 200, SysMenuSidebarStyle.收起,
-            [
-                BlazorMenuSeedData.Api("GetAll", "list", "GetAll", 201, isSystem: false),
-            ],
-            type: SysMenuType.接口, isSystem: false),
-        ],
-        type: SysMenuType.接口, isHidden: true, isSystem: false),
     ];
 
     private static void EnsureCustomPageButtons(IFreeSql freeSql)

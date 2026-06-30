@@ -6,7 +6,7 @@ namespace NeoAdmin.Blazor.SeedData;
 public static class UserSeedData
 {
     private const string DemoPassword = "123456";
-    private const int DemoUserCount = 50;
+    private const int DemoUserCount = 10;
 
     private static readonly string[] Nicknames =
     [

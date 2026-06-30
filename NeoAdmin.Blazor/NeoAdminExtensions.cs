@@ -137,6 +137,9 @@ public static class NeoAdminExtensions
             mvcBuilder.AddApplicationPart(assembly);
         }
 
+        Assembly[] registeredAssemblies = apiAssemblies.ToArray();
+        services.Configure<NeoAdminOptions>(options => options.ApiAssemblies = registeredAssemblies);
+
         services.AddSwaggerGen();
         services.AddOptions<SwaggerGenOptions>()
             .Configure<IOptions<NeoAdminOptions>>((swaggerOptions, _) =>
@@ -242,7 +245,10 @@ public static class NeoAdminExtensions
         }
 
         MenuSeedData.Ensure(freeSql);
-        FileApiMenuSeedData.Ensure(freeSql);
+        Assembly[] apiAssemblies = options.ApiAssemblies.Length > 0
+            ? options.ApiAssemblies
+            : [typeof(BaseApiController).Assembly];
+        ApiMenuSeedData.Ensure(freeSql, apiAssemblies);
         RoleSeedData.Ensure(freeSql, options);
         DictSeedData.Ensure(freeSql);
         ParamSeedData.Ensure(freeSql);

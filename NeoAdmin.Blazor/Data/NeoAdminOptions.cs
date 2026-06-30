@@ -52,6 +52,11 @@ public sealed class NeoAdminOptions
     public Assembly[] SchedulerAssemblies { get; set; } = [];
 
     /// <summary>
+    /// <c>AddNeoAdminApi</c> 注册的 API 程序集，用于反射生成接口权限菜单。
+    /// </summary>
+    public Assembly[] ApiAssemblies { get; set; } = [];
+
+    /// <summary>
     /// 定时任务执行时的回调（未匹配 SchedulerAttribute 时触发）。
     /// </summary>
     public Action<IServiceProvider, TaskInfo>? SchedulerExecuting { get; set; }

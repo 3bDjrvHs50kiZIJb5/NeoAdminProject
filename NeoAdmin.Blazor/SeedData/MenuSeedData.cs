@@ -37,6 +37,9 @@ public static class MenuSeedData
     public static void EnsureMenuUnderParent(IFreeSql freeSql, SysMenu target, long parentId) =>
         EnsureRecursive(freeSql, target, parentId);
 
+    /// <summary>
+    /// 按 <c>ParentId + Label + Path + Type</c> 判重：不存在则插入，已存在则永不更新，并继续递归子节点以补齐缺失项。
+    /// </summary>
     private static void EnsureRecursive(IFreeSql freeSql, SysMenu target, long parentId)
     {
         SysMenu? current = freeSql.Select<SysMenu>()
@@ -46,8 +49,7 @@ public static class MenuSeedData
                         && a.Type == target.Type)
             .First();
 
-        bool isNewInsert = current is null;
-        if (isNewInsert)
+        if (current is null)
         {
             current = Copy(target, parentId);
             freeSql.Insert(current).ExecuteAffrows();
@@ -55,13 +57,7 @@ public static class MenuSeedData
 
         foreach (SysMenu child in target.Children)
         {
-            // 已有菜单：不再自动补按钮/接口等权限点子节点，避免覆盖菜单管理里的勾选结果
-            if (!isNewInsert && child.Type.IsPermissionNode())
-            {
-                continue;
-            }
-
-            EnsureRecursive(freeSql, child, current!.Id);
+            EnsureRecursive(freeSql, child, current.Id);
         }
     }
 

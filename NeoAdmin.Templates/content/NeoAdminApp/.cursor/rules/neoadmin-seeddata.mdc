@@ -14,18 +14,35 @@ alwaysApply: false
 public static void Initialize(IServiceProvider sp)
 {
     var freeSql = sp.GetRequiredService<IFreeSql>();
+    var options = sp.GetRequiredService<IOptions<NeoAdminOptions>>().Value;
     SyncStructure(freeSql);
-    MenuSeedData.Ensure(freeSql);
-    // 其他种子...
-}
-
-public static void SyncStructure(IFreeSql freeSql)
-{
-    freeSql.CodeFirst.SyncStructure<MyItem>();
+    if (options.EnableSeedData)
+    {
+        MenuSeedData.Ensure(freeSql, options);
+        // 其他种子...
+    }
 }
 ```
 
 在 `Program.cs` 启动时调用：`DataSetup.Initialize(app.Services);`
+
+## EnableSeedData 配置
+
+通过 `NeoAdmin:EnableSeedData` 控制种子同步，**不再使用** `CurrentSeedVersion` 版本号。
+
+| 配置文件 | 建议值 | 说明 |
+|---|---|---|
+| `appsettings.json` | `true` | 本地/新环境默认开启 |
+| `appsettings.Development.json` | `true` | 开发环境显式开启 |
+| `appsettings.Production.json` | `false` | 生产环境跳过演示种子与菜单增量 |
+
+**`EnableSeedData=true` 时同步**：宿主业务/Demo 菜单、演示组织与用户、博客演示数据、全局搜索 Tab 索引。
+
+**始终同步（不受开关影响）**：管理员账号、角色、字典/参数/站点设置；框架 `/admin` 系统菜单仅在库中尚无 `/admin/menu` 时初始化一次。
+
+**框架菜单**（`NeoAdmin.Blazor/SeedData/MenuSeedData`）与 **宿主菜单**（`NeoAdmin/SeedData/MenuSeedData`）相互独立；后者才受 `EnableSeedData` 控制。
+
+升级菜单或演示数据后：生产环境临时设 `EnableSeedData=true` 并重启，完成后改回 `false`。
 
 ## 菜单种子 MenuSeedData
 
@@ -54,10 +71,18 @@ private static List<SysMenu> CreateMenus() =>
 实体继承 `EntityAudited` 且 `CrudTable` 设 `IsWorkflowAudit="true"` 时：
 
 ```csharp
-AuditMenuSeedData.EnsureButtons(freeSql, "/Blog/Article");
+// 菜单种子用 PageWithAudit 即可（首次安装会创建全部审批按钮）
+BlazorMenuSeedData.PageWithAudit("文章", "/Blog/Article", 453, "file-text", isSystem: false);
+
+// 仅旧库升级、且该页尚无审批按钮时手动调用一次：
+// AuditMenuSeedData.EnsureButtons(freeSql, "/Blog/Article");
 ```
+
+已有菜单在种子同步时**不会**再自动补 add/edit/remove 与 audit_xx 子节点（见 `MenuSeedData.EnsureRecursive`）。勿在 `DataSetup.Initialize` 每次启动调用 `EnsureButtons`。
 
 ## 注意
 
 - 菜单 `Path` 必须与页面 `@page` 路由完全一致
 - 新菜单需为角色分配后侧边栏才可见
+- **新增/调整宿主业务菜单后**：确保 `EnableSeedData=true` 并重启以增量补齐；生产完成后可改回 `false`
+- **新增/调整框架 /admin 菜单后**：需在菜单管理中手动添加，或清空相关菜单后重启以触发首次初始化
