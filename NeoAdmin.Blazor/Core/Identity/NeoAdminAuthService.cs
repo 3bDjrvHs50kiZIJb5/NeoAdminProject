@@ -16,19 +16,22 @@ public sealed class NeoAdminAuthService
     private readonly IHttpContextAccessor httpContextAccessor;
     private readonly LoginRateLimiter loginRateLimiter;
     private readonly ILogger<NeoAdminAuthService> logger;
+    private readonly IDisabledAccountLoginMessageResolver? disabledAccountLoginMessageResolver;
 
     public NeoAdminAuthService(
         IFreeSql freeSql,
         IDataProtectionProvider dataProtectionProvider,
         IHttpContextAccessor httpContextAccessor,
         LoginRateLimiter loginRateLimiter,
-        ILogger<NeoAdminAuthService> logger)
+        ILogger<NeoAdminAuthService> logger,
+        IDisabledAccountLoginMessageResolver? disabledAccountLoginMessageResolver = null)
     {
         this.freeSql = freeSql;
         tokenProtector = dataProtectionProvider.CreateProtector("NeoAdmin.Auth.Token.v1");
         this.httpContextAccessor = httpContextAccessor;
         this.loginRateLimiter = loginRateLimiter;
         this.logger = logger;
+        this.disabledAccountLoginMessageResolver = disabledAccountLoginMessageResolver;
     }
 
     public async Task<ApiResult<LoginResponse>> LoginAsync(LoginRequest request)
@@ -63,9 +66,10 @@ public sealed class NeoAdminAuthService
 
         if (!user.IsEnabled)
         {
-            await WriteLoginLogAsync(user.Username, SysUserLoginLog.LogType.登陆失败, "账户已禁用");
-            logger.LogWarning("登录失败：账户已禁用，Username={Username}", user.Username);
-            return ApiResult<LoginResponse>.Error("账户已被禁用");
+            string message = await ResolveDisabledAccountLoginMessageAsync(user);
+            await WriteLoginLogAsync(user.Username, SysUserLoginLog.LogType.登陆失败, "账户未开通");
+            logger.LogWarning("登录失败：账户未开通，Username={Username}", user.Username);
+            return ApiResult<LoginResponse>.Error(message);
         }
 
         user.LoginTime = DateTime.Now;
@@ -180,6 +184,20 @@ public sealed class NeoAdminAuthService
             Ip = IpHelper.GetClientIpAddress(httpContext, logger),
             UserAgent = httpContext?.Request.Headers.UserAgent.ToString() ?? string.Empty
         }).ExecuteAffrowsAsync();
+    }
+
+    private async Task<string> ResolveDisabledAccountLoginMessageAsync(SysUser user)
+    {
+        if (disabledAccountLoginMessageResolver is not null)
+        {
+            string? customMessage = await disabledAccountLoginMessageResolver.TryResolveAsync(user);
+            if (!string.IsNullOrWhiteSpace(customMessage))
+            {
+                return customMessage;
+            }
+        }
+
+        return "账户已被禁用";
     }
 
     private static UserSummaryResponse ToSummary(SysUser user) => new()
