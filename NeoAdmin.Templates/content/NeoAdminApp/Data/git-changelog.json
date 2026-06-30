@@ -1,5 +1,11 @@
 [
   {
+    "shortHash": "554e379",
+    "committedAt": "2026-06-30T14:13:05+08:00",
+    "subject": "release: v1.0.41",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
     "shortHash": "478f41c",
     "committedAt": "2026-06-30T14:11:26+08:00",
     "subject": "feat(Identity): 支持宿主自定义未开通账号登录提示文案",
@@ -292,11 +298,5 @@
     "committedAt": "2026-06-12T10:53:03+08:00",
     "subject": "修复 SysTask 的 Status/Interval 列映射与 FreeScheduler 一致",
     "body": "NeoAdmin 先于 FreeScheduler 执行 SyncStructure 时未将枚举映射为字符串，导致 PostgreSQL 建成 int 列；现与 FreeSqlHandler 对齐为 varchar。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "aeac4aa",
-    "committedAt": "2026-06-12T09:21:05+08:00",
-    "subject": "chore: 发布 v1.0.21",
-    "body": "移除审计与站点设置实体的自定义表名，统一 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
   }
 ]

@@ -3,13 +3,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using NeoAdmin.Blazor.Data;
 using NeoAdmin.Blazor.Entities;
-using NeoAdmin.Blazor.SeedData;
 using NeoAdmin.Entities.Blog;
 
 namespace NeoAdmin.SeedData;
 
 /// <summary>
-/// 博客表结构同步与种子数据（宿主项目专用）。
+/// 启动种子调度（业务表结构、菜单种子、演示数据）。
 /// </summary>
 public static class DataSetup
 {
@@ -23,13 +22,18 @@ public static class DataSetup
             SyncStructure(freeSql);
         }
 
+        MenuSeedData.Ensure(freeSql);
+
         if (options.EnableSeedData)
         {
-            MenuSeedData.Ensure(freeSql, options);
-            PageSearchTabSeedData.Ensure();
-            // 审批按钮由 MenuSeedData 中 PageWithAudit 在首次种子时创建；勿在此每次启动 EnsureButtons，否则会覆盖菜单管理里取消勾选的审批权限点。
-            SeedData.Ensure(freeSql, options);
+            EnsureSeedData(freeSql, options);
         }
+    }
+
+    public static void EnsureSeedData(IFreeSql freeSql, NeoAdminOptions options)
+    {
+        PageSearchTabSeedData.Ensure();
+        BlogSeedData.Ensure(freeSql, options);
     }
 
     public static void SyncStructure(IFreeSql freeSql)

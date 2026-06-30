@@ -8,7 +8,7 @@ namespace NeoAdmin.SeedData;
 /// <summary>
 /// 博客示例种子数据。
 /// </summary>
-public static class SeedData
+public static class BlogSeedData
 {
     private const long ArticleIdBase = 510359705468997;
     private const long CommentIdBase = 510365667639365;
