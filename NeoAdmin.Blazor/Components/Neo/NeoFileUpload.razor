@@ -6,44 +6,54 @@
 @inject FileService FileService
 @inject NavigationManager NavigationManager
 @inject IToastService ToastService
+@inject IJSRuntime JS
 @inject ILogger<NeoFileUpload> Logger
 
 <div class="space-y-2">
     @if (ShowPreviewState)
     {
-        <div class="rounded-lg border bg-muted/30 p-3">
-            @if (!string.IsNullOrWhiteSpace(EffectivePreviewLabel))
-            {
-                <p class="mb-2 text-xs text-muted-foreground">@EffectivePreviewLabel</p>
-            }
+        <div class="space-y-2 rounded-lg border bg-muted/30 p-3">
             @if (IsImagePath(EffectivePreviewUrl))
             {
-                <img src="@NavigationManager.ToMediaUrl(EffectivePreviewUrl!)"
-                     alt="@ImageAlt"
-                     class="@PreviewImageClass" />
-            }
-            else
-            {
-                <div class="flex items-center gap-2 text-sm">
-                    <LucideIcon Name="file" Size="16" Class="shrink-0 text-muted-foreground" />
-                    <a href="@NavigationManager.ToMediaUrl(EffectivePreviewUrl!)"
-                       target="_blank"
-                       rel="noopener noreferrer"
-                       class="truncate text-primary underline-offset-4 hover:underline">
-                        @EffectiveDisplayName
-                    </a>
+                <div class="@PreviewImageContainerClass">
+                    <img src="@NavigationManager.ToMediaUrl(EffectivePreviewUrl!)"
+                         alt="@ImageAlt"
+                         class="@PreviewImageClass" />
                 </div>
             }
+            <div class="flex min-w-0 items-center gap-2">
+                @if (!IsImagePath(EffectivePreviewUrl))
+                {
+                    <LucideIcon Name="file" Size="16" Class="shrink-0 text-muted-foreground" />
+                }
+                <a href="@NavigationManager.ToMediaUrl(EffectivePreviewUrl!)"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="min-w-0 flex-1 truncate text-sm text-primary underline-offset-4 hover:underline"
+                   title="@NavigationManager.ToMediaUrl(EffectivePreviewUrl!)">
+                    @GetPreviewTitle()
+                </a>
+                <Button Type="ButtonType.Button"
+                        Variant="ButtonVariant.Ghost"
+                        Size="ButtonSize.Icon"
+                        Title="复制链接"
+                        OnClick="CopyUrlAsync">
+                    <LucideIcon Name="copy" Size="16" />
+                    <span class="sr-only">复制</span>
+                </Button>
+                @if (ShowClearButton)
+                {
+                    <Button Type="ButtonType.Button"
+                            Variant="ButtonVariant.Ghost"
+                            Size="ButtonSize.Icon"
+                            Title="删除"
+                            OnClick="ClearAsync">
+                        <LucideIcon Name="trash-2" Size="16" />
+                        <span class="sr-only">删除</span>
+                    </Button>
+                }
+            </div>
         </div>
-        @if (ShowClearButton)
-        {
-            <Button Type="ButtonType.Button"
-                    Variant="ButtonVariant.Ghost"
-                    Size="ButtonSize.Small"
-                    OnClick="ClearAsync">
-                @ClearButtonText
-            </Button>
-        }
     }
     @if (ShowUploadArea)
     {
@@ -51,22 +61,25 @@
         {
             <p class="text-xs text-muted-foreground">@EmptyHint</p>
         }
-        @if (Multiple && isUploading)
+        @if (isUploading)
         {
             <p class="flex items-center gap-2 text-sm text-muted-foreground">
                 <LucideIcon Name="loader-circle" Size="16" Class="animate-spin" />
                 正在上传，请稍候…
             </p>
         }
-        <FileUpload @ref="fileUpload"
-                    Files="files"
-                    FilesChanged="OnFilesChangedAsync"
-                    Multiple="@Multiple"
-                    Accept="@Accept"
-                    MaxFileSize="@MaxFileSize"
-                    ShowPreview="@ShowLocalPreview"
-                    ShowProgress="@ShowProgress"
-                    Disabled="@(Disabled || isUploading)" />
+        else
+        {
+            <FileUpload @ref="fileUpload"
+                        Files="files"
+                        FilesChanged="OnFilesChangedAsync"
+                        Multiple="@Multiple"
+                        Accept="@Accept"
+                        MaxFileSize="@MaxFileSize"
+                        ShowPreview="@ShowLocalPreview"
+                        ShowProgress="@ShowProgress"
+                        Disabled="@(Disabled || isUploading)" />
+        }
     }
     @if (!string.IsNullOrWhiteSpace(HelpText))
     {
@@ -123,10 +136,13 @@
     public string ClearButtonText { get; set; } = "清除";
 
     [Parameter]
-    public string PreviewImageClass { get; set; } = "h-32 max-w-full rounded-md border bg-background object-cover";
+    public string PreviewImageClass { get; set; } = "h-full w-full object-cover";
 
     [Parameter]
-    public bool ShowLocalPreview { get; set; } = true;
+    public string PreviewImageContainerClass { get; set; } = "h-32 w-full overflow-hidden rounded-md border bg-background";
+
+    [Parameter]
+    public bool ShowLocalPreview { get; set; }
 
     [Parameter]
     public bool Disabled { get; set; }
@@ -182,6 +198,16 @@
             : !string.IsNullOrWhiteSpace(lastUploadedName)
                 ? lastUploadedName
                 : Path.GetFileName(EffectivePreviewUrl ?? string.Empty);
+
+    private string GetPreviewTitle()
+    {
+        if (IsUsingDefaultPreview && !string.IsNullOrWhiteSpace(EffectivePreviewLabel))
+        {
+            return EffectivePreviewLabel;
+        }
+
+        return EffectiveDisplayName;
+    }
 
     /// <summary>重置多文件上传状态（对话框关闭时调用）。</summary>
     public bool IsUploading => isUploading;
@@ -365,6 +391,26 @@
         await ValueChanged.InvokeAsync(Value);
         await OnCleared.InvokeAsync();
         await ResetFileInputAsync();
+    }
+
+    private async Task CopyUrlAsync()
+    {
+        string? url = NavigationManager.ToMediaUrl(EffectivePreviewUrl ?? string.Empty);
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return;
+        }
+
+        try
+        {
+            await JS.InvokeVoidAsync("neoAdminAuth.copyText", url);
+            ToastService.Success("已复制", "文件链接已复制到剪贴板。");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "NeoFileUpload 复制链接失败");
+            ToastService.Error("复制失败", ex.Message);
+        }
     }
 
     private async Task ResetFileInputAsync()
