@@ -1,5 +1,17 @@
 [
   {
+    "shortHash": "98db7b4",
+    "committedAt": "2026-07-01T15:16:40+08:00",
+    "subject": "feat(NeoFileUpload): 优化预览区布局并支持复制链接",
+    "body": "预览区整合复制与删除按钮，上传中隐藏选择区，默认关闭本地预览。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "57c6d2f",
+    "committedAt": "2026-07-01T00:00:28+08:00",
+    "subject": "release: v1.0.43",
+    "body": "API 权限菜单改为反射自动生成；移除手写 Api 菜单种子；演示用户减至 10 人；删除 OSS 测试脚本。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
     "shortHash": "080ab76",
     "committedAt": "2026-06-30T23:16:23+08:00",
     "subject": "release: v1.0.42",
@@ -286,17 +298,5 @@
     "committedAt": "2026-06-13T12:46:18+08:00",
     "subject": "补充 Serilog 日志开发文档与 Cursor 规则，移除根目录重复上手文档",
     "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "4df9e6a",
-    "committedAt": "2026-06-13T09:53:59+08:00",
-    "subject": "IP 白名单校验覆盖 /login 页面",
-    "body": "移除 /login 路径的豁免，启用白名单后登录页同样受 IP 限制。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "5ec354d",
-    "committedAt": "2026-06-12T11:05:38+08:00",
-    "subject": "chore: 发布 v1.0.22",
-    "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号；含 SysTask Status/Interval 列映射修复。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
   }
 ]

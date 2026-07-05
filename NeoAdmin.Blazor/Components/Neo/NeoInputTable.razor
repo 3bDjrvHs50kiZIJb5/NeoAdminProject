@@ -112,6 +112,13 @@ else
     [Parameter]
     public RenderFragment? TableHeader { get; set; }
 
+    /// <summary>
+    /// 选择弹窗内 DataTable 的列定义，传入多个 <see cref="DataTableColumn{TData}"/> 自定义展示列（ID 列固定保留）。
+    /// 未设置时回退为单列，并依次使用 <see cref="TableRow"/>、<see cref="TableCell"/> 或实体首个字符串字段作为显示文本。
+    /// </summary>
+    [Parameter]
+    public RenderFragment? PickerColumns { get; set; }
+
     [Parameter]
     public RenderFragment<TItem>? TableRow { get; set; }
 
@@ -574,6 +581,10 @@ else
         }
 
         <div class="min-h-0 min-w-0 flex-1">
+            @if (TableHeader != null)
+            {
+                <div class="mb-2">@TableHeader</div>
+            }
             <DataTable TData="CrudGridRow<TItem>"
                        Data="@pickerRows"
                        ShowToolbar="false"
@@ -595,26 +606,33 @@ else
                                      Header="ID"
                                      Sortable="false"
                                      Width="180px" />
-                    <DataTableColumn TData="CrudGridRow<TItem>"
-                                     TValue="string"
-                                     Property="@(_ => string.Empty)"
-                                     Header=""
-                                     Sortable="false">
-                        <CellTemplate Context="row">
-                            @if (TableRow != null)
-                            {
-                                @TableRow(row.Item)
-                            }
-                            else if (TableCell != null)
-                            {
-                                @TableCell(row.Item)
-                            }
-                            else
-                            {
-                                <span>@GetDefaultLabel(row.Item)</span>
-                            }
-                        </CellTemplate>
-                    </DataTableColumn>
+                    @if (PickerColumns != null)
+                    {
+                        @PickerColumns
+                    }
+                    else
+                    {
+                        <DataTableColumn TData="CrudGridRow<TItem>"
+                                         TValue="string"
+                                         Property="@(_ => string.Empty)"
+                                         Header=""
+                                         Sortable="false">
+                            <CellTemplate Context="row">
+                                @if (TableRow != null)
+                                {
+                                    @TableRow(row.Item)
+                                }
+                                else if (TableCell != null)
+                                {
+                                    @TableCell(row.Item)
+                                }
+                                else
+                                {
+                                    <span>@GetDefaultLabel(row.Item)</span>
+                                }
+                            </CellTemplate>
+                        </DataTableColumn>
+                    }
                 </Columns>
                 <EmptyTemplate>
                     <div class="py-10 text-center text-sm text-muted-foreground">暂无数据</div>
