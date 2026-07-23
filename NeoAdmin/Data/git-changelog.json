@@ -1,5 +1,23 @@
 [
   {
+    "shortHash": "cae1c02",
+    "committedAt": "2026-07-23T13:22:07+08:00",
+    "subject": "修复定时任务 E2E：兼容 SchedulerAutoLoad 显式开启的开发环境。",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "d142e92",
+    "committedAt": "2026-07-23T13:19:04+08:00",
+    "subject": "release: v1.0.46",
+    "body": ""
+  },
+  {
+    "shortHash": "ba262ec",
+    "committedAt": "2026-07-23T13:15:10+08:00",
+    "subject": "新增配置文件管理页，并完善定时任务开发环境自动加载开关。",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
     "shortHash": "ea6676a",
     "committedAt": "2026-07-05T22:15:41+08:00",
     "subject": "NeoInputTable 选择弹窗支持 PickerColumns 与 TableHeader；补充未开通账号登录提示文档",
@@ -280,23 +298,5 @@
     "committedAt": "2026-06-13T14:54:57+08:00",
     "subject": "修复 LayoutAdmin 侧栏账户菜单会话检查竞态导致的空引用",
     "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "45245a6",
-    "committedAt": "2026-06-13T14:28:02+08:00",
-    "subject": "Docker 发布跳过 Tailwind 构建，支持 SkipTailwindBuild 参数",
-    "body": "镜像内不再安装 Node.js，发布时直接复用源码中的 tailwind.css。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "00ad5cd",
-    "committedAt": "2026-06-13T13:00:17+08:00",
-    "subject": "修复系统日志页表格区域滚动布局",
-    "body": "改用 flex 填满可用高度，表头筛选与分页固定，仅日志列表内部滚动。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "3684379",
-    "committedAt": "2026-06-13T12:47:09+08:00",
-    "subject": "chore: 发布 v1.0.23",
-    "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
   }
 ]

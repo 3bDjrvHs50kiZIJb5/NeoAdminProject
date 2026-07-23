@@ -2,6 +2,7 @@ namespace NeoAdmin.Blazor.Models;
 
 /// <summary>
 /// appsettings 固定字段表单模型。值为 <c>null</c> 表示该键不在当前文件中（保存时不写入 / 会移除）。
+/// 含框架通用项与常见宿主扩展（Sms / Pandoc / DeepSeek / OpenAI）。
 /// </summary>
 public sealed class AppSettingsFormModel
 {
@@ -46,6 +47,28 @@ public sealed class AppSettingsFormModel
     // Logging
     public string? LoggingDefault { get; set; }
     public string? LoggingAspNetCore { get; set; }
+
+    // Sms（宿主扩展，如 NovoLab）
+    public string? SmsAccessKeyId { get; set; }
+    public string? SmsAccessKeySecret { get; set; }
+    public string? SmsSignName { get; set; }
+    public string? SmsPasswordResetTemplateCode { get; set; }
+    public string? SmsRegisterTemplateCode { get; set; }
+    public int? SmsCodeExpireMinutes { get; set; }
+    public int? SmsSendIntervalSeconds { get; set; }
+
+    // Pandoc
+    public string? PandocExecutablePath { get; set; }
+
+    // DeepSeek
+    public string? DeepSeekApiKey { get; set; }
+    public string? DeepSeekBaseUrl { get; set; }
+    public string? DeepSeekModel { get; set; }
+
+    // OpenAI
+    public string? OpenAIApiKey { get; set; }
+    public string? OpenAIBaseUrl { get; set; }
+    public string? OpenAIModel { get; set; }
 }
 
 /// <summary>可编辑的 appsettings 文件描述。</summary>

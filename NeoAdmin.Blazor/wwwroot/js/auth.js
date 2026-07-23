@@ -22,6 +22,21 @@ window.neoAdminAuth = {
     copyText: async function (text) {
         await navigator.clipboard.writeText(text);
     },
+    scrollIntoViewById: function (id) {
+        const el = document.getElementById(id);
+        if (!el) {
+            return;
+        }
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+    },
+    scrollPageToTop: function () {
+        const container = document.querySelector(".neo-admin-page-scroll");
+        if (container) {
+            container.scrollTo({ top: 0, behavior: "smooth" });
+            return;
+        }
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    },
     /**
      * 监听标签页重新可见 / 窗口获焦，回调 Blazor 做登录态校验（单点登录互踢）。
      */

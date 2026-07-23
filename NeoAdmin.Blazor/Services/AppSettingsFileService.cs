@@ -119,10 +119,24 @@ public sealed class AppSettingsFileService
         form.LoggingDefault = NullIfWhiteSpace(form.LoggingDefault);
         form.LoggingAspNetCore = NullIfWhiteSpace(form.LoggingAspNetCore);
 
+        form.SmsSignName = NullIfWhiteSpace(form.SmsSignName);
+        form.SmsPasswordResetTemplateCode = NullIfWhiteSpace(form.SmsPasswordResetTemplateCode);
+        form.SmsRegisterTemplateCode = NullIfWhiteSpace(form.SmsRegisterTemplateCode);
+        form.PandocExecutablePath = NullIfWhiteSpace(form.PandocExecutablePath);
+        form.DeepSeekBaseUrl = NullIfWhiteSpace(form.DeepSeekBaseUrl);
+        form.DeepSeekModel = NullIfWhiteSpace(form.DeepSeekModel);
+        form.OpenAIBaseUrl = NullIfWhiteSpace(form.OpenAIBaseUrl);
+        form.OpenAIModel = NullIfWhiteSpace(form.OpenAIModel);
+
         // 密钥：null 仍表示未配置；非 null（含 ""）按原样写入以便清除
         if (form.OssAccessKeyId is not null)
         {
             form.OssAccessKeyId = form.OssAccessKeyId.Trim();
+        }
+
+        if (form.SmsAccessKeyId is not null)
+        {
+            form.SmsAccessKeyId = form.SmsAccessKeyId.Trim();
         }
     }
 

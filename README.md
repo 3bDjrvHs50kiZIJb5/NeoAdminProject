@@ -165,7 +165,7 @@ dotnet new install ./NeoAdmin.Templates --force
 | 组织 | `/admin/org` | 树形组织结构 |
 | 字典管理 | `/admin/dict` | 字典类型与字典项 |
 | 参数配置 | `/admin/param` | 系统键值参数 |
-| 配置文件 | `/admin/config-files` | 固定字段编辑 appsettings*.json（基础/开发/生产） |
+| 配置文件 | `/admin/config-files` | 固定字段编辑 appsettings*.json（框架 + Sms/Pandoc/DeepSeek/OpenAI 等宿主扩展） |
 | 站点设置 | `/admin/site-settings` | 站点标题、Logo 等 |
 | IP 白名单 | `/admin/ip-whitelist` | 访问 IP 控制 |
 | 文件管理 | `/admin/file` | 上传文件记录、批量上传、下载 |

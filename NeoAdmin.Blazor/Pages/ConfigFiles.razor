@@ -4,17 +4,41 @@
 @using NeoAdmin.Blazor.Services
 @inject AppSettingsFileService AppSettingsFileService
 @inject IToastService ToastService
+@inject IJSRuntime JS
 @inject ILogger<ConfigFiles> Logger
 
 <PageTitle>配置文件</PageTitle>
 
 <div class="neo-admin-page-scroll flex min-h-0 flex-1 flex-col">
-<div class="mx-auto flex w-full max-w-4xl flex-col gap-4 pb-8">
+<div class="relative mx-auto flex w-full max-w-6xl gap-6 pb-8">
+    <nav class="sticky top-4 z-10 w-36 shrink-0 self-start sm:w-40" aria-label="配置章节导航">
+        <button type="button"
+                class="mb-1 flex h-7 w-full min-w-0 items-center gap-1.5 overflow-hidden rounded-md px-2 text-sm text-muted-foreground outline-none ring-ring transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2"
+                @onclick="ScrollToTopAsync">
+            <LucideIcon Name="arrow-up" Size="14" Class="shrink-0" />
+            <span class="truncate">返回顶部</span>
+        </button>
+        <ul class="ml-px flex min-w-0 flex-col gap-1 border-l border-border px-2.5 py-0.5">
+            @foreach (var item in SectionNavItems)
+            {
+                <li>
+                    <button type="button"
+                            data-active="@(activeSectionId == item.Id ? "true" : null)"
+                            class="flex h-7 w-full min-w-0 items-center overflow-hidden rounded-md px-2 text-sm text-muted-foreground outline-none ring-ring transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 active:bg-accent active:text-accent-foreground data-[active=true]:bg-accent data-[active=true]:text-accent-foreground"
+                            @onclick="() => ScrollToSectionAsync(item.Id)">
+                        <span class="truncate">@item.Label</span>
+                    </button>
+                </li>
+            }
+        </ul>
+    </nav>
+
+    <div class="mx-auto flex w-full min-w-0 max-w-4xl flex-1 flex-col gap-4">
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
             <h1 class="text-2xl font-semibold tracking-tight">配置文件</h1>
             <p class="text-sm text-muted-foreground">
-                按文件编辑 appsettings 固定字段，保存后写回 JSON。开发密钥写在 Development；部分项（连接串、WorkId 等）通常需重启后生效。
+                按文件编辑 appsettings 固定字段（含框架与常见宿主扩展：Sms / Pandoc / DeepSeek / OpenAI）。开发密钥写在 Development；部分项通常需重启后生效。
             </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
@@ -57,6 +81,7 @@
     else if (model is not null)
     {
         <div class="space-y-4">
+            <div id="cfg-sec-neoadmin" class="scroll-mt-4">
             <Card>
                 <CardHeader>
                     <CardTitle>NeoAdmin 基础</CardTitle>
@@ -146,7 +171,9 @@
                     </div>
                 </CardContent>
             </Card>
+            </div>
 
+            <div id="cfg-sec-upload" class="scroll-mt-4">
             <Card>
                 <CardHeader>
                     <CardTitle>文件上传</CardTitle>
@@ -181,7 +208,9 @@
                     </div>
                 </CardContent>
             </Card>
+            </div>
 
+            <div id="cfg-sec-oss" class="scroll-mt-4">
             <Card>
                 <CardHeader>
                     <CardTitle>阿里云 OSS</CardTitle>
@@ -214,7 +243,9 @@
                     </div>
                 </CardContent>
             </Card>
+            </div>
 
+            <div id="cfg-sec-dashscope" class="scroll-mt-4">
             <Card>
                 <CardHeader>
                     <CardTitle>DashScope 语音</CardTitle>
@@ -235,7 +266,110 @@
                     </div>
                 </CardContent>
             </Card>
+            </div>
 
+            <div id="cfg-sec-sms" class="scroll-mt-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>SMS</CardTitle>
+                    <CardDescription>阿里云短信（找回密码 / 注册验证码等宿主扩展）。</CardDescription>
+                </CardHeader>
+                <CardContent class="grid gap-4 sm:grid-cols-2">
+                    <div class="space-y-2">
+                        <Label For="cfg-sms-ak">AccessKeyId</Label>
+                        <Input id="cfg-sms-ak" Class="w-full" @bind-Value="model.SmsAccessKeyId" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-sms-sk">AccessKeySecret</Label>
+                        <Input id="cfg-sms-sk" Type="InputType.Password" Class="w-full" @bind-Value="model.SmsAccessKeySecret" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-sms-sign">SignName</Label>
+                        <Input id="cfg-sms-sign" Class="w-full" @bind-Value="model.SmsSignName" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-sms-expire">CodeExpireMinutes</Label>
+                        <Input id="cfg-sms-expire" Class="w-full" Value="@IntToText(model.SmsCodeExpireMinutes)" ValueChanged="v => model.SmsCodeExpireMinutes = TextToInt(v)" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-sms-interval">SendIntervalSeconds</Label>
+                        <Input id="cfg-sms-interval" Class="w-full" Value="@IntToText(model.SmsSendIntervalSeconds)" ValueChanged="v => model.SmsSendIntervalSeconds = TextToInt(v)" />
+                    </div>
+                    <div class="col-span-full my-1 border-t border-border"></div>
+                    <div class="space-y-2">
+                        <Label For="cfg-sms-reset">PasswordResetTemplateCode</Label>
+                        <Input id="cfg-sms-reset" Class="w-full" @bind-Value="model.SmsPasswordResetTemplateCode" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-sms-reg">RegisterTemplateCode</Label>
+                        <Input id="cfg-sms-reg" Class="w-full" @bind-Value="model.SmsRegisterTemplateCode" />
+                    </div>
+                </CardContent>
+            </Card>
+            </div>
+
+            <div id="cfg-sec-pandoc" class="scroll-mt-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Pandoc</CardTitle>
+                    <CardDescription>文档转换可执行文件路径（Word / PDF 等）。</CardDescription>
+                </CardHeader>
+                <CardContent class="grid gap-4 sm:grid-cols-2">
+                    <div class="space-y-2 sm:col-span-2">
+                        <Label For="cfg-pandoc">ExecutablePath</Label>
+                        <Input id="cfg-pandoc" Class="w-full" Placeholder="pandoc 或绝对路径" @bind-Value="model.PandocExecutablePath" />
+                    </div>
+                </CardContent>
+            </Card>
+            </div>
+
+            <div id="cfg-sec-deepseek" class="scroll-mt-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>DeepSeek</CardTitle>
+                    <CardDescription>DeepSeek 对话 API（课件 / 文档等 AI 能力）。</CardDescription>
+                </CardHeader>
+                <CardContent class="grid gap-4 sm:grid-cols-2">
+                    <div class="space-y-2 sm:col-span-2">
+                        <Label For="cfg-ds-key">ApiKey</Label>
+                        <Input id="cfg-ds-key" Type="InputType.Password" Class="w-full" @bind-Value="model.DeepSeekApiKey" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-ds-url">BaseUrl</Label>
+                        <Input id="cfg-ds-url" Class="w-full" Placeholder="https://api.deepseek.com" @bind-Value="model.DeepSeekBaseUrl" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-ds-model">Model</Label>
+                        <Input id="cfg-ds-model" Class="w-full" Placeholder="deepseek-chat" @bind-Value="model.DeepSeekModel" />
+                    </div>
+                </CardContent>
+            </Card>
+            </div>
+
+            <div id="cfg-sec-openai" class="scroll-mt-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>OpenAI</CardTitle>
+                    <CardDescription>OpenAI 兼容对话 API（官方或第三方兼容端点）。</CardDescription>
+                </CardHeader>
+                <CardContent class="grid gap-4 sm:grid-cols-2">
+                    <div class="space-y-2 sm:col-span-2">
+                        <Label For="cfg-openai-key">ApiKey</Label>
+                        <Input id="cfg-openai-key" Type="InputType.Password" Class="w-full" @bind-Value="model.OpenAIApiKey" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-openai-url">BaseUrl</Label>
+                        <Input id="cfg-openai-url" Class="w-full" Placeholder="https://api.openai.com/v1" @bind-Value="model.OpenAIBaseUrl" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-openai-model">Model</Label>
+                        <Input id="cfg-openai-model" Class="w-full" Placeholder="gpt-4o-mini" @bind-Value="model.OpenAIModel" />
+                    </div>
+                </CardContent>
+            </Card>
+            </div>
+
+            <div id="cfg-sec-logging" class="scroll-mt-4">
             <Card>
                 <CardHeader>
                     <CardTitle>Logging</CardTitle>
@@ -256,6 +390,7 @@
                     </div>
                 </CardContent>
             </Card>
+            </div>
 
             <div class="flex items-center justify-end gap-2">
                 <Button Variant="ButtonVariant.Outline" OnClick="HandleSaveAsync" Disabled="@(isLoading || isSaving)">
@@ -264,6 +399,7 @@
             </div>
         </div>
     }
+    </div>
 </div>
 </div>
 
@@ -280,8 +416,22 @@
         "", "Trace", "Debug", "Information", "Warning", "Error", "Critical", "None"
     ];
 
+    private static readonly (string Id, string Label)[] SectionNavItems =
+    [
+        ("cfg-sec-neoadmin", "NeoAdmin"),
+        ("cfg-sec-upload", "File Upload"),
+        ("cfg-sec-oss", "Aliyun OSS"),
+        ("cfg-sec-dashscope", "DashScope"),
+        ("cfg-sec-sms", "SMS"),
+        ("cfg-sec-pandoc", "Pandoc"),
+        ("cfg-sec-deepseek", "DeepSeek"),
+        ("cfg-sec-openai", "OpenAI"),
+        ("cfg-sec-logging", "Logging"),
+    ];
+
     private AppSettingsFormModel? model;
     private string selectedFileName = AppSettingsFileService.Files[0].FileName;
+    private string activeSectionId = "cfg-sec-neoadmin";
     private bool fileExists = true;
     private bool isLoading = true;
     private bool isSaving;
@@ -322,6 +472,37 @@
 
         selectedFileName = fileName;
         await LoadAsync();
+    }
+
+    private async Task ScrollToSectionAsync(string sectionId)
+    {
+        if (string.IsNullOrWhiteSpace(sectionId))
+        {
+            return;
+        }
+
+        activeSectionId = sectionId;
+        try
+        {
+            await JS.InvokeVoidAsync("neoAdminAuth.scrollIntoViewById", sectionId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "配置章节跳转失败，SectionId={SectionId}", sectionId);
+        }
+    }
+
+    private async Task ScrollToTopAsync()
+    {
+        activeSectionId = string.Empty;
+        try
+        {
+            await JS.InvokeVoidAsync("neoAdminAuth.scrollPageToTop");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "配置页返回顶部失败");
+        }
     }
 
     private async Task HandleSaveAsync()

@@ -274,7 +274,7 @@ app.Run();
 | **终端控制台** | 实时日志 |
 | **`Logs/admin-YYYYMMDD.log`** | 按天滚动，自动保留最近 30 个文件 |
 | **后台 `/admin/system-log`** | 在线浏览、按级别筛选、关键词搜索、自动刷新、清空 INF、删除日志文件 |
-| **后台 `/admin/config-files`** | 用固定字段表单编辑 `appsettings*.json`（基础 / Development / Production） |
+| **后台 `/admin/config-files`** | 用固定字段表单编辑 `appsettings*.json`（框架项 + Sms / Pandoc / DeepSeek / OpenAI） |
 | **HTTP 请求** | 自动记录耗时，如 `HTTP GET /api/article responded 200 in 12.3 ms` |
 | **SQL 监控** | `MonitorCommand: true` 时，失败或超过 2 秒的 SQL 记为 Error，可在系统日志页筛选 |
 

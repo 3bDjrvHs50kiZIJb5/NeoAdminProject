@@ -55,6 +55,24 @@ public static class AppSettingsJsonMapper
 
             LoggingDefault = GetString(obj, "Logging", "LogLevel", "Default"),
             LoggingAspNetCore = GetString(obj, "Logging", "LogLevel", "Microsoft.AspNetCore"),
+
+            SmsAccessKeyId = GetString(obj, "Sms", "AccessKeyId"),
+            SmsAccessKeySecret = GetString(obj, "Sms", "AccessKeySecret"),
+            SmsSignName = GetString(obj, "Sms", "SignName"),
+            SmsPasswordResetTemplateCode = GetString(obj, "Sms", "PasswordResetTemplateCode"),
+            SmsRegisterTemplateCode = GetString(obj, "Sms", "RegisterTemplateCode"),
+            SmsCodeExpireMinutes = GetInt(obj, "Sms", "CodeExpireMinutes"),
+            SmsSendIntervalSeconds = GetInt(obj, "Sms", "SendIntervalSeconds"),
+
+            PandocExecutablePath = GetString(obj, "Pandoc", "ExecutablePath"),
+
+            DeepSeekApiKey = GetString(obj, "DeepSeek", "ApiKey"),
+            DeepSeekBaseUrl = GetString(obj, "DeepSeek", "BaseUrl"),
+            DeepSeekModel = GetString(obj, "DeepSeek", "Model"),
+
+            OpenAIApiKey = GetString(obj, "OpenAI", "ApiKey"),
+            OpenAIBaseUrl = GetString(obj, "OpenAI", "BaseUrl"),
+            OpenAIModel = GetString(obj, "OpenAI", "Model"),
         };
     }
 
@@ -101,6 +119,24 @@ public static class AppSettingsJsonMapper
 
         SetOrRemoveString(root, form.LoggingDefault, "Logging", "LogLevel", "Default");
         SetOrRemoveString(root, form.LoggingAspNetCore, "Logging", "LogLevel", "Microsoft.AspNetCore");
+
+        SetOrRemoveString(root, form.SmsAccessKeyId, "Sms", "AccessKeyId");
+        SetOrRemoveString(root, form.SmsAccessKeySecret, "Sms", "AccessKeySecret");
+        SetOrRemoveString(root, form.SmsSignName, "Sms", "SignName");
+        SetOrRemoveString(root, form.SmsPasswordResetTemplateCode, "Sms", "PasswordResetTemplateCode");
+        SetOrRemoveString(root, form.SmsRegisterTemplateCode, "Sms", "RegisterTemplateCode");
+        SetOrRemoveInt(root, form.SmsCodeExpireMinutes, "Sms", "CodeExpireMinutes");
+        SetOrRemoveInt(root, form.SmsSendIntervalSeconds, "Sms", "SendIntervalSeconds");
+
+        SetOrRemoveString(root, form.PandocExecutablePath, "Pandoc", "ExecutablePath");
+
+        SetOrRemoveString(root, form.DeepSeekApiKey, "DeepSeek", "ApiKey");
+        SetOrRemoveString(root, form.DeepSeekBaseUrl, "DeepSeek", "BaseUrl");
+        SetOrRemoveString(root, form.DeepSeekModel, "DeepSeek", "Model");
+
+        SetOrRemoveString(root, form.OpenAIApiKey, "OpenAI", "ApiKey");
+        SetOrRemoveString(root, form.OpenAIBaseUrl, "OpenAI", "BaseUrl");
+        SetOrRemoveString(root, form.OpenAIModel, "OpenAI", "Model");
 
         PruneEmptyObjects(root);
         return root.ToJsonString(WriteOptions) + Environment.NewLine;
@@ -360,6 +396,10 @@ public static class AppSettingsJsonMapper
         PruneKnown(root, "DashScope");
         PruneKnown(root, "Logging", "LogLevel");
         PruneKnown(root, "Logging");
+        PruneKnown(root, "Sms");
+        PruneKnown(root, "Pandoc");
+        PruneKnown(root, "DeepSeek");
+        PruneKnown(root, "OpenAI");
     }
 
     private static void PruneKnown(JsonObject root, params string[] path)
