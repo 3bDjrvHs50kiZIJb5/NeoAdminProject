@@ -145,7 +145,7 @@ NeoAdmin/
 | **Entities/Blog/** | 博客表实体；继承框架基类（如 `EntityAudited`） |
 | **SeedData/** | 首次/启动时建表、写菜单、审批按钮、演示数据 |
 | **Services/** | 跨页面复用的业务服务（如博客关联维护） |
-| **Jobs/** | 带 `[Scheduler]` 的定时任务，在 `Program.cs` 中通过 `SchedulerAssemblies` 注册 |
+| **Jobs/** | 带 `[Scheduler]` 的定时任务，在 `Program.cs` 中通过 `SchedulerAssemblies` 注册；开发环境默认不自动加载执行持久化任务，可配置 `NeoAdmin:SchedulerAutoLoad=true` 开启 |
 | **wwwroot/** | 静态资源与 Tailwind 编译 CSS |
 
 ### 博客示例模块

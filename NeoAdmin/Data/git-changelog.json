@@ -1,5 +1,11 @@
 [
   {
+    "shortHash": "ea6676a",
+    "committedAt": "2026-07-05T22:15:41+08:00",
+    "subject": "NeoInputTable 选择弹窗支持 PickerColumns 与 TableHeader；补充未开通账号登录提示文档",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
     "shortHash": "98db7b4",
     "committedAt": "2026-07-01T15:16:40+08:00",
     "subject": "feat(NeoFileUpload): 优化预览区布局并支持复制链接",
@@ -292,11 +298,5 @@
     "committedAt": "2026-06-13T12:47:09+08:00",
     "subject": "chore: 发布 v1.0.23",
     "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "0ea03f7",
-    "committedAt": "2026-06-13T12:46:18+08:00",
-    "subject": "补充 Serilog 日志开发文档与 Cursor 规则，移除根目录重复上手文档",
-    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
   }
 ]

@@ -1,0 +1,380 @@
+@page "/admin/config-files"
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Models
+@using NeoAdmin.Blazor.Services
+@inject AppSettingsFileService AppSettingsFileService
+@inject IToastService ToastService
+@inject ILogger<ConfigFiles> Logger
+
+<PageTitle>配置文件</PageTitle>
+
+<div class="neo-admin-page-scroll flex min-h-0 flex-1 flex-col">
+<div class="mx-auto flex w-full max-w-4xl flex-col gap-4 pb-8">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <h1 class="text-2xl font-semibold tracking-tight">配置文件</h1>
+            <p class="text-sm text-muted-foreground">
+                按文件编辑 appsettings 固定字段，保存后写回 JSON。开发密钥写在 Development；部分项（连接串、WorkId 等）通常需重启后生效。
+            </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <Button Variant="ButtonVariant.Outline" OnClick="LoadAsync" Disabled="@(isLoading || isSaving)">
+                <LucideIcon Name="refresh-cw" Size="16" Class="@(isLoading ? "mr-2 animate-spin" : "mr-2")" />
+                刷新
+            </Button>
+            <Button Variant="ButtonVariant.Outline" OnClick="HandleSaveAsync" Disabled="@(isLoading || isSaving || model is null)">
+                @(isSaving ? "保存中…" : "保存")
+            </Button>
+        </div>
+    </div>
+
+    <Alert AccentBorder="true">
+        <AlertDescription>
+            字段选「未配置」表示不写入当前文件（适合 Development / Production 分层覆盖）。空密钥会写入空字符串以清除。
+            当前文件：<code class="rounded bg-muted px-1 py-0.5 text-xs">@selectedFileName</code>
+            @if (!fileExists)
+            {
+                <span class="text-muted-foreground">（文件尚不存在，保存时将创建）</span>
+            }
+        </AlertDescription>
+    </Alert>
+
+    <Tabs Value="@selectedFileName" ValueChanged="HandleTabChangedAsync" Class="w-full">
+        <TabsList Class="mb-4 flex h-auto w-full flex-wrap justify-start gap-1">
+            @foreach (AppSettingsFileInfo file in AppSettingsFileService.Files)
+            {
+                <TabsTrigger Value="@file.FileName">@file.DisplayName</TabsTrigger>
+            }
+        </TabsList>
+    </Tabs>
+
+    @if (isLoading)
+    {
+        <Card>
+            <CardContent Class="py-12 text-center text-sm text-muted-foreground">加载中…</CardContent>
+        </Card>
+    }
+    else if (model is not null)
+    {
+        <div class="space-y-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>NeoAdmin 基础</CardTitle>
+                    <CardDescription>数据库、种子、Swagger、定时任务与日志浏览目录。</CardDescription>
+                </CardHeader>
+                <CardContent class="grid gap-4 sm:grid-cols-2">
+                    <div class="space-y-2">
+                        <Label>数据库类型</Label>
+                        <NativeSelect TValue="string" Class="w-full" Value="@(model.DataType ?? "")" ValueChanged="v => model.DataType = EmptyToNull(v)">
+                            <NativeSelectOption Value="">未配置</NativeSelectOption>
+                            <NativeSelectOption Value="Sqlite">Sqlite</NativeSelectOption>
+                            <NativeSelectOption Value="MySql">MySql</NativeSelectOption>
+                            <NativeSelectOption Value="SqlServer">SqlServer</NativeSelectOption>
+                            <NativeSelectOption Value="PostgreSQL">PostgreSQL</NativeSelectOption>
+                            <NativeSelectOption Value="Oracle">Oracle</NativeSelectOption>
+                            <NativeSelectOption Value="Dameng">Dameng</NativeSelectOption>
+                            <NativeSelectOption Value="KingbaseES">KingbaseES</NativeSelectOption>
+                        </NativeSelect>
+                    </div>
+                    <div class="space-y-2 sm:col-span-2">
+                        <Label For="cfg-connection">连接字符串</Label>
+                        <Input id="cfg-connection" Class="w-full" @bind-Value="model.ConnectionString" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label>自动同步框架表</Label>
+                        <NativeSelect TValue="string" Class="w-full" Value="@BoolToSelect(model.AutoSyncStructure)" ValueChanged="v => model.AutoSyncStructure = SelectToBool(v)">
+                            @foreach (var opt in BoolOptions) { <NativeSelectOption Value="@opt.Value">@opt.Label</NativeSelectOption> }
+                        </NativeSelect>
+                    </div>
+                    <div class="space-y-2">
+                        <Label>启用种子数据</Label>
+                        <NativeSelect TValue="string" Class="w-full" Value="@BoolToSelect(model.EnableSeedData)" ValueChanged="v => model.EnableSeedData = SelectToBool(v)">
+                            @foreach (var opt in BoolOptions) { <NativeSelectOption Value="@opt.Value">@opt.Label</NativeSelectOption> }
+                        </NativeSelect>
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-home">登录首页路径</Label>
+                        <Input id="cfg-home" Class="w-full" Placeholder="/Admin" @bind-Value="model.HomePath" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label>SQL 监控</Label>
+                        <NativeSelect TValue="string" Class="w-full" Value="@BoolToSelect(model.MonitorCommand)" ValueChanged="v => model.MonitorCommand = SelectToBool(v)">
+                            @foreach (var opt in BoolOptions) { <NativeSelectOption Value="@opt.Value">@opt.Label</NativeSelectOption> }
+                        </NativeSelect>
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-seed-user">种子管理员用户名</Label>
+                        <Input id="cfg-seed-user" Class="w-full" @bind-Value="model.SeedAdminUserName" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-seed-pwd">种子管理员密码</Label>
+                        <Input id="cfg-seed-pwd" Type="InputType.Password" Class="w-full" @bind-Value="model.SeedAdminPassword" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-workid">雪花 WorkId（0–63）</Label>
+                        <Input id="cfg-workid" Class="w-full" Value="@IntToText(model.WorkId)" ValueChanged="v => model.WorkId = TextToInt(v)" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label>IP 白名单</Label>
+                        <NativeSelect TValue="string" Class="w-full" Value="@BoolToSelect(model.EnableIpWhitelist)" ValueChanged="v => model.EnableIpWhitelist = SelectToBool(v)">
+                            @foreach (var opt in BoolOptions) { <NativeSelectOption Value="@opt.Value">@opt.Label</NativeSelectOption> }
+                        </NativeSelect>
+                    </div>
+                    <div class="space-y-2">
+                        <Label>Swagger</Label>
+                        <NativeSelect TValue="string" Class="w-full" Value="@BoolToSelect(model.IsSwagger)" ValueChanged="v => model.IsSwagger = SelectToBool(v)">
+                            @foreach (var opt in BoolOptions) { <NativeSelectOption Value="@opt.Value">@opt.Label</NativeSelectOption> }
+                        </NativeSelect>
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-swagger-hides">Swagger 隐藏片段</Label>
+                        <Input id="cfg-swagger-hides" Class="w-full" Placeholder="逗号分隔" @bind-Value="model.SwaggerHides" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label>定时任务自动加载</Label>
+                        <NativeSelect TValue="string" Class="w-full" Value="@BoolToSelect(model.SchedulerAutoLoad)" ValueChanged="v => model.SchedulerAutoLoad = SelectToBool(v)">
+                            @foreach (var opt in BoolOptions) { <NativeSelectOption Value="@opt.Value">@opt.Label</NativeSelectOption> }
+                        </NativeSelect>
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-log-dir">日志目录</Label>
+                        <Input id="cfg-log-dir" Class="w-full" Placeholder="Logs" @bind-Value="model.LogDirectory" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-log-prefix">日志文件前缀</Label>
+                        <Input id="cfg-log-prefix" Class="w-full" Placeholder="admin-" @bind-Value="model.LogFilePrefix" />
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>文件上传</CardTitle>
+                    <CardDescription>本地上传目录、大小与扩展名限制。</CardDescription>
+                </CardHeader>
+                <CardContent class="grid gap-4 sm:grid-cols-2">
+                    <div class="space-y-2">
+                        <Label For="cfg-upload-dir">上传目录</Label>
+                        <Input id="cfg-upload-dir" Class="w-full" @bind-Value="model.FileUploadDirectory" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-upload-date">日期子目录格式</Label>
+                        <Input id="cfg-upload-date" Class="w-full" Placeholder="yyyyMMdd" @bind-Value="model.FileUploadDateTimeDirectory" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label>MD5 去重</Label>
+                        <NativeSelect TValue="string" Class="w-full" Value="@BoolToSelect(model.FileUploadMd5)" ValueChanged="v => model.FileUploadMd5 = SelectToBool(v)">
+                            @foreach (var opt in BoolOptions) { <NativeSelectOption Value="@opt.Value">@opt.Label</NativeSelectOption> }
+                        </NativeSelect>
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-upload-max">最大字节</Label>
+                        <Input id="cfg-upload-max" Class="w-full" Value="@LongToText(model.FileUploadMaxSize)" ValueChanged="v => model.FileUploadMaxSize = TextToLong(v)" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-upload-include">允许扩展名</Label>
+                        <Input id="cfg-upload-include" Class="w-full" Placeholder=".png, .jpg" @bind-Value="model.FileUploadIncludeExtension" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-upload-exclude">禁止扩展名</Label>
+                        <Input id="cfg-upload-exclude" Class="w-full" Placeholder=".exe, .dll, .jar" @bind-Value="model.FileUploadExcludeExtension" />
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>阿里云 OSS</CardTitle>
+                    <CardDescription>Endpoint、AccessKeyId、AccessKeySecret、BucketName 均填写后启用。</CardDescription>
+                </CardHeader>
+                <CardContent class="grid gap-4 sm:grid-cols-2">
+                    <div class="space-y-2">
+                        <Label For="cfg-oss-endpoint">Endpoint</Label>
+                        <Input id="cfg-oss-endpoint" Class="w-full" Placeholder="oss-cn-hangzhou.aliyuncs.com" @bind-Value="model.OssEndpoint" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-oss-bucket">BucketName</Label>
+                        <Input id="cfg-oss-bucket" Class="w-full" @bind-Value="model.OssBucketName" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-oss-ak">AccessKeyId</Label>
+                        <Input id="cfg-oss-ak" Class="w-full" @bind-Value="model.OssAccessKeyId" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-oss-sk">AccessKeySecret</Label>
+                        <Input id="cfg-oss-sk" Type="InputType.Password" Class="w-full" @bind-Value="model.OssAccessKeySecret" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-oss-domain">CustomDomain</Label>
+                        <Input id="cfg-oss-domain" Class="w-full" @bind-Value="model.OssCustomDomain" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-oss-prefix">Prefix</Label>
+                        <Input id="cfg-oss-prefix" Class="w-full" @bind-Value="model.OssPrefix" />
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>DashScope 语音</CardTitle>
+                    <CardDescription>阿里云百炼实时语音识别。</CardDescription>
+                </CardHeader>
+                <CardContent class="grid gap-4 sm:grid-cols-2">
+                    <div class="space-y-2 sm:col-span-2">
+                        <Label For="cfg-dash-key">ApiKey</Label>
+                        <Input id="cfg-dash-key" Type="InputType.Password" Class="w-full" @bind-Value="model.DashScopeApiKey" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-dash-model">RealtimeModel</Label>
+                        <Input id="cfg-dash-model" Class="w-full" Placeholder="paraformer-realtime-v2" @bind-Value="model.DashScopeRealtimeModel" />
+                    </div>
+                    <div class="space-y-2">
+                        <Label For="cfg-dash-rate">SampleRate</Label>
+                        <Input id="cfg-dash-rate" Class="w-full" Value="@IntToText(model.DashScopeSampleRate)" ValueChanged="v => model.DashScopeSampleRate = TextToInt(v)" />
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Logging</CardTitle>
+                    <CardDescription>ASP.NET 默认日志节（实际输出以 Serilog 为准）。</CardDescription>
+                </CardHeader>
+                <CardContent class="grid gap-4 sm:grid-cols-2">
+                    <div class="space-y-2">
+                        <Label>默认级别</Label>
+                        <NativeSelect TValue="string" Class="w-full" Value="@(model.LoggingDefault ?? "")" ValueChanged="v => model.LoggingDefault = EmptyToNull(v)">
+                            @foreach (var opt in LogLevelOptions) { <NativeSelectOption Value="@opt">@(string.IsNullOrEmpty(opt) ? "未配置" : opt)</NativeSelectOption> }
+                        </NativeSelect>
+                    </div>
+                    <div class="space-y-2">
+                        <Label>Microsoft.AspNetCore 级别</Label>
+                        <NativeSelect TValue="string" Class="w-full" Value="@(model.LoggingAspNetCore ?? "")" ValueChanged="v => model.LoggingAspNetCore = EmptyToNull(v)">
+                            @foreach (var opt in LogLevelOptions) { <NativeSelectOption Value="@opt">@(string.IsNullOrEmpty(opt) ? "未配置" : opt)</NativeSelectOption> }
+                        </NativeSelect>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <div class="flex items-center justify-end gap-2">
+                <Button Variant="ButtonVariant.Outline" OnClick="HandleSaveAsync" Disabled="@(isLoading || isSaving)">
+                    @(isSaving ? "保存中…" : "保存到当前文件")
+                </Button>
+            </div>
+        </div>
+    }
+</div>
+</div>
+
+@code {
+    private static readonly (string Value, string Label)[] BoolOptions =
+    [
+        ("", "未配置"),
+        ("true", "开"),
+        ("false", "关"),
+    ];
+
+    private static readonly string[] LogLevelOptions =
+    [
+        "", "Trace", "Debug", "Information", "Warning", "Error", "Critical", "None"
+    ];
+
+    private AppSettingsFormModel? model;
+    private string selectedFileName = AppSettingsFileService.Files[0].FileName;
+    private bool fileExists = true;
+    private bool isLoading = true;
+    private bool isSaving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        try
+        {
+            fileExists = AppSettingsFileService.FileExists(selectedFileName);
+            model = await AppSettingsFileService.LoadFormAsync(selectedFileName);
+            Logger.LogInformation("配置文件页已加载，FileName={FileName}", selectedFileName);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "加载配置文件失败，FileName={FileName}", selectedFileName);
+            ToastService.Error("加载失败", ex.Message);
+            model = new AppSettingsFormModel();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleTabChangedAsync(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName)
+            || string.Equals(fileName, selectedFileName, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        selectedFileName = fileName;
+        await LoadAsync();
+    }
+
+    private async Task HandleSaveAsync()
+    {
+        if (model is null || isSaving)
+        {
+            return;
+        }
+
+        isSaving = true;
+        Logger.LogInformation("保存配置文件开始，FileName={FileName}", selectedFileName);
+        try
+        {
+            await AppSettingsFileService.SaveFormAsync(selectedFileName, model);
+            Logger.LogInformation("保存配置文件成功，FileName={FileName}", selectedFileName);
+            ToastService.Success("配置文件", $"已保存 {selectedFileName}");
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "保存配置文件失败，FileName={FileName}", selectedFileName);
+            ToastService.Error("保存失败", ex.Message);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private static string BoolToSelect(bool? value) => value switch
+    {
+        true => "true",
+        false => "false",
+        _ => ""
+    };
+
+    private static bool? SelectToBool(string? value) => value switch
+    {
+        "true" => true,
+        "false" => false,
+        _ => null
+    };
+
+    private static string? EmptyToNull(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value;
+
+    private static string IntToText(int? value) => value?.ToString() ?? string.Empty;
+
+    private static int? TextToInt(string? value) =>
+        int.TryParse(value, out int n) ? n : null;
+
+    private static string LongToText(long? value) => value?.ToString() ?? string.Empty;
+
+    private static long? TextToLong(string? value) =>
+        long.TryParse(value, out long n) ? n : null;
+}

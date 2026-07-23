@@ -7,10 +7,13 @@
 @using ResultGetPage = FreeScheduler.Datafeed.ResultGetPage
 @using ClusterLog = FreeScheduler.Datafeed.ClusterLog
 @using NeoAdmin.Blazor.Services
+@using NeoAdmin.Blazor.Data
 @using FreeTaskStatus = FreeScheduler.TaskStatus
 @using Microsoft.Extensions.Hosting
+@using Microsoft.Extensions.Options
 @inject TaskSchedulerService TaskSchedulerService
 @inject IHostEnvironment HostEnvironment
+@inject IOptions<NeoAdminOptions> NeoAdminOptions
 @inject IToastService ToastService
 
 <PageTitle>定时任务</PageTitle>
@@ -21,9 +24,9 @@
         <Alert AccentBorder="true">
             <AlertDescription>
                 @pageResult.Description
-                @if (HostEnvironment.IsDevelopment())
+                @if (!IsSchedulerAutoLoadEnabled)
                 {
-                    <span class="text-muted-foreground">，未启动任务（开发环境）</span>
+                    <span class="text-muted-foreground">，@SchedulerAutoLoadMessage</span>
                 }
             </AlertDescription>
         </Alert>
@@ -369,6 +372,14 @@
     private int pageSize = 30;
     private long total;
     private int maxPageNumber = 1;
+
+    private bool IsSchedulerAutoLoadEnabled =>
+        NeoAdminOptions.Value.SchedulerAutoLoad ?? !HostEnvironment.IsDevelopment();
+
+    private string SchedulerAutoLoadMessage =>
+        HostEnvironment.IsDevelopment() && NeoAdminOptions.Value.SchedulerAutoLoad is null
+            ? "开发环境默认不自动加载执行任务"
+            : "当前配置不自动加载执行任务";
 
     private bool editorOpen;
     private TaskInfo? editorTask;

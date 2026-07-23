@@ -242,6 +242,7 @@ app.Run();
 | `MonitorCommand` | SQL 监控：失败或耗时超过 2 秒的 SQL 以 Error 写入日志（默认 `true`；生产可按需关闭） |
 | `WorkId` | 雪花 ID 机器号（0–63，多实例需不同） |
 | `EnableIpWhitelist` | IP 白名单（无启用记录时不拦截） |
+| `SchedulerAutoLoad` | 是否启动时自动加载并执行持久化定时任务；未配置时开发环境默认关，其它环境默认开 |
 | `IsSwagger` | Swagger UI 开关 |
 | `LogDirectory` / `LogFilePrefix` | Serilog 文件日志目录与前缀（默认 `Logs/admin-*.log`） |
 | `FileUpload` | 上传目录、大小、扩展名限制 |
@@ -273,6 +274,7 @@ app.Run();
 | **终端控制台** | 实时日志 |
 | **`Logs/admin-YYYYMMDD.log`** | 按天滚动，自动保留最近 30 个文件 |
 | **后台 `/admin/system-log`** | 在线浏览、按级别筛选、关键词搜索、自动刷新、清空 INF、删除日志文件 |
+| **后台 `/admin/config-files`** | 用固定字段表单编辑 `appsettings*.json`（基础 / Development / Production） |
 | **HTTP 请求** | 自动记录耗时，如 `HTTP GET /api/article responded 200 in 12.3 ms` |
 | **SQL 监控** | `MonitorCommand: true` 时，失败或超过 2 秒的 SQL 记为 Error，可在系统日志页筛选 |
 
@@ -1598,6 +1600,8 @@ options.SchedulerAssemblies = [Assembly.GetExecutingAssembly()];
 ```
 
 管理界面：`/admin/task-scheduler`
+
+开发环境默认只登记和展示持久化任务，不自动加载执行；如需本地执行可配置 `NeoAdmin:SchedulerAutoLoad=true`。
 
 ---
 

@@ -165,6 +165,7 @@ dotnet new install ./NeoAdmin.Templates --force
 | 组织 | `/admin/org` | 树形组织结构 |
 | 字典管理 | `/admin/dict` | 字典类型与字典项 |
 | 参数配置 | `/admin/param` | 系统键值参数 |
+| 配置文件 | `/admin/config-files` | 固定字段编辑 appsettings*.json（基础/开发/生产） |
 | 站点设置 | `/admin/site-settings` | 站点标题、Logo 等 |
 | IP 白名单 | `/admin/ip-whitelist` | 访问 IP 控制 |
 | 文件管理 | `/admin/file` | 上传文件记录、批量上传、下载 |
@@ -225,6 +226,7 @@ dotnet new install ./NeoAdmin.Templates --force
 | `EnableSeedData` | 是否写入业务演示种子（组织、人事、博客等；默认 `true`） |
 | `WorkId` | 雪花算法机器号（0–63，多实例需不同） |
 | `EnableIpWhitelist` | 是否启用 IP 白名单（默认 `true`；无任何启用记录时不拦截） |
+| `SchedulerAutoLoad` | 是否启动时自动加载并执行持久化定时任务；未配置时开发环境默认关，其它环境默认开 |
 | `IsSwagger` | 是否启用 Swagger UI；未配置时开发环境开、其它环境关 |
 | `SwaggerHides` | Swagger 文档中隐藏的路径片段 |
 | `LogDirectory` / `LogFilePrefix` | Serilog 文件日志目录与前缀（默认 `Logs/admin-*.log`） |
@@ -259,7 +261,7 @@ app.MapRazorComponents<YourApp>()
 
 - 根路由 `/` 建议由宿主项目自行定义（本仓库示例为控制台仪表盘）
 - 业务菜单可通过 `NeoAdmin.Blazor.SeedData.MenuSeedData.EnsureMenus` 追加种子
-- 定时任务在 `AddNeoAdmin` 的 `SchedulerAssemblies` 中注册宿主程序集
+- 定时任务在 `AddNeoAdmin` 的 `SchedulerAssemblies` 中注册宿主程序集；开发环境默认不自动加载执行持久化任务，可配置 `NeoAdmin:SchedulerAutoLoad=true` 开启
 - `NeoAdmin.Blazor` 可作为类库引用（`ProjectReference`），也可通过 NuGet 安装
 
 NuGet 安装：

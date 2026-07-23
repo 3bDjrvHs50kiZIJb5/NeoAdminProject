@@ -52,6 +52,12 @@ public sealed class NeoAdminOptions
     public Assembly[] SchedulerAssemblies { get; set; } = [];
 
     /// <summary>
+    /// 是否在启动时自动加载并执行持久化定时任务。
+    /// 未配置时：开发环境默认关闭，避免本地调试误触发业务任务；其它环境默认开启。
+    /// </summary>
+    public bool? SchedulerAutoLoad { get; set; }
+
+    /// <summary>
     /// <c>AddNeoAdminApi</c> 注册的 API 程序集，用于反射生成接口权限菜单。
     /// </summary>
     public Assembly[] ApiAssemblies { get; set; } = [];

@@ -11,12 +11,35 @@ public static class MenuSeedData
     /// </summary>
     public static void Ensure(IFreeSql freeSql)
     {
-        if (!NeedsInitialSystemMenus(freeSql))
+        if (NeedsInitialSystemMenus(freeSql))
+        {
+            EnsureMenus(freeSql, CreateMenus());
+            return;
+        }
+
+        EnsureIncrementalSystemMenus(freeSql);
+    }
+
+    /// <summary>
+    /// 旧库升级：在「系统管理」下增量补齐后续新增的框架菜单。
+    /// </summary>
+    private static void EnsureIncrementalSystemMenus(IFreeSql freeSql)
+    {
+        SysMenu? systemRoot = freeSql.Select<SysMenu>()
+            .Where(a => a.ParentId == 0
+                        && a.Label == "系统管理"
+                        && a.Type == SysMenuType.菜单)
+            .First();
+
+        if (systemRoot is null)
         {
             return;
         }
 
-        EnsureMenus(freeSql, CreateMenus());
+        EnsureMenuUnderParent(
+            freeSql,
+            Menu("配置文件", "file-cog", "/admin/config-files", 941),
+            systemRoot.Id);
     }
 
     /// <summary>库中尚无 /admin/menu 时表示系统菜单未初始化。</summary>
@@ -86,6 +109,7 @@ public static class MenuSeedData
             Menu("组织", "network", "/admin/org", 925, type: SysMenuType.增删改查),
             Menu("字典管理", "book-open", "/admin/dict", 930, type: SysMenuType.增删改查),
             Menu("参数配置", "sliders-horizontal", "/admin/param", 940, type: SysMenuType.增删改查),
+            Menu("配置文件", "file-cog", "/admin/config-files", 941),
             Menu("站点设置", "globe", "/admin/site-settings", 942),
             Menu("IP 白名单", "shield-check", "/admin/ip-whitelist", 945, type: SysMenuType.增删改查),
             Menu("文件管理", "folder-open", "/admin/file", 950, type: SysMenuType.增删改查),

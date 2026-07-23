@@ -2,6 +2,7 @@ using FreeScheduler;
 using FreeSql;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NCrontab;
 using NeoAdmin.Blazor.Data;
@@ -16,8 +17,10 @@ public static class NeoAdminSchedulerExtensions
         {
             IFreeSql freeSql = serviceProvider.GetRequiredService<IFreeSql>();
             IHostEnvironment environment = serviceProvider.GetRequiredService<IHostEnvironment>();
+            ILogger logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(NeoAdminSchedulerExtensions));
             NeoAdminOptions? options = serviceProvider.GetService<IOptions<NeoAdminOptions>>()?.Value;
             var attributeTriggers = new Dictionary<string, Action<IServiceProvider, TaskInfo>>();
+            bool schedulerAutoLoad = options?.SchedulerAutoLoad ?? !environment.IsDevelopment();
 
             FreeSqlSchedulerSetup.ConfigureEntities(freeSql);
 
@@ -40,27 +43,62 @@ public static class NeoAdminSchedulerExtensions
                     }
                 })
                 .UseTimeZone(TimeSpan.FromHours(8))
-                .UseStorage(freeSql, !environment.IsDevelopment(), null)
-                .UseCustomInterval(task =>
-                {
-                    if ((int)task.Interval != 21)
-                    {
-                        return null;
-                    }
-
-                    DateTime utcNow = DateTime.UtcNow;
-                    DateTime nextOccurrence = CrontabSchedule.Parse(
-                            task.IntervalArgument,
-                            new CrontabSchedule.ParseOptions { IncludingSeconds = true })
-                        .GetNextOccurrence(utcNow);
-
-                    return nextOccurrence < utcNow
-                        ? TimeSpan.FromSeconds(5)
-                        : nextOccurrence.Subtract(utcNow);
-                })
+                .UseStorage(freeSql, schedulerAutoLoad, null)
+                .UseCustomInterval(task => GetCronNextDelay(task, logger))
                 .Build();
         });
 
         return services;
+    }
+
+    private static TimeSpan? GetCronNextDelay(TaskInfo task, ILogger logger)
+    {
+        if ((int)task.Interval != 21)
+        {
+            return null;
+        }
+
+        string cron = task.IntervalArgument?.Trim() ?? string.Empty;
+        string[] parts = cron.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length is not (5 or 6))
+        {
+            logger.LogWarning(
+                "定时任务 Cron 表达式无效：TaskId={TaskId}，Topic={Topic}，Cron={Cron}",
+                task.Id,
+                task.Topic,
+                cron);
+            return null;
+        }
+
+        try
+        {
+            var parseOptions = new CrontabSchedule.ParseOptions { IncludingSeconds = parts.Length == 6 };
+            CrontabSchedule? schedule = CrontabSchedule.TryParse(cron, parseOptions);
+            if (schedule is null)
+            {
+                logger.LogWarning(
+                    "定时任务 Cron 表达式无效：TaskId={TaskId}，Topic={Topic}，Cron={Cron}",
+                    task.Id,
+                    task.Topic,
+                    cron);
+                return null;
+            }
+
+            DateTime now = DateTime.UtcNow.AddHours(8);
+            DateTime nextOccurrence = schedule.GetNextOccurrence(now);
+            return nextOccurrence <= now
+                ? TimeSpan.FromSeconds(5)
+                : nextOccurrence.Subtract(now);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "计算定时任务下次运行时间失败：TaskId={TaskId}，Topic={Topic}，Cron={Cron}",
+                task.Id,
+                task.Topic,
+                cron);
+            return null;
+        }
     }
 }
