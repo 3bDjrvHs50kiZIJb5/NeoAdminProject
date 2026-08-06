@@ -1,5 +1,11 @@
 [
   {
+    "shortHash": "a30ff5e",
+    "committedAt": "2026-07-23T14:01:08+08:00",
+    "subject": "完善配置文件页章节导航与宿主扩展字段，并发布 v1.0.47。",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
     "shortHash": "cae1c02",
     "committedAt": "2026-07-23T13:22:07+08:00",
     "subject": "修复定时任务 E2E：兼容 SchedulerAutoLoad 显式开启的开发环境。",
@@ -292,11 +298,5 @@
     "committedAt": "2026-06-13T15:04:36+08:00",
     "subject": "添加 VS Code 多根工作区配置",
     "body": "便于同时打开 NeoAdmin 宿主与 NeoAdmin.Blazor 框架项目。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "daed437",
-    "committedAt": "2026-06-13T14:54:57+08:00",
-    "subject": "修复 LayoutAdmin 侧栏账户菜单会话检查竞态导致的空引用",
-    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
   }
 ]

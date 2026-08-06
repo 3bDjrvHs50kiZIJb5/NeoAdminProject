@@ -40,6 +40,10 @@ public static class MenuSeedData
             freeSql,
             Menu("配置文件", "file-cog", "/admin/config-files", 941),
             systemRoot.Id);
+        EnsureMenuUnderParent(
+            freeSql,
+            Menu("API 调试", "unplug", "/admin/api-explorer", 959),
+            systemRoot.Id);
     }
 
     /// <summary>库中尚无 /admin/menu 时表示系统菜单未初始化。</summary>
@@ -114,7 +118,8 @@ public static class MenuSeedData
             Menu("IP 白名单", "shield-check", "/admin/ip-whitelist", 945, type: SysMenuType.增删改查),
             Menu("文件管理", "folder-open", "/admin/file", 950, type: SysMenuType.增删改查),
             Menu("定时任务", "clock", "/admin/task-scheduler", 955, type: SysMenuType.增删改查),
-            Menu("系统日志", "scroll-text", "/admin/system-log", 958)
+            Menu("系统日志", "scroll-text", "/admin/system-log", 958),
+            Menu("API 调试", "unplug", "/admin/api-explorer", 959)
         ])
     ];
 

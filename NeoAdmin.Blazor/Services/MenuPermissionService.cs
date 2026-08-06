@@ -242,14 +242,18 @@ public sealed class MenuPermissionService
   private static SysMenu? FindMenuByPath(IReadOnlyList<SysMenu> menus, string path)
   {
     string normalized = MenuPathHelper.NormalizePagePath(path);
+    // 目录/Api 等节点 Path 为空时，NormalizePagePath 会落成 "/"，不能当成首页路由匹配。
     SysMenu? exact = menus.FirstOrDefault(menu =>
-      string.Equals(MenuPathHelper.NormalizePagePath(menu.Path), normalized, StringComparison.Ordinal));
+      !string.IsNullOrWhiteSpace(menu.Path)
+      && string.Equals(MenuPathHelper.NormalizePagePath(menu.Path), normalized, StringComparison.Ordinal));
     if (exact is not null)
     {
       return exact;
     }
 
-    return menus.FirstOrDefault(menu => MenuPathHelper.PathsEqual(menu.Path, path));
+    return menus.FirstOrDefault(menu =>
+      !string.IsNullOrWhiteSpace(menu.Path)
+      && MenuPathHelper.PathsEqual(menu.Path, path));
   }
 
   private static bool IsPageMenuType(SysMenuType type) =>

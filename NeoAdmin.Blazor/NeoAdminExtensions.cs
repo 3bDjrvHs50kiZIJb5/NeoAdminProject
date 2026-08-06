@@ -110,6 +110,9 @@ public static class NeoAdminExtensions
         services.AddScoped<NeoAdminScopeState>();
         services.AddScoped<AuditWorkflowService>();
         services.AddScoped<NeoPickerOverlayService>();
+        services.AddScoped<ApiExplorerCatalogService>();
+        services.AddScoped<ApiExplorerInvokeService>();
+        services.AddHttpClient("NeoAdmin.ApiExplorer");
         services.AddNeoAdminScheduler();
         services.AddNeoAdminVoice(configuration);
         return services;
@@ -192,6 +195,24 @@ public static class NeoAdminExtensions
 
         app.MapControllers();
         app.MapNeoAdminVoiceHub();
+
+        try
+        {
+            using IServiceScope scope = app.Services.CreateScope();
+            ApiExplorerCatalogService catalog =
+                scope.ServiceProvider.GetRequiredService<ApiExplorerCatalogService>();
+            IHostEnvironment environment =
+                scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
+            catalog.EnsureRequestDefaultsConfigFile(environment.ContentRootPath);
+        }
+        catch (Exception ex)
+        {
+            ILogger logger = app.Services
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger(typeof(NeoAdminExtensions));
+            logger.LogWarning(ex, "初始化 ApiExplorer 请求默认配置失败");
+        }
+
         return app;
     }
 

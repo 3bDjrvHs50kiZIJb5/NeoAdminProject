@@ -1,0 +1,211 @@
+@page "/admin/api-explorer"
+@layout LayoutAdmin
+@using NeoAdmin.Blazor.Components.ApiExplorer
+@using NeoAdmin.Blazor.Models
+@using NeoAdmin.Blazor.Services
+@inject ApiExplorerCatalogService CatalogService
+@inject IJSRuntime JSRuntime
+@inject ILogger<ApiExplorer> Logger
+
+<PageTitle>API 调试</PageTitle>
+
+<div class="neo-admin-page-scroll flex min-h-0 flex-1 flex-col p-1">
+    <div class="flex min-h-0 flex-1 overflow-hidden rounded-xl border bg-card shadow-sm">
+        <aside class="flex w-72 shrink-0 flex-col border-r bg-background">
+            <div class="border-b px-4 py-3">
+                <div class="text-sm font-semibold leading-snug">API 调试</div>
+                <div class="mt-1 text-xs text-muted-foreground">扫描已注册 Controller（含宿主）</div>
+            </div>
+
+            <div class="border-b px-3 py-2">
+                <Input @bind-Value="searchKeyword"
+                       Placeholder="搜索接口…"
+                       Class="h-8 text-xs" />
+            </div>
+
+            <div class="min-h-0 flex-1 overflow-y-auto py-2">
+                @if (endpoints.Count == 0)
+                {
+                    <div class="px-3 py-4 text-xs text-muted-foreground">未发现 api/* 接口</div>
+                }
+                else
+                {
+                    @foreach (IGrouping<string, ApiExplorerEndpoint> group in FilteredGroups)
+                    {
+                        <div class="px-3 pb-1 pt-2 text-xs font-medium text-muted-foreground">@group.Key</div>
+                        @foreach (ApiExplorerEndpoint endpoint in group)
+                        {
+                            <button type="button"
+                                    class="@GetSidebarItemClass(endpoint.Id)"
+                                    @onclick="() => SelectEndpoint(endpoint.Id)">
+                                <span class="@GetMethodBadgeClass(endpoint.HttpMethod)">@endpoint.HttpMethod</span>
+                                <span class="truncate">@endpoint.Title</span>
+                            </button>
+                        }
+                    }
+                }
+            </div>
+        </aside>
+
+        <main class="min-w-0 flex-1 overflow-y-auto">
+            @if (selectedEndpoint is null)
+            {
+                <div class="flex h-full items-center justify-center text-sm text-muted-foreground">
+                    请从左侧选择一个接口
+                </div>
+            }
+            else
+            {
+                <div class="border-b px-6 py-5">
+                    <h1 class="text-2xl font-semibold tracking-tight">@selectedEndpoint.Title</h1>
+                    <p class="mt-2 text-sm text-muted-foreground">
+                        @(selectedEndpoint.ControllerName)
+                        @if (!string.IsNullOrWhiteSpace(selectedEndpoint.RequestBodyTypeName))
+                        {
+                            <span> · Body: @selectedEndpoint.RequestBodyTypeName</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(selectedEndpoint.ResponseTypeName))
+                        {
+                            <span> · Response: @selectedEndpoint.ResponseTypeName</span>
+                        }
+                    </p>
+                </div>
+
+                <div class="border-b bg-slate-800 px-6 py-3 text-white">
+                    <div class="flex items-center gap-3">
+                        <span class="@GetMethodBadgeClass(selectedEndpoint.HttpMethod, onDark: true)">@selectedEndpoint.HttpMethod</span>
+                        <code class="text-sm font-mono text-slate-100">/@selectedEndpoint.RelativePath</code>
+                        <button type="button"
+                                class="ml-auto inline-flex size-8 items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
+                                @onclick='() => CopyTextAsync("/" + selectedEndpoint.RelativePath)'
+                                aria-label="复制接口地址">
+                            <LucideIcon Name="copy" Size="14" />
+                        </button>
+                        <Button Type="ButtonType.Button"
+                                Size="ButtonSize.Small"
+                                Class="bg-blue-500 text-white hover:bg-blue-600"
+                                OnClick="OpenTryItTab">
+                            <LucideIcon Name="play" Size="14" />
+                            在线测试
+                        </Button>
+                    </div>
+                </div>
+
+                <div class="px-6 py-4">
+                    <Tabs Value="@detailTab" ValueChanged="OnDetailTabChanged" Class="w-full">
+                        <TabsList Class="h-9">
+                            <TabsTrigger Value="tryit">在线测试</TabsTrigger>
+                            <TabsTrigger Value="doc">参数</TabsTrigger>
+                            <TabsTrigger Value="json">样例 JSON</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent Value="tryit" Class="mt-4">
+                            <ApiExplorerTryIt Endpoint="selectedEndpoint" />
+                        </TabsContent>
+
+                        <TabsContent Value="doc" Class="mt-4 space-y-4">
+                            <section>
+                                <h2 class="mb-3 text-sm font-semibold">请求参数</h2>
+                                <ApiExplorerParamTable Parameters="selectedEndpoint.Parameters" />
+                            </section>
+                        </TabsContent>
+
+                        <TabsContent Value="json" Class="mt-4 space-y-4">
+                            <section>
+                                <h2 class="mb-2 text-sm font-semibold">请求 Body 样例</h2>
+                                <pre class="overflow-x-auto rounded-lg border bg-muted/40 p-4 text-xs leading-relaxed"><code>@(selectedEndpoint.RequestBodySampleJson ?? "（无 Body）")</code></pre>
+                            </section>
+                        </TabsContent>
+                    </Tabs>
+                </div>
+            }
+        </main>
+    </div>
+</div>
+
+@code {
+    private IReadOnlyList<ApiExplorerEndpoint> endpoints = [];
+    private string searchKeyword = string.Empty;
+    private string selectedEndpointId = string.Empty;
+    private string detailTab = "tryit";
+
+    private ApiExplorerEndpoint? selectedEndpoint =>
+        endpoints.FirstOrDefault(e => string.Equals(e.Id, selectedEndpointId, StringComparison.OrdinalIgnoreCase));
+
+    private IEnumerable<IGrouping<string, ApiExplorerEndpoint>> FilteredGroups
+    {
+        get
+        {
+            IEnumerable<ApiExplorerEndpoint> filtered = endpoints;
+            if (!string.IsNullOrWhiteSpace(searchKeyword))
+            {
+                filtered = endpoints.Where(e =>
+                    e.Title.Contains(searchKeyword, StringComparison.OrdinalIgnoreCase)
+                    || e.RelativePath.Contains(searchKeyword, StringComparison.OrdinalIgnoreCase)
+                    || e.HttpMethod.Contains(searchKeyword, StringComparison.OrdinalIgnoreCase)
+                    || e.Group.Contains(searchKeyword, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return filtered.GroupBy(e => e.Group);
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        Logger.LogInformation("进入 API 调试页");
+        endpoints = CatalogService.GetEndpoints();
+        if (endpoints.Count > 0 && string.IsNullOrWhiteSpace(selectedEndpointId))
+        {
+            selectedEndpointId = endpoints[0].Id;
+        }
+    }
+
+    private void SelectEndpoint(string id)
+    {
+        selectedEndpointId = id;
+        detailTab = "tryit";
+    }
+
+    private void OpenTryItTab() => detailTab = "tryit";
+
+    private Task OnDetailTabChanged(string value)
+    {
+        detailTab = value;
+        return Task.CompletedTask;
+    }
+
+    private string GetSidebarItemClass(string endpointId)
+    {
+        bool active = string.Equals(endpointId, selectedEndpointId, StringComparison.OrdinalIgnoreCase);
+        return active
+            ? "flex w-full items-center gap-2 truncate rounded-md bg-accent px-3 py-2 text-left text-xs text-accent-foreground"
+            : "flex w-full items-center gap-2 truncate rounded-md px-3 py-2 text-left text-xs text-muted-foreground hover:bg-accent/60 hover:text-accent-foreground";
+    }
+
+    private static string GetMethodBadgeClass(string method, bool onDark = false)
+    {
+        string color = method.ToUpperInvariant() switch
+        {
+            "GET" => "bg-emerald-500",
+            "POST" => "bg-blue-500",
+            "PUT" => "bg-amber-500",
+            "PATCH" => "bg-orange-500",
+            "DELETE" => "bg-rose-500",
+            _ => "bg-slate-500"
+        };
+        string text = onDark ? "text-white" : "text-white";
+        return $"shrink-0 rounded {color} px-1.5 py-0.5 text-[10px] font-semibold {text}";
+    }
+
+    private async Task CopyTextAsync(string text)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
+        }
+        catch (JSException ex)
+        {
+            Logger.LogWarning(ex, "复制失败");
+        }
+    }
+}

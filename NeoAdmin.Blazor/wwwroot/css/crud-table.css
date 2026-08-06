@@ -77,6 +77,25 @@
   user-select: auto;
 }
 
+/*
+ * DataTable 多选列：外层 div 默认 line-height≈20px，Checkbox 仅 h-4(16px) 顶对齐；
+ * 且 td 内 inline 内容会受行盒 strut 影响，align-middle 仍会略偏上。
+ * 用绝对定位铺满单元格再 flex 居中（th 已是 sticky，本身可作为定位包含块，勿再写 relative 覆盖）。
+ */
+.crud-table [data-keyboard-nav] td:has([role="checkbox"]) {
+  position: relative;
+}
+
+.crud-table [data-keyboard-nav] th:has([role="checkbox"]) > div,
+.crud-table [data-keyboard-nav] td:has([role="checkbox"]) > div {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
 /* 列表纵向滚动时固定表头（滚动容器为 DataTable 的 overflow-y-auto 外层） */
 .crud-table [data-keyboard-nav] thead th {
   position: sticky;

@@ -1,0 +1,256 @@
+@using System.Text.Json
+@using NeoAdmin.Blazor.Models
+@using NeoAdmin.Blazor.Services
+@inject ApiExplorerInvokeService InvokeService
+@inject ILogger<ApiExplorerTryIt> Logger
+
+@if (Endpoint is null)
+{
+    <p class="text-sm text-muted-foreground">请从左侧选择一个接口。</p>
+}
+else
+{
+    <div class="space-y-4">
+        @if (Endpoint.HasFormFile)
+        {
+            <Alert Variant="AlertVariant.Warning">
+                <AlertDescription>
+                    该接口包含文件上传（multipart），本页仅支持 JSON / 查询参数试调；文件上传请用业务页或 Swagger。
+                </AlertDescription>
+            </Alert>
+        }
+
+        @if (PathParameters.Count > 0)
+        {
+            <div class="space-y-2">
+                <div class="text-sm font-medium">路径参数</div>
+                <div class="grid gap-2 sm:grid-cols-2">
+                    @foreach (ApiExplorerParameter parameter in PathParameters)
+                    {
+                        <div class="space-y-1">
+                            <Label>@parameter.Name</Label>
+                            <Input Class="w-full font-mono text-xs"
+                                   Value="@GetRouteValue(parameter.Name)"
+                                   ValueChanged="@(v => SetRouteValue(parameter.Name, v))" />
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (QueryParameters.Count > 0)
+        {
+            <div class="space-y-2">
+                <div class="text-sm font-medium">Query 参数</div>
+                <div class="grid gap-2 sm:grid-cols-2">
+                    @foreach (ApiExplorerParameter parameter in QueryParameters)
+                    {
+                        <div class="space-y-1">
+                            <Label>@parameter.Name</Label>
+                            <Input Class="w-full font-mono text-xs"
+                                   Value="@GetQueryValue(parameter.Name)"
+                                   ValueChanged="@(v => SetQueryValue(parameter.Name, v))" />
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="space-y-2">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <Label For="api-explorer-request-body">请求 Body（JSON）</Label>
+                <div class="flex flex-wrap gap-2">
+                    <Button Type="ButtonType.Button"
+                            Variant="ButtonVariant.Outline"
+                            Size="ButtonSize.Small"
+                            Disabled="isSending"
+                            OnClick="ResetRequestBody">
+                        重置
+                    </Button>
+                    <Button Type="ButtonType.Button"
+                            Variant="ButtonVariant.Outline"
+                            Size="ButtonSize.Small"
+                            Disabled="isSending"
+                            OnClick="FormatRequestBody">
+                        格式化
+                    </Button>
+                    <Button Type="ButtonType.Button"
+                            Size="ButtonSize.Small"
+                            Disabled="isSending"
+                            OnClick="SendRequestAsync">
+                        @(isSending ? "请求中…" : "发送请求")
+                    </Button>
+                </div>
+            </div>
+            <Textarea id="api-explorer-request-body"
+                      Class="min-h-56 font-mono text-xs"
+                      @bind-Value="requestBody" />
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(responseSummary))
+        {
+            <div class="space-y-2">
+                <div class="flex flex-wrap items-center gap-3 text-sm">
+                    <span class="font-medium">响应</span>
+                    <Badge Variant="@(responseSucceeded ? BadgeVariant.Success : BadgeVariant.Destructive)">
+                        @responseSummary
+                    </Badge>
+                    @if (durationMs >= 0)
+                    {
+                        <span class="text-muted-foreground">@durationMs ms</span>
+                    }
+                    @if (responseTruncated)
+                    {
+                        <span class="text-muted-foreground">已截取数组样例（每组最多 10 条），便于查看结构</span>
+                    }
+                </div>
+                <pre class="max-h-[60vh] overflow-auto rounded-lg border bg-muted/40 p-4 text-xs leading-relaxed"><code>@responseBody</code></pre>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private readonly Dictionary<string, string> routeValues = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string> queryValues = new(StringComparer.OrdinalIgnoreCase);
+
+    private ApiExplorerEndpoint? boundEndpoint;
+    private string requestBody = "{\n  \n}";
+    private string? responseSummary;
+    private string responseBody = string.Empty;
+    private bool responseSucceeded;
+    private bool responseTruncated;
+    private long durationMs = -1;
+    private bool isSending;
+
+    [Parameter]
+    public ApiExplorerEndpoint? Endpoint { get; set; }
+
+    private IReadOnlyList<ApiExplorerParameter> PathParameters =>
+        Endpoint?.Parameters.Where(p => p.Source is "Path").ToList() ?? [];
+
+    private IReadOnlyList<ApiExplorerParameter> QueryParameters =>
+        Endpoint?.Parameters.Where(p => p.Source is "Query").ToList() ?? [];
+
+    protected override void OnParametersSet()
+    {
+        if (ReferenceEquals(Endpoint, boundEndpoint))
+        {
+            return;
+        }
+
+        boundEndpoint = Endpoint;
+        routeValues.Clear();
+        queryValues.Clear();
+        responseSummary = null;
+        responseBody = string.Empty;
+        durationMs = -1;
+
+        if (Endpoint is null)
+        {
+            requestBody = "{\n  \n}";
+            return;
+        }
+
+        foreach (ApiExplorerParameter parameter in PathParameters)
+        {
+            routeValues[parameter.Name] = parameter.DefaultValue ?? string.Empty;
+        }
+
+        foreach (ApiExplorerParameter parameter in QueryParameters)
+        {
+            queryValues[parameter.Name] = parameter.DefaultValue ?? string.Empty;
+        }
+
+        requestBody = string.IsNullOrWhiteSpace(Endpoint.RequestBodySampleJson)
+            ? "{\n  \n}"
+            : Endpoint.RequestBodySampleJson;
+    }
+
+    private string GetRouteValue(string name) =>
+        routeValues.TryGetValue(name, out string? value) ? value : string.Empty;
+
+    private void SetRouteValue(string name, string? value)
+    {
+        routeValues[name] = value ?? string.Empty;
+    }
+
+    private string GetQueryValue(string name) =>
+        queryValues.TryGetValue(name, out string? value) ? value : string.Empty;
+
+    private void SetQueryValue(string name, string? value)
+    {
+        queryValues[name] = value ?? string.Empty;
+    }
+
+    private void ResetRequestBody()
+    {
+        requestBody = string.IsNullOrWhiteSpace(Endpoint?.RequestBodySampleJson)
+            ? "{\n  \n}"
+            : Endpoint.RequestBodySampleJson!;
+    }
+
+    private void FormatRequestBody()
+    {
+        if (string.IsNullOrWhiteSpace(requestBody))
+        {
+            return;
+        }
+
+        try
+        {
+            using JsonDocument doc = JsonDocument.Parse(requestBody);
+            requestBody = JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions { WriteIndented = true });
+        }
+        catch (JsonException)
+        {
+            // keep raw
+        }
+    }
+
+    private async Task SendRequestAsync()
+    {
+        if (Endpoint is null || isSending)
+        {
+            return;
+        }
+
+        isSending = true;
+        responseSummary = null;
+        try
+        {
+            Logger.LogInformation(
+                "ApiExplorer 发送试调，Method={Method}，Path={Path}",
+                Endpoint.HttpMethod,
+                Endpoint.RelativePath);
+
+            ApiExplorerInvokeResult result = await InvokeService.InvokeAsync(new ApiExplorerInvokeRequest
+            {
+                HttpMethod = Endpoint.HttpMethod,
+                RelativePath = Endpoint.RelativePath,
+                RouteValues = new Dictionary<string, string>(routeValues, StringComparer.OrdinalIgnoreCase),
+                QueryValues = new Dictionary<string, string>(queryValues, StringComparer.OrdinalIgnoreCase),
+                JsonBody = requestBody
+            });
+
+            responseSucceeded = result.Succeeded;
+            responseSummary = result.Summary;
+            responseBody = result.Body;
+            durationMs = result.DurationMs;
+            responseTruncated = result.Truncated;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "ApiExplorer 试调异常");
+            responseSucceeded = false;
+            responseSummary = "请求失败";
+            responseBody = ex.Message;
+            durationMs = -1;
+            responseTruncated = false;
+        }
+        finally
+        {
+            isSending = false;
+        }
+    }
+}
