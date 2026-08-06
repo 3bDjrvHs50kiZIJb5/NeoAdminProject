@@ -1,5 +1,11 @@
 [
   {
+    "shortHash": "364f696",
+    "committedAt": "2026-08-06T15:24:13+08:00",
+    "subject": "新增 API 调试页并发布 v1.0.48。",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
     "shortHash": "a30ff5e",
     "committedAt": "2026-07-23T14:01:08+08:00",
     "subject": "完善配置文件页章节导航与宿主扩展字段，并发布 v1.0.47。",
@@ -292,11 +298,5 @@
     "committedAt": "2026-06-13T15:05:52+08:00",
     "subject": "chore: 发布 v1.0.24",
     "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "042f1fc",
-    "committedAt": "2026-06-13T15:04:36+08:00",
-    "subject": "添加 VS Code 多根工作区配置",
-    "body": "便于同时打开 NeoAdmin 宿主与 NeoAdmin.Blazor 框架项目。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
   }
 ]

@@ -1,7 +1,9 @@
 @using System.Text.Json
 @using NeoAdmin.Blazor.Models
 @using NeoAdmin.Blazor.Services
+@inject ApiExplorerCatalogService CatalogService
 @inject ApiExplorerInvokeService InvokeService
+@inject IJSRuntime JSRuntime
 @inject ILogger<ApiExplorerTryIt> Logger
 
 @if (Endpoint is null)
@@ -20,45 +22,14 @@ else
             </Alert>
         }
 
-        @if (PathParameters.Count > 0)
-        {
-            <div class="space-y-2">
-                <div class="text-sm font-medium">路径参数</div>
-                <div class="grid gap-2 sm:grid-cols-2">
-                    @foreach (ApiExplorerParameter parameter in PathParameters)
-                    {
-                        <div class="space-y-1">
-                            <Label>@parameter.Name</Label>
-                            <Input Class="w-full font-mono text-xs"
-                                   Value="@GetRouteValue(parameter.Name)"
-                                   ValueChanged="@(v => SetRouteValue(parameter.Name, v))" />
-                        </div>
-                    }
-                </div>
-            </div>
-        }
-
-        @if (QueryParameters.Count > 0)
-        {
-            <div class="space-y-2">
-                <div class="text-sm font-medium">Query 参数</div>
-                <div class="grid gap-2 sm:grid-cols-2">
-                    @foreach (ApiExplorerParameter parameter in QueryParameters)
-                    {
-                        <div class="space-y-1">
-                            <Label>@parameter.Name</Label>
-                            <Input Class="w-full font-mono text-xs"
-                                   Value="@GetQueryValue(parameter.Name)"
-                                   ValueChanged="@(v => SetQueryValue(parameter.Name, v))" />
-                        </div>
-                    }
-                </div>
-            </div>
-        }
-
         <div class="space-y-2">
             <div class="flex flex-wrap items-center justify-between gap-2">
-                <Label For="api-explorer-request-body">请求 Body（JSON）</Label>
+                <div class="space-y-1">
+                    <Label For="@RequestBodyFieldId">请求参数（JSON）</Label>
+                    <p class="text-xs text-muted-foreground">
+                        编辑下方 JSON 后发送；Path / Query 参数会从此处读取。变量：选中文本后点击替换，无选区则插入。成功试调后写入 appsettings.ApiExplorer.json
+                    </p>
+                </div>
                 <div class="flex flex-wrap gap-2">
                     <Button Type="ButtonType.Button"
                             Variant="ButtonVariant.Outline"
@@ -82,16 +53,45 @@ else
                     </Button>
                 </div>
             </div>
-            <Textarea id="api-explorer-request-body"
+
+            <div class="flex flex-wrap gap-1.5">
+                @foreach (string token in VariableTokens)
+                {
+                    <button type="button"
+                            class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+                            title="选中下方文本后点击替换；无选区则插入"
+                            @onmousedown:preventDefault
+                            @onclick="() => InsertVariableAsync(token)">
+                        @token
+                    </button>
+                }
+            </div>
+
+            <Textarea Id="@RequestBodyFieldId"
                       Class="min-h-56 font-mono text-xs"
                       @bind-Value="requestBody" />
+        </div>
+
+        <div class="space-y-2">
+            <div class="flex flex-wrap items-center gap-3 text-sm">
+                <span class="font-medium">响应样例</span>
+                <Badge Variant="@(HasConfiguredResponseSample ? BadgeVariant.Success : BadgeVariant.Secondary)">
+                    @(HasConfiguredResponseSample ? "配置" : "模拟")
+                </Badge>
+                <span class="text-muted-foreground">
+                    @(HasConfiguredResponseSample
+                        ? "来自 appsettings.ApiExplorer.json；成功试调后会自动覆盖更新"
+                        : "按返回类型生成；成功试调后自动写入 appsettings.ApiExplorer.json")
+                </span>
+            </div>
+            <pre class="max-h-[60vh] overflow-auto rounded-lg border bg-muted/40 p-4 text-xs leading-relaxed"><code>@responseSampleBody</code></pre>
         </div>
 
         @if (!string.IsNullOrWhiteSpace(responseSummary))
         {
             <div class="space-y-2">
                 <div class="flex flex-wrap items-center gap-3 text-sm">
-                    <span class="font-medium">响应</span>
+                    <span class="font-medium">实际响应</span>
                     <Badge Variant="@(responseSucceeded ? BadgeVariant.Success : BadgeVariant.Destructive)">
                         @responseSummary
                     </Badge>
@@ -111,11 +111,27 @@ else
 }
 
 @code {
+    private const string RequestBodyFieldId = "api-explorer-request-body";
+
+    private static readonly string[] VariableTokens =
+    [
+        "{{unix}}",
+        "{{unix-1h}}",
+        "{{now:yyyyMMddHHmmss}}",
+        "{{random:8}}",
+        "{{guid}}",
+        "{{randomInt:1:100}}",
+        "{{alpha:6}}"
+    ];
+
     private readonly Dictionary<string, string> routeValues = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, string> queryValues = new(StringComparer.OrdinalIgnoreCase);
 
     private ApiExplorerEndpoint? boundEndpoint;
     private string requestBody = "{\n  \n}";
+    private string responseSampleBody = "{\n  \n}";
+    private bool hasConfiguredRequestSample;
+    private bool hasConfiguredResponseSample;
     private string? responseSummary;
     private string responseBody = string.Empty;
     private bool responseSucceeded;
@@ -125,6 +141,8 @@ else
 
     [Parameter]
     public ApiExplorerEndpoint? Endpoint { get; set; }
+
+    private bool HasConfiguredResponseSample => hasConfiguredResponseSample;
 
     private IReadOnlyList<ApiExplorerParameter> PathParameters =>
         Endpoint?.Parameters.Where(p => p.Source is "Path").ToList() ?? [];
@@ -145,10 +163,11 @@ else
         responseSummary = null;
         responseBody = string.Empty;
         durationMs = -1;
+        ApplyResponseSample(Endpoint);
+        ApplyRequestBody(Endpoint);
 
         if (Endpoint is null)
         {
-            requestBody = "{\n  \n}";
             return;
         }
 
@@ -161,33 +180,56 @@ else
         {
             queryValues[parameter.Name] = parameter.DefaultValue ?? string.Empty;
         }
+    }
 
-        requestBody = string.IsNullOrWhiteSpace(Endpoint.RequestBodySampleJson)
+    private void ApplyRequestBody(ApiExplorerEndpoint? endpoint)
+    {
+        string? configured = endpoint is null
+            ? null
+            : CatalogService.GetConfiguredRequestSampleJson(endpoint.Id);
+
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            requestBody = configured;
+            hasConfiguredRequestSample = true;
+            return;
+        }
+
+        hasConfiguredRequestSample = false;
+        requestBody = string.IsNullOrWhiteSpace(endpoint?.RequestBodySampleJson)
             ? "{\n  \n}"
-            : Endpoint.RequestBodySampleJson;
+            : endpoint.RequestBodySampleJson;
     }
 
-    private string GetRouteValue(string name) =>
-        routeValues.TryGetValue(name, out string? value) ? value : string.Empty;
-
-    private void SetRouteValue(string name, string? value)
+    private async Task InsertVariableAsync(string token)
     {
-        routeValues[name] = value ?? string.Empty;
-    }
+        try
+        {
+            string? next = await JSRuntime.InvokeAsync<string?>(
+                "neoAdminAuth.replaceTextareaSelection",
+                RequestBodyFieldId,
+                token);
 
-    private string GetQueryValue(string name) =>
-        queryValues.TryGetValue(name, out string? value) ? value : string.Empty;
-
-    private void SetQueryValue(string name, string? value)
-    {
-        queryValues[name] = value ?? string.Empty;
+            if (next is not null)
+            {
+                requestBody = next;
+            }
+            else
+            {
+                // DOM 未就绪时退化为追加
+                requestBody = (requestBody ?? string.Empty) + token;
+            }
+        }
+        catch (JSException ex)
+        {
+            Logger.LogWarning(ex, "ApiExplorer 插入变量失败，退化为追加");
+            requestBody = (requestBody ?? string.Empty) + token;
+        }
     }
 
     private void ResetRequestBody()
     {
-        requestBody = string.IsNullOrWhiteSpace(Endpoint?.RequestBodySampleJson)
-            ? "{\n  \n}"
-            : Endpoint.RequestBodySampleJson!;
+        ApplyRequestBody(Endpoint);
     }
 
     private void FormatRequestBody()
@@ -199,7 +241,18 @@ else
 
         try
         {
-            using JsonDocument doc = JsonDocument.Parse(requestBody);
+            string toFormat = requestBody;
+            try
+            {
+                using JsonDocument expanded = JsonDocument.Parse(ApiExplorerVariableExpander.ExpandJsonBody(requestBody));
+                toFormat = JsonSerializer.Serialize(expanded.RootElement);
+            }
+            catch (JsonException)
+            {
+                // 展开失败则尝试格式化原文
+            }
+
+            using JsonDocument doc = JsonDocument.Parse(toFormat);
             requestBody = JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions { WriteIndented = true });
         }
         catch (JsonException)
@@ -219,6 +272,15 @@ else
         responseSummary = null;
         try
         {
+            string expandedBody = ApiExplorerVariableExpander.ExpandJsonBody(requestBody);
+            Dictionary<string, string> expandedRouteValues =
+                ApiExplorerVariableExpander.ExpandDictionary(routeValues);
+            Dictionary<string, string> expandedQueryValues =
+                ApiExplorerVariableExpander.ExpandDictionary(queryValues);
+
+            // 编辑框里的 JSON 覆盖 Path/Query（GET 等无真正 Body 的接口也靠这里改参）
+            ApplyBodyFieldsToParamMaps(expandedBody, expandedRouteValues, expandedQueryValues);
+
             Logger.LogInformation(
                 "ApiExplorer 发送试调，Method={Method}，Path={Path}",
                 Endpoint.HttpMethod,
@@ -228,9 +290,9 @@ else
             {
                 HttpMethod = Endpoint.HttpMethod,
                 RelativePath = Endpoint.RelativePath,
-                RouteValues = new Dictionary<string, string>(routeValues, StringComparer.OrdinalIgnoreCase),
-                QueryValues = new Dictionary<string, string>(queryValues, StringComparer.OrdinalIgnoreCase),
-                JsonBody = requestBody
+                RouteValues = expandedRouteValues,
+                QueryValues = expandedQueryValues,
+                JsonBody = expandedBody
             });
 
             responseSucceeded = result.Succeeded;
@@ -238,6 +300,26 @@ else
             responseBody = result.Body;
             durationMs = result.DurationMs;
             responseTruncated = result.Truncated;
+
+            if (ShouldPersistSample(result) && Endpoint is not null)
+            {
+                if (CatalogService.SaveRequestDefault(Endpoint.Id, requestBody))
+                {
+                    hasConfiguredRequestSample = true;
+                    Logger.LogInformation(
+                        "ApiExplorer 请求默认配置已写入，Endpoint={EndpointId}",
+                        Endpoint.Id);
+                }
+
+                if (CatalogService.SaveResponseDefault(Endpoint.Id, result.Body))
+                {
+                    responseSampleBody = result.Body;
+                    hasConfiguredResponseSample = true;
+                    Logger.LogInformation(
+                        "ApiExplorer 响应样例已写入配置，Endpoint={EndpointId}",
+                        Endpoint.Id);
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -252,5 +334,142 @@ else
         {
             isSending = false;
         }
+    }
+
+    private void ApplyResponseSample(ApiExplorerEndpoint? endpoint)
+    {
+        string? configured = endpoint is null
+            ? null
+            : CatalogService.GetConfiguredResponseSampleJson(endpoint.Id);
+
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            responseSampleBody = configured;
+            hasConfiguredResponseSample = true;
+            return;
+        }
+
+        hasConfiguredResponseSample = false;
+        responseSampleBody = string.IsNullOrWhiteSpace(endpoint?.ResponseBodySampleJson)
+            ? """
+              {
+                "code": 0,
+                "message": "成功",
+                "data": null,
+                "succeeded": true
+              }
+              """
+            : endpoint.ResponseBodySampleJson!;
+    }
+
+    /// <summary>
+    /// 把请求参数 JSON 中的字段写回 Path/Query 字典，避免只改编辑框却仍发送旧默认值。
+    /// </summary>
+    private void ApplyBodyFieldsToParamMaps(
+        string jsonBody,
+        Dictionary<string, string> route,
+        Dictionary<string, string> query)
+    {
+        if (Endpoint is null || string.IsNullOrWhiteSpace(jsonBody))
+        {
+            return;
+        }
+
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(jsonBody);
+            if (document.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                return;
+            }
+
+            foreach (ApiExplorerParameter parameter in Endpoint.Parameters)
+            {
+                if (parameter.Source is not ("Path" or "Query" or "Form"))
+                {
+                    continue;
+                }
+
+                if (!TryGetPropertyIgnoreCase(document.RootElement, parameter.Name, out JsonElement value))
+                {
+                    continue;
+                }
+
+                string text = value.ValueKind switch
+                {
+                    JsonValueKind.String => value.GetString() ?? string.Empty,
+                    JsonValueKind.Null => string.Empty,
+                    JsonValueKind.True => "true",
+                    JsonValueKind.False => "false",
+                    JsonValueKind.Number => value.GetRawText(),
+                    _ => value.GetRawText()
+                };
+
+                if (string.Equals(parameter.Source, "Path", StringComparison.OrdinalIgnoreCase))
+                {
+                    route[parameter.Name] = text;
+                }
+                else
+                {
+                    query[parameter.Name] = text;
+                }
+            }
+        }
+        catch (JsonException ex)
+        {
+            Logger.LogWarning(ex, "ApiExplorer 解析请求参数 JSON 失败，仍使用默认 Path/Query");
+        }
+    }
+
+    /// <summary>
+    /// HTTP 2xx，且若响应为 ApiResult 风格则要求业务成功（succeeded=true 或 code=0）。
+    /// </summary>
+    private static bool ShouldPersistSample(ApiExplorerInvokeResult result)
+    {
+        if (!result.Succeeded || string.IsNullOrWhiteSpace(result.Body))
+        {
+            return false;
+        }
+
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(result.Body);
+            if (document.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                return true;
+            }
+
+            if (TryGetPropertyIgnoreCase(document.RootElement, "succeeded", out JsonElement succeeded))
+            {
+                return succeeded.ValueKind == JsonValueKind.True;
+            }
+
+            if (TryGetPropertyIgnoreCase(document.RootElement, "code", out JsonElement code)
+                && code.TryGetInt32(out int codeValue))
+            {
+                return codeValue == 0;
+            }
+
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static bool TryGetPropertyIgnoreCase(JsonElement element, string name, out JsonElement value)
+    {
+        foreach (JsonProperty property in element.EnumerateObject())
+        {
+            if (string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                value = property.Value;
+                return true;
+            }
+        }
+
+        value = default;
+        return false;
     }
 }

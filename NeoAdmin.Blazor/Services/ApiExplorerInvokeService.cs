@@ -62,6 +62,14 @@ public sealed class ApiExplorerInvokeService
                 return Fail(0, "未找到对应 Controller Action，无法进程内试调", stopwatch);
             }
 
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                _logger.LogWarning(
+                    "ApiExplorer 试调未拿到后台登录 Token，Method={Method}，Path={Path}",
+                    httpMethod,
+                    path);
+            }
+
             await using AsyncServiceScope scope = _scopeFactory.CreateAsyncScope();
             DefaultHttpContext httpContext = CreateHttpContext(
                 scope.ServiceProvider,
@@ -71,18 +79,34 @@ public sealed class ApiExplorerInvokeService
                 request.JsonBody,
                 request.RouteValues);
 
-            Microsoft.AspNetCore.Routing.RouteData routeData = BuildRouteData(actionDescriptor, description, request.RouteValues);
-            var actionContext = new ActionContext(httpContext, routeData, actionDescriptor);
+            // 进程内试调使用独立 HttpContext；必须挂到 Accessor，否则权限过滤器 / GetCurrentUser
+            // 读不到 Bearer，会误判为「没有访问权限」(5003)。
+            IHttpContextAccessor httpContextAccessor =
+                scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>();
+            HttpContext? previousHttpContext = httpContextAccessor.HttpContext;
+            httpContextAccessor.HttpContext = httpContext;
 
-            IActionInvokerFactory invokerFactory =
-                scope.ServiceProvider.GetRequiredService<IActionInvokerFactory>();
-            IActionInvoker? invoker = invokerFactory.CreateInvoker(actionContext);
-            if (invoker is null)
+            try
             {
-                return Fail(0, "无法创建 ActionInvoker", stopwatch);
+                Microsoft.AspNetCore.Routing.RouteData routeData =
+                    BuildRouteData(actionDescriptor, description, request.RouteValues);
+                var actionContext = new ActionContext(httpContext, routeData, actionDescriptor);
+
+                IActionInvokerFactory invokerFactory =
+                    scope.ServiceProvider.GetRequiredService<IActionInvokerFactory>();
+                IActionInvoker? invoker = invokerFactory.CreateInvoker(actionContext);
+                if (invoker is null)
+                {
+                    return Fail(0, "无法创建 ActionInvoker", stopwatch);
+                }
+
+                await invoker.InvokeAsync();
+            }
+            finally
+            {
+                httpContextAccessor.HttpContext = previousHttpContext;
             }
 
-            await invoker.InvokeAsync();
             stopwatch.Stop();
 
             httpContext.Response.Body.Position = 0;
@@ -304,9 +328,10 @@ public sealed class ApiExplorerInvokeService
         (relativePath ?? string.Empty).Trim().TrimStart('/');
 
     /// <summary>
-    /// 所有 JSON 响应统一预览：任意数组最多保留 <see cref="MaxArrayPreviewItems"/> 条。
+    /// 所有 JSON 响应统一预览：任意数组最多保留 <see cref="MaxArrayPreviewItems"/> 条；
+    /// 字符串字段若本身是 JSON 对象/数组（常见于上游二次序列化的 data），会再解析后展开展示。
     /// </summary>
-    private static (string Json, bool Truncated) FormatResponsePreview(string raw)
+    internal static (string Json, bool Truncated) FormatResponsePreview(string raw)
     {
         if (string.IsNullOrWhiteSpace(raw))
         {
@@ -323,7 +348,7 @@ public sealed class ApiExplorerInvokeService
                 Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
             }))
             {
-                bool truncated = WritePreview(writer, document.RootElement, MaxArrayPreviewItems);
+                bool truncated = WritePreview(writer, document.RootElement, MaxArrayPreviewItems, depth: 0);
                 writer.Flush();
                 string json = Encoding.UTF8.GetString(stream.ToArray());
                 return (json, truncated);
@@ -340,7 +365,9 @@ public sealed class ApiExplorerInvokeService
         }
     }
 
-    private static bool WritePreview(Utf8JsonWriter writer, JsonElement element, int maxArrayItems)
+    private const int MaxEmbeddedJsonDepth = 8;
+
+    private static bool WritePreview(Utf8JsonWriter writer, JsonElement element, int maxArrayItems, int depth)
     {
         switch (element.ValueKind)
         {
@@ -351,7 +378,7 @@ public sealed class ApiExplorerInvokeService
                 foreach (JsonProperty property in element.EnumerateObject())
                 {
                     writer.WritePropertyName(property.Name);
-                    truncated |= WritePreview(writer, property.Value, maxArrayItems);
+                    truncated |= WritePreview(writer, property.Value, maxArrayItems, depth);
                 }
 
                 writer.WriteEndObject();
@@ -371,7 +398,7 @@ public sealed class ApiExplorerInvokeService
                         break;
                     }
 
-                    truncated |= WritePreview(writer, item, maxArrayItems);
+                    truncated |= WritePreview(writer, item, maxArrayItems, depth);
                     index++;
                 }
 
@@ -385,9 +412,66 @@ public sealed class ApiExplorerInvokeService
                 writer.WriteEndArray();
                 return truncated;
             }
+            case JsonValueKind.String:
+            {
+                if (depth < MaxEmbeddedJsonDepth
+                    && TryParseEmbeddedJsonObjectOrArray(element.GetString(), out JsonDocument? embedded)
+                    && embedded is not null)
+                {
+                    using (embedded)
+                    {
+                        return WritePreview(writer, embedded.RootElement, maxArrayItems, depth + 1);
+                    }
+                }
+
+                element.WriteTo(writer);
+                return false;
+            }
             default:
                 element.WriteTo(writer);
                 return false;
+        }
+    }
+
+    /// <summary>
+    /// 尝试把「二次序列化」的 JSON 字符串解析为对象或数组；普通文本 / 标量字符串原样保留。
+    /// </summary>
+    private static bool TryParseEmbeddedJsonObjectOrArray(string? value, out JsonDocument? document)
+    {
+        document = null;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        ReadOnlySpan<char> span = value.AsSpan().Trim();
+        if (span.Length < 2)
+        {
+            return false;
+        }
+
+        char first = span[0];
+        if (first is not ('{' or '['))
+        {
+            return false;
+        }
+
+        try
+        {
+            JsonDocument parsed = JsonDocument.Parse(value);
+            JsonValueKind kind = parsed.RootElement.ValueKind;
+            if (kind is JsonValueKind.Object or JsonValueKind.Array)
+            {
+                document = parsed;
+                return true;
+            }
+
+            parsed.Dispose();
+            return false;
+        }
+        catch (JsonException)
+        {
+            return false;
         }
     }
 }

@@ -68,5 +68,33 @@ window.neoAdminAuth = {
         if (window.__neoAdminSessionWatchCleanup) {
             window.__neoAdminSessionWatchCleanup();
         }
+    },
+    /**
+     * 替换 textarea 当前选区（无选区则在光标处插入），返回新文本。
+     * 用于 ApiExplorer 变量芯片点击写入请求 Body。
+     */
+    replaceTextareaSelection: function (elementId, text) {
+        const el = document.getElementById(elementId);
+        if (!el) {
+            return null;
+        }
+
+        const value = typeof el.value === "string" ? el.value : "";
+        const start = typeof el.selectionStart === "number" ? el.selectionStart : value.length;
+        const end = typeof el.selectionEnd === "number" ? el.selectionEnd : start;
+        const insert = text == null ? "" : String(text);
+        const next = value.slice(0, start) + insert + value.slice(end);
+        el.value = next;
+
+        const cursor = start + insert.length;
+        try {
+            el.focus();
+            el.setSelectionRange(cursor, cursor);
+        } catch (_) {
+            // ignore focus/selection failures on detached nodes
+        }
+
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        return next;
     }
 };

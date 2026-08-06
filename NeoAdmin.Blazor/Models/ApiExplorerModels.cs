@@ -25,6 +25,9 @@ public sealed class ApiExplorerEndpoint
 
     public string? ResponseTypeName { get; init; }
 
+    /// <summary>按返回类型生成的模拟响应 JSON，用于展示接口返回样式。</summary>
+    public string? ResponseBodySampleJson { get; init; }
+
     public bool HasFormFile { get; init; }
 }
 
