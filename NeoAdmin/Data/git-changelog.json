@@ -1,5 +1,11 @@
 [
   {
+    "shortHash": "ffe9dc6",
+    "committedAt": "2026-08-06T22:25:03+08:00",
+    "subject": "完善 API 调试页变量展开与响应样例，并发布 v1.0.49。",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
     "shortHash": "364f696",
     "committedAt": "2026-08-06T15:24:13+08:00",
     "subject": "新增 API 调试页并发布 v1.0.48。",
@@ -292,11 +298,5 @@
     "committedAt": "2026-06-13T15:13:24+08:00",
     "subject": "侧边栏底部以 Badge 显示 NeoAdmin.Blazor 框架版本",
     "body": "从程序集 InformationalVersion 读取版本号，折叠侧边栏时自动隐藏。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "0af6712",
-    "committedAt": "2026-06-13T15:05:52+08:00",
-    "subject": "chore: 发布 v1.0.24",
-    "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
   }
 ]
