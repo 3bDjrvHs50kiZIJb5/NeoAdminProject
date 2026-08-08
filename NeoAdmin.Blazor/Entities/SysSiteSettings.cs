@@ -60,4 +60,9 @@ public sealed class SysSiteSettings : EntityCreated
     /// 站点是否启用（关闭后可在中间件等处扩展拦截逻辑）。
     /// </summary>
     public bool IsEnabled { get; set; } = true;
+
+    /// <summary>
+    /// 白名单人工审核：开启后拦截页提交的 IP 需管理员审核；关闭则提交后立即生效。
+    /// </summary>
+    public bool IpWhitelistManualApproval { get; set; } = false;
 }

@@ -94,8 +94,10 @@ public static class NeoAdminExtensions
             return freeSql;
         });
 
+        services.AddMemoryCache();
         services.AddScoped<UnitOfWorkManager>();
         services.AddSingleton<LoginRateLimiter>();
+        services.AddSingleton<IpWhitelistCaptchaService>();
         services.AddScoped<NeoAdminAuthService>();
         services.AddScoped<MenuService>();
         services.AddSingleton<AliyunOssStorageService>();

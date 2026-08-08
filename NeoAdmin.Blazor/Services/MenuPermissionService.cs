@@ -34,6 +34,12 @@ public sealed class MenuPermissionService
 
   public void Invalidate() => _snapshot = null;
 
+  public async Task<bool> IsAdministratorAsync()
+  {
+    UserPermissionSnapshot snapshot = await GetSnapshotAsync();
+    return snapshot.IsAdministrator;
+  }
+
   public async Task<bool> HasPageAsync(string menuPath)
   {
     UserPermissionSnapshot snapshot = await GetSnapshotAsync();

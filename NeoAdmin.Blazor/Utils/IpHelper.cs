@@ -68,7 +68,13 @@ public static class IpHelper
             parsedIp = parsedIp.MapToIPv4();
         }
 
-        return parsedIp.ToString();
+        string result = parsedIp.ToString();
+        if (result is "::1" or "127.0.0.1")
+        {
+            return "127.0.0.1";
+        }
+
+        return result;
     }
 
     public static string ToIpv4Display(string? ip)

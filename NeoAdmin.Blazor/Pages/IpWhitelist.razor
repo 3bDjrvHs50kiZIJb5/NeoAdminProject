@@ -1,11 +1,17 @@
 @page "/admin/ip-whitelist"
 @layout LayoutAdmin
 @using NeoAdmin.Blazor.Components
+@using NeoAdmin.Blazor.Core.Identity
 @using NeoAdmin.Blazor.Entities
+@using NeoAdmin.Blazor.Services
 @using NeoAdmin.Blazor.Utils
 @using Microsoft.AspNetCore.Http
+@using Microsoft.JSInterop
 @inject IFreeSql FreeSql
 @inject IHttpContextAccessor HttpContextAccessor
+@inject NeoAdminAuthService AuthService
+@inject IJSRuntime JSRuntime
+@inject MenuPermissionService MenuPermissionService
 
 <PageTitle>IP 白名单</PageTitle>
 
@@ -44,6 +50,10 @@
                              Sortable="false">
                 <CellTemplate Context="row">
                     <span class="block truncate" title="@row.Item.Description">@row.Item.Description</span>
+                    @if (!row.Item.IsEnabled && row.Item.UserId is null)
+                    {
+                        <span class="ml-1 text-xs text-amber-600">待审核</span>
+                    }
                 </CellTemplate>
             </DataTableColumn>
             <DataTableColumn TData="CrudGridRow<SysIpWhitelist>"
@@ -142,11 +152,16 @@
         return Task.CompletedTask;
     }
 
-    private void HandleQuery(CrudQueryEventArgs<SysIpWhitelist> e)
+    private async Task HandleQuery(CrudQueryEventArgs<SysIpWhitelist> e)
     {
         CrudFilterInfo enabledFilter = e.Filters[0];
+        long? currentUserId = await GetCurrentUserIdAsync();
+        long userId = currentUserId.GetValueOrDefault();
+        bool isAdministrator = await MenuPermissionService.IsAdministratorAsync();
 
         e.Select!
+            .WhereIf(!isAdministrator && currentUserId.HasValue, a => a.UserId == userId)
+            .WhereIf(!isAdministrator && !currentUserId.HasValue, a => false)
             .WhereIf(!string.IsNullOrWhiteSpace(e.SearchText),
                 a => a.IpAddress.Contains(e.SearchText!)
                      || a.Description.Contains(e.SearchText!))
@@ -188,6 +203,15 @@
     private async Task HandleSaving(CrudConfirmEventArgs<SysIpWhitelist> e)
     {
         SysIpWhitelist item = e.Item;
+        long? currentUserId = await GetCurrentUserIdAsync();
+        if (!currentUserId.HasValue)
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        bool isAdministrator = await MenuPermissionService.IsAdministratorAsync();
+
         item.IpAddress = IpHelper.NormalizeIp(item.IpAddress?.Trim());
         item.Description = item.Description?.Trim() ?? string.Empty;
 
@@ -197,7 +221,14 @@
             return;
         }
 
+        if (item.Id > 0 && !isAdministrator && item.UserId != currentUserId.Value)
+        {
+            e.Cancel = true;
+            return;
+        }
+
         bool ipExists = await FreeSql.Select<SysIpWhitelist>()
+            .WhereIf(!isAdministrator, a => a.UserId == currentUserId.Value)
             .Where(a => a.IpAddress == item.IpAddress && a.Id != item.Id)
             .AnyAsync();
 
@@ -209,9 +240,43 @@
 
         if (item.Id == 0)
         {
+            item.UserId = currentUserId.Value;
             item.CreatedTime = DateTime.Now;
             item.AccessCount = 0;
             item.LastAccessTime = null;
         }
+    }
+
+    private async Task<long?> GetCurrentUserIdAsync()
+    {
+        string? token = HttpContextAccessor.HttpContext?.Request.Headers.Authorization.FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(token)
+            && token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            token = token[7..].Trim();
+        }
+        else
+        {
+            try
+            {
+                token = await JSRuntime.InvokeAsync<string?>("neoAdminAuth.getToken");
+            }
+            catch (InvalidOperationException)
+            {
+                // 非 Blazor 交互上下文时忽略。
+            }
+            catch (JSException)
+            {
+                // JS 未就绪时忽略。
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return null;
+        }
+
+        ApiResult<UserSummaryResponse> result = await AuthService.CheckAsync(token);
+        return result.Succeeded ? result.Data!.Id : null;
     }
 }

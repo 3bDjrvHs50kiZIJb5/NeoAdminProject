@@ -18,7 +18,8 @@ public static class SiteSettingsSeedData
             Host = "localhost",
             Host2 = "127.0.0.1",
             Description = "NeoAdmin 管理后台",
-            IsEnabled = true
+            IsEnabled = true,
+            IpWhitelistManualApproval = false
         }).ExecuteAffrows();
     }
 }

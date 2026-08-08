@@ -750,7 +750,7 @@ await MenuPermissionService.HasApiAsync("login", "ChangePassword");
 | `IsMultiSelect` | bool | `true` | 多选复选框 |
 | `IsSingleSelect` | bool | `false` | 单选 Radio 模式 |
 | `Compact` | bool | `false` | 紧凑模式（隐藏标题，用于嵌入选择器） |
-| `FilterExpanded` | bool | `true` | 筛选区默认展开 |
+| `FilterExpanded` | bool | `false` | 筛选区默认收起 |
 | `IsPickerMode` | bool | `false` | 选择器模式，不触发 OnSelectChanged |
 | `KeepSelectionOnPaging` | bool | `false` | 跨页保持勾选 |
 | `IsCascadeSelection` | bool | `false` | 树形父子联动勾选 |
@@ -873,7 +873,7 @@ private void HandleQuery(CrudQueryEventArgs<MyItem> e)
 | 参数 | 类型 | 说明 |
 |------|------|------|
 | `QueryInfo` | CrudQueryInfo | 筛选配置（必填） |
-| `FilterExpanded` | bool | 默认 `true` |
+| `FilterExpanded` | bool | 默认 `false` |
 
 内部组件，由 `CrudTable` 自动渲染。
 

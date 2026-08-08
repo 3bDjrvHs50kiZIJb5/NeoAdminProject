@@ -376,7 +376,7 @@
     [Parameter] public bool Compact { get; set; } = false;
 
     /// <summary>筛选条件区域是否默认展开。</summary>
-    [Parameter] public bool FilterExpanded { get; set; } = true;
+    [Parameter] public bool FilterExpanded { get; set; } = false;
     /// <summary>
     /// 嵌入 NeoInputTable 等弹窗选择器：仅同步 SelectedKeys，不触发 OnSelectChanged / SelectedKeysChanged，
     /// 也不在勾选后 StateHasChanged，避免 DataTable 选中项双向绑定死循环。

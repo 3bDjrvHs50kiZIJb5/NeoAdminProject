@@ -1,7 +1,12 @@
 @namespace NeoAdmin.Blazor.Components
+@using Microsoft.JSInterop
+@using NeoUI.Blazor.Services
+@inject CollapsibleStateService CollapsibleState
+@inject NavigationManager NavigationManager
+
 @if (QueryInfo.Filters.Length > 0)
 {
-    <Collapsible @bind-Open="collapsibleOpen" Class="mb-4 rounded-lg border border-border bg-muted/20 p-3">
+    <Collapsible Open="collapsibleOpen" OpenChanged="HandleOpenChanged" Class="mb-4 rounded-lg border border-border bg-muted/20 p-3">
         <div class="flex items-center justify-between gap-2">
             <span class="text-sm text-muted-foreground">
                 筛选条件
@@ -74,13 +79,75 @@
     public CrudQueryInfo QueryInfo { get; set; } = default!;
 
     [Parameter]
-    public bool FilterExpanded { get; set; } = true;
+    public bool FilterExpanded { get; set; } = false;
 
-    private bool collapsibleOpen = true;
+    private bool collapsibleOpen = false;
+    private bool stateLoaded;
+    private string storageKey = string.Empty;
 
     protected override void OnInitialized()
     {
         collapsibleOpen = FilterExpanded;
+        storageKey = BuildStorageKey();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || stateLoaded || string.IsNullOrWhiteSpace(storageKey))
+        {
+            return;
+        }
+
+        stateLoaded = true;
+        try
+        {
+            bool saved = await CollapsibleState.GetStateAsync(storageKey, FilterExpanded);
+            if (saved != collapsibleOpen)
+            {
+                collapsibleOpen = saved;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex) when (ex is JSException or InvalidOperationException)
+        {
+            // 预渲染或 JS 不可用时忽略，保持 FilterExpanded 默认值
+        }
+    }
+
+    private async Task HandleOpenChanged(bool open)
+    {
+        collapsibleOpen = open;
+        if (string.IsNullOrWhiteSpace(storageKey))
+        {
+            return;
+        }
+
+        try
+        {
+            await CollapsibleState.SetStateAsync(storageKey, open);
+        }
+        catch (Exception ex) when (ex is JSException or InvalidOperationException)
+        {
+            // 忽略持久化失败，不影响交互
+        }
+    }
+
+    private string BuildStorageKey()
+    {
+        string relativePath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Trim('/');
+        if (string.IsNullOrWhiteSpace(relativePath))
+        {
+            relativePath = "root";
+        }
+
+        // 去掉 query/hash，避免同页不同查询串拆成多个 key
+        int queryIndex = relativePath.IndexOfAny(['?', '#']);
+        if (queryIndex >= 0)
+        {
+            relativePath = relativePath[..queryIndex];
+        }
+
+        return $"neoadmin-crud-filter-{relativePath}";
     }
 
     private bool HasActiveFilters =>

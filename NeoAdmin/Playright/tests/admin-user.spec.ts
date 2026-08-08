@@ -16,6 +16,7 @@ test.describe('用户管理', () => {
   });
 
   test('列表展示种子管理员用户', async ({ page }) => {
+    await searchCrudTable(page, '账号/姓名..', 'admin');
     await expect(page.getByRole('row').filter({ hasText: 'admin' }).first()).toBeVisible({ timeout: stepTimeout });
   });
 
@@ -47,6 +48,7 @@ test.describe('用户管理', () => {
   });
 
   test('登录日志按钮打开弹窗', async ({ page }) => {
+    await searchCrudTable(page, '账号/姓名..', 'admin');
     await page.getByRole('row').filter({ hasText: 'admin' }).getByRole('button', { name: '日志' }).click();
 
     const logDialog = page.getByRole('dialog').filter({ hasText: '登录日志' });

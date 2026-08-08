@@ -8,6 +8,11 @@ namespace NeoAdmin.Blazor.Entities;
 [Table(Name = "sysipwhitelist")]
 public sealed class SysIpWhitelist : Entity
 {
+    /// <summary>
+    /// 所属用户；列表与校验按此字段隔离。
+    /// </summary>
+    public long? UserId { get; set; }
+
     [Column(StringLength = 300)]
     public string IpAddress { get; set; } = string.Empty;
 

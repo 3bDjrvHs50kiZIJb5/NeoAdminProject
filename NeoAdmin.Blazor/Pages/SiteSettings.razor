@@ -56,6 +56,10 @@
                             <Checkbox @bind-Checked="model.IsEnabled" Id="site-enabled" />
                             <Label For="site-enabled" Class="font-normal">站点启用</Label>
                         </div>
+                        <div class="flex items-center gap-2">
+                            <Checkbox @bind-Checked="model.IpWhitelistManualApproval" Id="site-ip-whitelist-manual-approval" />
+                            <Label For="site-ip-whitelist-manual-approval" Class="font-normal">白名单人工审核</Label>
+                        </div>
                     </div>
                     <div class="space-y-2">
                         <Label For="site-description">说明</Label>
@@ -63,6 +67,7 @@
                                   Class="min-h-24 w-full"
                                   MaxLength="500"
                                   @bind-Value="model.Description" />
+                        <p class="text-xs text-muted-foreground">「白名单人工审核」开启时，拦截页提交的 IP 需管理员审核后生效；关闭则提交后立即加入白名单。</p>
                     </div>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="space-y-2">
