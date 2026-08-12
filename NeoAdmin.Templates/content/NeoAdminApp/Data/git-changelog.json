@@ -1,5 +1,17 @@
 [
   {
+    "shortHash": "a597d12",
+    "committedAt": "2026-08-12T23:46:29+08:00",
+    "subject": "定时任务：启动时预热 FreeScheduler，优化任务列表 UI",
+    "body": "应用启动时主动解析 Scheduler 单例，避免懒加载导致定时任务不执行；任务页移除内容列、标题去前缀、状态 Badge 展示。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "8c07120",
+    "committedAt": "2026-08-08T11:06:29+08:00",
+    "subject": "同步更新日志",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
     "shortHash": "b98a2aa",
     "committedAt": "2026-08-08T11:06:24+08:00",
     "subject": "发布 v1.0.50：IP 白名单自助申请与用户隔离，筛选区默认收起并记忆状态。",
@@ -286,17 +298,5 @@
     "committedAt": "2026-06-13T16:33:05+08:00",
     "subject": "chore: 发布 v1.0.26",
     "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "27920c8",
-    "committedAt": "2026-06-13T16:30:42+08:00",
-    "subject": "调整 Tailwind 构建开关并同步模板",
-    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "3fb10d6",
-    "committedAt": "2026-06-13T15:30:54+08:00",
-    "subject": "修复 Docker/CI 构建时 Tailwind CSS 未生成导致线上 404",
-    "body": "镜像内安装 Node 并在 publish 前编译 CSS；调整 csproj 静态资源纳入时机并移除 SkipTailwindBuild。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
   }
 ]
