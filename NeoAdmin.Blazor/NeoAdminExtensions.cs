@@ -164,6 +164,7 @@ public static class NeoAdminExtensions
     {
         ArgumentNullException.ThrowIfNull(app);
         app.Services.GetRequiredService<IFreeSql>();
+        EnsureSchedulerStarted(app);
         app.UseRouting();
 
         NeoAdminOptions options = app.Services.GetRequiredService<IOptions<NeoAdminOptions>>().Value;
@@ -216,6 +217,33 @@ public static class NeoAdminExtensions
         }
 
         return app;
+    }
+
+    /// <summary>
+    /// 启动时预热 FreeScheduler。调度器注册为懒加载单例，若不主动解析则定时任务不会执行。
+    /// </summary>
+    private static void EnsureSchedulerStarted(WebApplication app)
+    {
+        ILogger logger = app.Services
+            .GetRequiredService<ILoggerFactory>()
+            .CreateLogger(typeof(NeoAdminExtensions));
+        IHostEnvironment environment = app.Services.GetRequiredService<IHostEnvironment>();
+        NeoAdminOptions options = app.Services.GetRequiredService<IOptions<NeoAdminOptions>>().Value;
+        bool schedulerAutoLoad = options.SchedulerAutoLoad ?? !environment.IsDevelopment();
+
+        try
+        {
+            app.Services.GetRequiredService<Scheduler>();
+            logger.LogInformation(
+                "FreeScheduler 已启动，SchedulerAutoLoad={SchedulerAutoLoad}，Environment={Environment}",
+                schedulerAutoLoad,
+                environment.EnvironmentName);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "FreeScheduler 启动失败");
+            throw;
+        }
     }
 
     private static bool IsSwaggerEnabled(IHostEnvironment environment, NeoAdminOptions options) =>

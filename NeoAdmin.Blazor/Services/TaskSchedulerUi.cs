@@ -1,9 +1,22 @@
 using FreeScheduler;
+using NeoAdmin.Blazor.Attributes;
+using NeoUI.Blazor;
 
 namespace NeoAdmin.Blazor.Services;
 
 public static class TaskSchedulerUi
 {
+    public static string FormatTopic(string? topic)
+    {
+        if (string.IsNullOrEmpty(topic))
+        {
+            return string.Empty;
+        }
+
+        return topic.StartsWith(SchedulerAttribute.TopicPrefix, StringComparison.Ordinal)
+            ? topic[SchedulerAttribute.TopicPrefix.Length..]
+            : topic;
+    }
     public static string FormatInterval(TaskInfo task)
     {
         if ((int)task.Interval == 21)
@@ -33,6 +46,14 @@ public static class TaskSchedulerUi
         0 => "运行中",
         2 => "已结束",
         _ => task.Status.ToString()
+    };
+
+    public static BadgeVariant GetStatusBadgeVariant(TaskInfo task) => (int)task.Status switch
+    {
+        0 => BadgeVariant.Success,
+        1 => BadgeVariant.Secondary,
+        2 => BadgeVariant.Outline,
+        _ => BadgeVariant.Outline
     };
 
     public static void ApplyIntervalDefaults(TaskInfo task, TaskInterval interval)

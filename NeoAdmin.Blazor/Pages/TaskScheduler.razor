@@ -80,7 +80,6 @@
                         <th class="px-2 py-2 text-left">标题</th>
                         <th class="px-2 py-2 text-left">定时</th>
                         <th class="px-2 py-2 text-left">轮次</th>
-                        <th class="px-2 py-2 text-left">内容</th>
                         <th class="px-2 py-2 text-left">状态</th>
                         <th class="px-2 py-2 text-left">错误</th>
                         <th class="px-2 py-2 text-left">最后运行</th>
@@ -91,7 +90,7 @@
                     @if (pageResult is null || pageResult.Tasks.Count == 0)
                     {
                         <tr>
-                            <td colspan="10" class="px-4 py-10 text-center text-muted-foreground">
+                            <td colspan="9" class="px-4 py-10 text-center text-muted-foreground">
                                 @(isLoaded ? "暂无数据" : "加载中...")
                             </td>
                         </tr>
@@ -127,7 +126,7 @@
                                         }
                                     </div>
                                 </td>
-                                <td class="max-w-[180px] truncate px-2 py-2" title="@item.Topic">@item.Topic</td>
+                                <td class="max-w-[180px] truncate px-2 py-2" title="@TaskSchedulerUi.FormatTopic(item.Topic)">@TaskSchedulerUi.FormatTopic(item.Topic)</td>
                                 <td class="px-2 py-2">@TaskSchedulerUi.FormatInterval(item)</td>
                                 <td class="px-2 py-2">
                                     <Button Variant="ButtonVariant.Ghost" Size="ButtonSize.Small"
@@ -142,8 +141,11 @@
                                         }
                                     </Button>
                                 </td>
-                                <td class="max-w-[200px] truncate px-2 py-2" title="@item.Body">@item.Body</td>
-                                <td class="px-2 py-2">@TaskSchedulerUi.FormatStatus(item)</td>
+                                <td class="px-2 py-2">
+                                    <Badge Variant="@TaskSchedulerUi.GetStatusBadgeVariant(item)">
+                                        @TaskSchedulerUi.FormatStatus(item)
+                                    </Badge>
+                                </td>
                                 <td class="px-2 py-2">@item.ErrorTimes</td>
                                 <td class="px-2 py-2">@item.LastRunTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
                                 <td class="px-2 py-2">@(nextTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")</td>
@@ -247,7 +249,7 @@
 <Dialog @bind-Open="taskLogOpen">
     <DialogContent Variant="DialogContentVariant.Form" Class="sm:max-w-4xl">
         <DialogHeader>
-            <DialogTitle>任务日志 — @(logTask?.Topic)</DialogTitle>
+            <DialogTitle>任务日志 — @TaskSchedulerUi.FormatTopic(logTask?.Topic)</DialogTitle>
         </DialogHeader>
         <div class="max-h-[60vh] overflow-auto rounded-md border">
             <table class="w-full text-sm">
