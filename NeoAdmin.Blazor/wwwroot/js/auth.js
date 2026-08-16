@@ -22,6 +22,25 @@ window.neoAdminAuth = {
     copyText: async function (text) {
         await navigator.clipboard.writeText(text);
     },
+    copyElementText: async function (elementId) {
+        const el = document.getElementById(elementId);
+        if (!el) {
+            return;
+        }
+        await this.copyText((el.textContent || "").trim());
+    },
+    /**
+     * 首页「创建项目」命令：输入框变更时同步 -n 项目名（静态 SSR，无 Blazor 绑定）。
+     */
+    syncCreateProjectCommand: function (input, commandId) {
+        const fallback = "MyAdmin";
+        const name = (input && input.value ? String(input.value) : "").trim() || fallback;
+        const el = document.getElementById(commandId);
+        if (!el) {
+            return;
+        }
+        el.textContent = "dotnet new neoadmin -n " + name + " -o .";
+    },
     scrollIntoViewById: function (id) {
         const el = document.getElementById(id);
         if (!el) {

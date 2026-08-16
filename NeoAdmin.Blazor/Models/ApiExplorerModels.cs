@@ -9,6 +9,14 @@ public sealed class ApiExplorerEndpoint
 
     public required string Title { get; init; }
 
+    /// <summary>来自 Action 的 XML &lt;summary&gt;。</summary>
+    public string? Summary { get; init; }
+
+    /// <summary>来自 Action 的 XML &lt;remarks&gt;。</summary>
+    public string? Remarks { get; init; }
+
+    public bool AllowAnonymous { get; init; }
+
     public required string HttpMethod { get; init; }
 
     public required string RelativePath { get; init; }

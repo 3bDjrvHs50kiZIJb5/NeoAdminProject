@@ -83,7 +83,8 @@
                     </p>
                 </div>
 
-                <div class="border-b bg-slate-800 px-6 py-3 text-white">
+                <div class="border-b bg-slate-800 px-6 py-3 text-white"
+                     style="--selection: rgb(125 211 252); --selection-foreground: rgb(15 23 42);">
                     <div class="flex items-center gap-3">
                         <span class="@GetMethodBadgeClass(selectedEndpoint.HttpMethod, onDark: true)">@selectedEndpoint.HttpMethod</span>
                         <code class="text-sm font-mono text-slate-100">/@selectedEndpoint.RelativePath</code>
@@ -101,7 +102,7 @@
                         <TabsList Class="h-9">
                             <TabsTrigger Value="tryit">在线测试</TabsTrigger>
                             <TabsTrigger Value="doc">参数</TabsTrigger>
-                            <TabsTrigger Value="json">样例 JSON</TabsTrigger>
+                            <TabsTrigger Value="intro">简介</TabsTrigger>
                         </TabsList>
 
                         <TabsContent Value="tryit" Class="mt-4">
@@ -115,14 +116,25 @@
                             </section>
                         </TabsContent>
 
-                        <TabsContent Value="json" Class="mt-4 space-y-4">
+                        <TabsContent Value="intro" Class="mt-4 space-y-4">
+                            <div class="space-y-2 text-sm leading-relaxed">
+                                @if (selectedEndpoint.AllowAnonymous)
+                                {
+                                    <Badge Variant="BadgeVariant.Secondary">无需登录</Badge>
+                                }
+                                <p>
+                                    @(string.IsNullOrWhiteSpace(selectedEndpoint.Summary)
+                                        ? $"{selectedEndpoint.HttpMethod} /{selectedEndpoint.RelativePath}"
+                                        : selectedEndpoint.Summary)
+                                </p>
+                                @if (!string.IsNullOrWhiteSpace(selectedEndpoint.Remarks))
+                                {
+                                    <p class="text-muted-foreground">@selectedEndpoint.Remarks</p>
+                                }
+                            </div>
                             <section>
-                                <h2 class="mb-2 text-sm font-semibold">请求 Body 样例</h2>
-                                <pre class="overflow-x-auto rounded-lg border bg-muted/40 p-4 text-xs leading-relaxed"><code>@(selectedEndpoint.RequestBodySampleJson ?? "（无 Body）")</code></pre>
-                            </section>
-                            <section>
-                                <h2 class="mb-2 text-sm font-semibold">响应 Body 样例（模拟）</h2>
-                                <pre class="overflow-x-auto rounded-lg border bg-muted/40 p-4 text-xs leading-relaxed"><code>@(selectedEndpoint.ResponseBodySampleJson ?? "（无）")</code></pre>
+                                <h2 class="mb-2 text-sm font-semibold">调用示例</h2>
+                                <pre class="overflow-x-auto rounded-lg border bg-muted/40 p-4 text-xs leading-relaxed"><code>@ApiExplorerDocumentation.BuildExample(selectedEndpoint)</code></pre>
                             </section>
                         </TabsContent>
                     </Tabs>
@@ -283,7 +295,7 @@
             _ => "bg-slate-500"
         };
         string text = onDark ? "text-white" : "text-white";
-        return $"shrink-0 rounded {color} px-1.5 py-0.5 text-[10px] font-semibold {text}";
+        return $"inline-flex min-w-10 shrink-0 items-center justify-center rounded {color} px-1.5 py-0.5 text-[10px] font-semibold {text}";
     }
 
     private async Task CopyTextAsync(string text)

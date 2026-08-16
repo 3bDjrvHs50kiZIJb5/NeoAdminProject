@@ -39,7 +39,7 @@
                              Property="@(row => row.Item.Label)"
                              Header="名称"
                              Sortable="false"
-                             Width="28%">
+                             Width="320px">
 
                 <CellTemplate Context="row">
                     <div class="flex items-center gap-1.5" style="padding-left:@(menuLevels.GetValueOrDefault(row.Item.Id) * 18)px">
@@ -52,6 +52,18 @@
                         @if (row.Item.IsHidden)
                         {
                             <span class="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">隐藏</span>
+                        }
+                        @if (!row.Item.Type.IsPermissionNode())
+                        {
+                            <span @onclick:stopPropagation="true">
+                                <Button Variant="ButtonVariant.Ghost"
+                                        Size="ButtonSize.Small"
+                                        Title="添加子菜单"
+                                        OnClick="@(() => AddChild(row.Item))">
+                                    <LucideIcon Name="plus" Size="14" />
+                                    <span class="sr-only">添加子菜单</span>
+                                </Button>
+                            </span>
                         }
                     </div>
                 </CellTemplate>
@@ -71,9 +83,13 @@
                              TValue="string"
                              Property="@(row => row.Item.Path)"
                              Header="路径"
-                             Sortable="false">
+                             Sortable="false"
+                             Width="auto">
                 <CellTemplate Context="row">
-                    @(string.IsNullOrWhiteSpace(row.Item.Path) ? "-" : row.Item.Path)
+                    @{
+                        string pathText = string.IsNullOrWhiteSpace(row.Item.Path) ? "-" : row.Item.Path;
+                    }
+                    <span class="block truncate" title="@pathText">@pathText</span>
                 </CellTemplate>
             </DataTableColumn>
             <DataTableColumn TData="CrudGridRow<SysMenu>"
@@ -212,11 +228,18 @@
         .ToList();
     private Task InitQuery(CrudQueryInfo e)
     {
+        CrudFilterInfo hiddenFilter = new("隐藏", "IsHidden", false, 4, "是,否", "true,false");
+        CrudFilterOption? notHiddenOption = hiddenFilter.Options.FirstOrDefault(option => option.Value == "false");
+        if (notHiddenOption is not null)
+        {
+            notHiddenOption.Selected = true;
+        }
+
         e.Filters =
         [
             new CrudFilterInfo("类型", "Type", typeof(SysMenuType), multiple: true, col: 8),
             new CrudFilterInfo("系统菜单", "IsSystem", false, 4, "是,否", "true,false"),
-            new CrudFilterInfo("隐藏", "IsHidden", false, 4, "是,否", "true,false"),
+            hiddenFilter,
             new CrudFilterInfo("折叠", "Collapsed", false, 4, "是,否", "true,false")
         ];
         return Task.CompletedTask;
@@ -253,7 +276,15 @@
         if (hiddenFilter.HasValue)
         {
             bool isHidden = hiddenFilter.Value<bool>();
-            query = query.Where(a => a.IsHidden == isHidden);
+            if (isHidden)
+            {
+                query = query.Where(a => a.IsHidden);
+            }
+            else
+            {
+                Dictionary<long, SysMenu> menuMap = flatMenus.ToDictionary(menu => menu.Id);
+                query = query.Where(a => !a.IsHidden && !MenuService.HasHiddenAncestor(a, menuMap));
+            }
         }
 
         CrudFilterInfo collapsedFilter = e.Filters.First(f => f.QueryStringName == "Collapsed");

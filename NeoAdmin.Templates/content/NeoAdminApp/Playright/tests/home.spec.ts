@@ -12,6 +12,22 @@ test.describe('首页', () => {
     await expect(page.getByText('快速开始')).toBeVisible();
   });
 
+  test('输入项目名称后创建命令同步更新', async ({ page }) => {
+    await page.goto('/');
+
+    const nameInput = page.getByRole('textbox', { name: '项目名称' });
+    const command = page.locator('#create-project-command');
+
+    await expect(nameInput).toHaveValue('MyAdmin');
+    await expect(command).toHaveText('dotnet new neoadmin -n MyAdmin -o .');
+
+    await nameInput.fill('ShopAdmin');
+    await expect(command).toHaveText('dotnet new neoadmin -n ShopAdmin -o .');
+
+    await nameInput.fill('   ');
+    await expect(command).toHaveText('dotnet new neoadmin -n MyAdmin -o .');
+  });
+
   test('从首页进入登录页', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('link', { name: '进入后台' }).click();

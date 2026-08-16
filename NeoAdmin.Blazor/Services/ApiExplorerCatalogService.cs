@@ -75,12 +75,10 @@ public sealed class ApiExplorerCatalogService
                 }
 
                 string httpMethod = (description.HttpMethod ?? "GET").ToUpperInvariant();
-                string controllerName = description.ActionDescriptor is ControllerActionDescriptor cad
-                    ? cad.ControllerName
-                    : groupName;
-                string? actionName = description.ActionDescriptor is ControllerActionDescriptor actionCad
-                    ? actionCad.ActionName
-                    : null;
+                ControllerActionDescriptor? actionDescriptor = description.ActionDescriptor as ControllerActionDescriptor;
+                string controllerName = actionDescriptor?.ControllerName ?? groupName;
+                string? actionName = actionDescriptor?.ActionName;
+                (string? summary, string? remarks, bool allowAnonymous) = ApiExplorerDocumentation.GetActionDocs(actionDescriptor);
 
                 List<ApiExplorerParameter> parameters = [];
                 Type? bodyType = null;
@@ -156,6 +154,9 @@ public sealed class ApiExplorerCatalogService
                     Id = id,
                     Group = groupName,
                     Title = title,
+                    Summary = summary,
+                    Remarks = remarks,
+                    AllowAnonymous = allowAnonymous,
                     HttpMethod = httpMethod,
                     RelativePath = relativePath.TrimStart('/'),
                     ControllerName = controllerName,

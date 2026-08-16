@@ -35,8 +35,11 @@ public sealed class IpWhitelistApplyController : BaseApiController
     }
 
     /// <summary>
-    /// 获取申请页验证码。
+    /// 获取 IP 白名单申请页上的图形验证码。
     /// </summary>
+    /// <remarks>
+    /// 返回验证码 id 和 svg 图片。下一步把 id 与图片上的 4 位字符一起交给 POST /api/ip-whitelist/apply。
+    /// </remarks>
     [HttpGet("captcha")]
     [AllowAnonymous]
     public ApiResult<IpWhitelistCaptchaResponse> Captcha()
@@ -50,8 +53,11 @@ public sealed class IpWhitelistApplyController : BaseApiController
     }
 
     /// <summary>
-    /// 提交当前 IP 到白名单（未启用，待管理员审核）。
+    /// 把当前访问者的 IP 加入白名单。IP 由服务端识别，不能在请求里指定。
     /// </summary>
+    /// <remarks>
+    /// 先调用 GET /api/ip-whitelist/captcha 拿到验证码。站点若开启「人工审核」，只写入待审核记录；否则立即生效。
+    /// </remarks>
     [HttpPost("apply")]
     [AllowAnonymous]
     public async Task<ApiResult> Apply([FromBody] IpWhitelistApplyRequest request)

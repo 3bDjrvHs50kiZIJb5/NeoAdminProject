@@ -71,14 +71,28 @@
                         <p class="text-xs leading-relaxed">
                             在空目录中创建项目
                         </p>
-                        <div class="relative">
-                            <pre class="overflow-x-auto rounded-lg border bg-muted/40 p-3 pr-10 text-xs leading-relaxed"><code>@CreateProjectCommand</code></pre>
-                            <button type="button"
-                                    onclick="neoAdminAuth.copyText('@CreateProjectCommand')"
-                                    aria-label="复制命令"
-                                    class="absolute right-1 top-1 inline-flex size-10 items-center justify-center rounded-md p-0 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
-                                <LucideIcon Name="copy" Size="18" />
-                            </button>
+                        <div class="flex items-center gap-2">
+                            <label for="project-name" class="sr-only">项目名称</label>
+                            <input id="project-name"
+                                   type="text"
+                                   value="@DefaultProjectName"
+                                   maxlength="64"
+                                   autocomplete="off"
+                                   spellcheck="false"
+                                   autocapitalize="off"
+                                   placeholder="@DefaultProjectName"
+                                   aria-label="项目名称"
+                                   class="h-9 w-36 shrink-0 rounded-lg border bg-muted/40 px-3 font-mono text-xs leading-relaxed placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                   oninput="neoAdminAuth.syncCreateProjectCommand(this, 'create-project-command')" />
+                            <div class="relative min-w-0 flex-1">
+                                <pre id="create-project-command" class="flex h-9 items-center overflow-x-auto rounded-lg border bg-muted/40 px-3 pr-10 text-xs leading-relaxed"><code>@CreateProjectCommand</code></pre>
+                                <button type="button"
+                                        onclick="neoAdminAuth.copyElementText('create-project-command')"
+                                        aria-label="复制命令"
+                                        class="absolute right-1 top-1/2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md p-0 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+                                    <LucideIcon Name="copy" Size="16" />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </li>
@@ -127,6 +141,7 @@
     private const string GitHubUrl = "https://github.com/3bDjrvHs50kiZIJb5/NeoAdminProject";
     private const string DevServerUrl = "http://localhost:5038/";
 
+    private const string DefaultProjectName = "MyAdmin";
     private const string InstallTemplateCommand = "dotnet new install NeoAdmin.Templates --force";
     private const string CreateProjectCommand = "dotnet new neoadmin -n MyAdmin -o .";
     private const string WatchRunCommand = "dotnet watch run";

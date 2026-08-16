@@ -12,6 +12,8 @@
 @inject NeoAdminAuthService AuthService
 @inject IJSRuntime JSRuntime
 @inject MenuPermissionService MenuPermissionService
+@inject IToastService ToastService
+@inject ILogger<IpWhitelist> Logger
 
 <PageTitle>IP 白名单</PageTitle>
 
@@ -20,11 +22,12 @@
                TItem="SysIpWhitelist"
                Title="IP 白名单"
                PageSize="50"
-               SearchPlaceholder="IP / 备注.."
+               SearchPlaceholder="IP / 用户.."
                InitQuery="InitQuery"
                OnQuery="HandleQuery"
                OnEdit="HandleEdit"
                OnSaving="HandleSaving"
+               OnRemoving="HandleRemoving"
                DialogContentSize="CrudDialogContentSize.Lg">
         <Columns>
             <DataTableColumn TData="CrudGridRow<SysIpWhitelist>"
@@ -41,19 +44,20 @@
                              Width="160px">
                 <CellTemplate Context="row">
                     <span class="block truncate font-medium" title="@row.Item.IpAddress">@row.Item.IpAddress</span>
-                </CellTemplate>
-            </DataTableColumn>
-            <DataTableColumn TData="CrudGridRow<SysIpWhitelist>"
-                             TValue="string"
-                             Property="@(row => row.Item.Description)"
-                             Header="备注"
-                             Sortable="false">
-                <CellTemplate Context="row">
-                    <span class="block truncate" title="@row.Item.Description">@row.Item.Description</span>
                     @if (!row.Item.IsEnabled && row.Item.UserId is null)
                     {
                         <span class="ml-1 text-xs text-amber-600">待审核</span>
                     }
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TData="CrudGridRow<SysIpWhitelist>"
+                             TValue="string"
+                             Property="@(row => row.Item.User != null ? row.Item.User.Username : string.Empty)"
+                             Header="用户"
+                             Sortable="false"
+                             Width="200px">
+                <CellTemplate Context="row">
+                    <span class="block truncate" title="@FormatUserLabel(row.Item.User)">@FormatUserLabel(row.Item.User)</span>
                 </CellTemplate>
             </DataTableColumn>
             <DataTableColumn TData="CrudGridRow<SysIpWhitelist>"
@@ -142,6 +146,12 @@
 
 @code {
     private CrudTable<SysIpWhitelist> table = default!;
+    private bool isAdministrator;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isAdministrator = await MenuPermissionService.IsAdministratorAsync();
+    }
 
     private Task InitQuery(CrudQueryInfo e)
     {
@@ -157,14 +167,17 @@
         CrudFilterInfo enabledFilter = e.Filters[0];
         long? currentUserId = await GetCurrentUserIdAsync();
         long userId = currentUserId.GetValueOrDefault();
-        bool isAdministrator = await MenuPermissionService.IsAdministratorAsync();
+        isAdministrator = await MenuPermissionService.IsAdministratorAsync();
 
         e.Select!
+            .Include(a => a.User)
             .WhereIf(!isAdministrator && currentUserId.HasValue, a => a.UserId == userId)
             .WhereIf(!isAdministrator && !currentUserId.HasValue, a => false)
             .WhereIf(!string.IsNullOrWhiteSpace(e.SearchText),
                 a => a.IpAddress.Contains(e.SearchText!)
-                     || a.Description.Contains(e.SearchText!))
+                     || a.Description.Contains(e.SearchText!)
+                     || a.User.Username.Contains(e.SearchText!)
+                     || a.User.Nickname.Contains(e.SearchText!))
             .WhereIf(enabledFilter.HasValue, a => a.IsEnabled == enabledFilter.Value<bool>())
             .OrderByDescending(a => a.Id);
     }
@@ -178,6 +191,12 @@
 
         item.IsEnabled = true;
         item.AccessCount = 0;
+
+        long? currentUserId = await GetCurrentUserIdAsync();
+        if (currentUserId.HasValue && !item.UserId.HasValue)
+        {
+            item.UserId = currentUserId.Value;
+        }
 
         if (!string.IsNullOrWhiteSpace(item.IpAddress))
         {
@@ -196,8 +215,6 @@
         {
             item.IpAddress = clientIp;
         }
-
-        await Task.CompletedTask;
     }
 
     private async Task HandleSaving(CrudConfirmEventArgs<SysIpWhitelist> e)
@@ -206,45 +223,121 @@
         long? currentUserId = await GetCurrentUserIdAsync();
         if (!currentUserId.HasValue)
         {
+            Logger.LogWarning("保存白名单被拒绝：未登录");
+            ToastService.Error("保存失败", "请先登录");
             e.Cancel = true;
             return;
         }
 
-        bool isAdministrator = await MenuPermissionService.IsAdministratorAsync();
-
+        isAdministrator = await MenuPermissionService.IsAdministratorAsync();
         item.IpAddress = IpHelper.NormalizeIp(item.IpAddress?.Trim());
         item.Description = item.Description?.Trim() ?? string.Empty;
 
         if (string.IsNullOrWhiteSpace(item.IpAddress) || item.IpAddress == "unknown")
         {
+            Logger.LogWarning("保存白名单被拒绝：IP 无效，UserId={UserId}", currentUserId.Value);
+            ToastService.Error("保存失败", "请填写有效的 IP 地址");
             e.Cancel = true;
             return;
         }
 
-        if (item.Id > 0 && !isAdministrator && item.UserId != currentUserId.Value)
+        if (item.Id == 0 || !isAdministrator)
         {
-            e.Cancel = true;
-            return;
+            item.UserId = currentUserId.Value;
+        }
+
+        if (item.Id > 0)
+        {
+            SysIpWhitelist? existing = await FreeSql.Select<SysIpWhitelist>()
+                .Where(a => a.Id == item.Id)
+                .FirstAsync();
+            if (existing is null)
+            {
+                Logger.LogWarning("保存白名单被拒绝：记录不存在，Id={Id}", item.Id);
+                ToastService.Error("保存失败", "记录不存在");
+                e.Cancel = true;
+                return;
+            }
+
+            if (!isAdministrator && existing.UserId != currentUserId.Value)
+            {
+                Logger.LogWarning("保存白名单被拒绝：无权修改他人记录，Id={Id}，UserId={UserId}", item.Id, currentUserId.Value);
+                ToastService.Error("保存失败", "只能修改自己的白名单");
+                e.Cancel = true;
+                return;
+            }
         }
 
         bool ipExists = await FreeSql.Select<SysIpWhitelist>()
-            .WhereIf(!isAdministrator, a => a.UserId == currentUserId.Value)
-            .Where(a => a.IpAddress == item.IpAddress && a.Id != item.Id)
+            .Where(a => a.UserId == item.UserId && a.IpAddress == item.IpAddress && a.Id != item.Id)
             .AnyAsync();
 
         if (ipExists)
         {
+            Logger.LogWarning("保存白名单被拒绝：IP 已存在，UserId={UserId}，Ip={Ip}", item.UserId, item.IpAddress);
+            ToastService.Error("保存失败", "该用户已存在相同 IP");
             e.Cancel = true;
             return;
         }
 
         if (item.Id == 0)
         {
-            item.UserId = currentUserId.Value;
             item.CreatedTime = DateTime.Now;
             item.AccessCount = 0;
             item.LastAccessTime = null;
+            Logger.LogInformation("新增白名单，UserId={UserId}，Ip={Ip}", item.UserId, item.IpAddress);
         }
+        else
+        {
+            Logger.LogInformation("更新白名单，Id={Id}，UserId={UserId}，Ip={Ip}", item.Id, item.UserId, item.IpAddress);
+        }
+    }
+
+    private async Task HandleRemoving(CrudConfirmEventArgs<SysIpWhitelist> e)
+    {
+        if (isAdministrator)
+        {
+            Logger.LogInformation("删除白名单，Id={Id}，UserId={UserId}，Ip={Ip}", e.Item.Id, e.Item.UserId, e.Item.IpAddress);
+            return;
+        }
+
+        long? currentUserId = await GetCurrentUserIdAsync();
+        SysIpWhitelist? existing = await FreeSql.Select<SysIpWhitelist>()
+            .Where(a => a.Id == e.Item.Id)
+            .FirstAsync();
+
+        if (existing is null)
+        {
+            Logger.LogWarning("删除白名单被拒绝：记录不存在，Id={Id}", e.Item.Id);
+            ToastService.Error("删除失败", "记录不存在");
+            e.Cancel = true;
+            return;
+        }
+
+        if (!currentUserId.HasValue || existing.UserId != currentUserId.Value)
+        {
+            Logger.LogWarning("删除白名单被拒绝：无权删除他人记录，Id={Id}", e.Item.Id);
+            ToastService.Error("删除失败", "只能删除自己的白名单");
+            e.Cancel = true;
+            return;
+        }
+
+        Logger.LogInformation("删除白名单，Id={Id}，UserId={UserId}，Ip={Ip}", existing.Id, existing.UserId, existing.IpAddress);
+    }
+
+    private static string FormatUserLabel(SysUser? user)
+    {
+        if (user is null)
+        {
+            return "未关联";
+        }
+
+        if (string.IsNullOrWhiteSpace(user.Nickname) || string.Equals(user.Nickname, user.Username, StringComparison.Ordinal))
+        {
+            return user.Username;
+        }
+
+        return $"{user.Username}（{user.Nickname}）";
     }
 
     private async Task<long?> GetCurrentUserIdAsync()
