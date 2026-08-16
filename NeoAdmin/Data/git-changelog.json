@@ -1,5 +1,17 @@
 [
   {
+    "shortHash": "df262e7",
+    "committedAt": "2026-08-16T20:59:34+08:00",
+    "subject": "发布 v1.0.52：API 调试页展示 XML 简介，IP 白名单按用户管理，菜单可添加子项。",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "5bc8aeb",
+    "committedAt": "2026-08-12T23:46:35+08:00",
+    "subject": "同步更新日志",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
     "shortHash": "a597d12",
     "committedAt": "2026-08-12T23:46:29+08:00",
     "subject": "定时任务：启动时预热 FreeScheduler，优化任务列表 UI",
@@ -286,17 +298,5 @@
     "committedAt": "2026-06-13T16:43:33+08:00",
     "subject": "更新工作区配置并纳入模板项目",
     "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "0e01363",
-    "committedAt": "2026-06-13T16:42:06+08:00",
-    "subject": "提交宿主 Tailwind CSS 修复 Docker 构建",
-    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "a4625b1",
-    "committedAt": "2026-06-13T16:33:05+08:00",
-    "subject": "chore: 发布 v1.0.26",
-    "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
   }
 ]
