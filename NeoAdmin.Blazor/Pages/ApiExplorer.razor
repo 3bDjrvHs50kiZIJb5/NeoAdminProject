@@ -10,6 +10,16 @@
 
 <PageTitle>API 调试</PageTitle>
 
+@* Tailwind 扫描用：HTTP method badge 完整类名 *@
+<div class="hidden" aria-hidden="true">
+    <span class="inline-flex min-w-10 shrink-0 items-center justify-center rounded bg-emerald-500 px-1.5 py-0.5 text-[10px] font-semibold text-white"></span>
+    <span class="inline-flex min-w-10 shrink-0 items-center justify-center rounded bg-blue-500 px-1.5 py-0.5 text-[10px] font-semibold text-white"></span>
+    <span class="inline-flex min-w-10 shrink-0 items-center justify-center rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-semibold text-white"></span>
+    <span class="inline-flex min-w-10 shrink-0 items-center justify-center rounded bg-orange-500 px-1.5 py-0.5 text-[10px] font-semibold text-white"></span>
+    <span class="inline-flex min-w-10 shrink-0 items-center justify-center rounded bg-rose-500 px-1.5 py-0.5 text-[10px] font-semibold text-white"></span>
+    <span class="inline-flex min-w-10 shrink-0 items-center justify-center rounded bg-slate-500 px-1.5 py-0.5 text-[10px] font-semibold text-white"></span>
+</div>
+
 <div class="neo-admin-page-scroll flex min-h-0 flex-1 flex-col p-1">
     <div class="flex min-h-0 flex-1 overflow-hidden rounded-xl border bg-card shadow-sm">
         <aside class="flex w-72 shrink-0 flex-col border-r bg-background">
@@ -86,7 +96,7 @@
                 <div class="border-b bg-slate-800 px-6 py-3 text-white"
                      style="--selection: rgb(125 211 252); --selection-foreground: rgb(15 23 42);">
                     <div class="flex items-center gap-3">
-                        <span class="@GetMethodBadgeClass(selectedEndpoint.HttpMethod, onDark: true)">@selectedEndpoint.HttpMethod</span>
+                        <span class="@GetMethodBadgeClass(selectedEndpoint.HttpMethod)">@selectedEndpoint.HttpMethod</span>
                         <code class="text-sm font-mono text-slate-100">/@selectedEndpoint.RelativePath</code>
                         <button type="button"
                                 class="ml-auto inline-flex size-8 items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
@@ -283,19 +293,17 @@
             : "flex w-full items-center gap-2 truncate rounded-md px-3 py-2 text-left text-xs text-muted-foreground hover:bg-accent/60 hover:text-accent-foreground";
     }
 
-    private static string GetMethodBadgeClass(string method, bool onDark = false)
+    private static string GetMethodBadgeClass(string method)
     {
-        string color = method.ToUpperInvariant() switch
+        return method.ToUpperInvariant() switch
         {
-            "GET" => "bg-emerald-500",
-            "POST" => "bg-blue-500",
-            "PUT" => "bg-amber-500",
-            "PATCH" => "bg-orange-500",
-            "DELETE" => "bg-rose-500",
-            _ => "bg-slate-500"
+            "GET" => "inline-flex min-w-10 shrink-0 items-center justify-center rounded bg-emerald-500 px-1.5 py-0.5 text-[10px] font-semibold text-white",
+            "POST" => "inline-flex min-w-10 shrink-0 items-center justify-center rounded bg-blue-500 px-1.5 py-0.5 text-[10px] font-semibold text-white",
+            "PUT" => "inline-flex min-w-10 shrink-0 items-center justify-center rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-semibold text-white",
+            "PATCH" => "inline-flex min-w-10 shrink-0 items-center justify-center rounded bg-orange-500 px-1.5 py-0.5 text-[10px] font-semibold text-white",
+            "DELETE" => "inline-flex min-w-10 shrink-0 items-center justify-center rounded bg-rose-500 px-1.5 py-0.5 text-[10px] font-semibold text-white",
+            _ => "inline-flex min-w-10 shrink-0 items-center justify-center rounded bg-slate-500 px-1.5 py-0.5 text-[10px] font-semibold text-white"
         };
-        string text = onDark ? "text-white" : "text-white";
-        return $"inline-flex min-w-10 shrink-0 items-center justify-center rounded {color} px-1.5 py-0.5 text-[10px] font-semibold {text}";
     }
 
     private async Task CopyTextAsync(string text)

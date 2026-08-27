@@ -9,5 +9,10 @@
 
 @import 'tailwindcss';
 
+/* NeoAdmin.Blazor NuGet 内 C# 动态拼接的类名（ApiExplorer HTTP method badge 等） */
+@source inline("bg-{emerald,blue,amber,orange,rose,slate}-500");
+@source inline("inline-flex min-w-10 shrink-0 items-center justify-center rounded px-1.5 py-0.5 text-[10px] font-semibold text-white");
+@source inline("bg-slate-{700,800} text-slate-{100,300} hover:bg-slate-700");
+
 /* 避免编译期烘焙颜色，保证 ThemeSwitcher / 暗色模式仍走 CSS 变量 */
 @theme inline;

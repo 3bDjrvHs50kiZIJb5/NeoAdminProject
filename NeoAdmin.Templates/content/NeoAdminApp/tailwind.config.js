@@ -1,7 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ['class'],
-  content: ['./**/*.{razor,html,cs}'],
+  content: [
+    './**/*.{razor,html,cs}',
+    // ProjectReference 开发时扫描库内 Tailwind 类名
+    '../NeoAdmin.Blazor/**/*.{razor,html,cs}',
+  ],
   theme: {
     extend: {
       fontFamily: {
