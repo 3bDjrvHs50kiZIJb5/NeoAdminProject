@@ -1,5 +1,17 @@
 [
   {
+    "shortHash": "5c23623",
+    "committedAt": "2026-08-27T10:42:05+08:00",
+    "subject": "发布 v1.0.53：修复 API 调试页 HTTP method badge 样式，补全 Tailwind 动态类名扫描。",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "f31a7d6",
+    "committedAt": "2026-08-16T20:59:41+08:00",
+    "subject": "同步更新日志",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
     "shortHash": "df262e7",
     "committedAt": "2026-08-16T20:59:34+08:00",
     "subject": "发布 v1.0.52：API 调试页展示 XML 简介，IP 白名单按用户管理，菜单可添加子项。",
@@ -285,18 +297,6 @@
     "shortHash": "391c32f",
     "committedAt": "2026-06-13T23:33:20+08:00",
     "subject": "增强 CrudTable 操作反馈、文件管理与用户登录日志，过滤 Blazor 断开日志噪声",
-    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "756dd88",
-    "committedAt": "2026-06-13T22:43:05+08:00",
-    "subject": "增强随笔专栏与 SQL 监控，同步模板至 v1.0.27",
-    "body": "- FreeSql CommandAfter 记录 SQL 耗时，MonitorCommand 默认开启\n- 随笔专栏支持多选删除与封面图上传预览\n- 随笔文章移除标题筛选器\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "e1c9ad1",
-    "committedAt": "2026-06-13T16:43:33+08:00",
-    "subject": "更新工作区配置并纳入模板项目",
     "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
   }
 ]
