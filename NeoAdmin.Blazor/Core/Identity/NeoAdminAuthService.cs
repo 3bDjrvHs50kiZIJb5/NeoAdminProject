@@ -206,7 +206,8 @@ public sealed class NeoAdminAuthService
         Username = user.Username,
         Nickname = user.Nickname,
         IsEnabled = user.IsEnabled,
-        LoginTime = user.LoginTime
+        LoginTime = user.LoginTime,
+        Avatar = user.Avatar
     };
 
     private static ApiResult? ValidateRequest(object request)

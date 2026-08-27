@@ -79,6 +79,28 @@
         </Button>
     </RowActionsContent>
     <EditTemplate Context="item">
+        <div class="space-y-2">
+            <Label>头像</Label>
+            @if (item.Id > 0 && string.IsNullOrWhiteSpace(item.Avatar))
+            {
+                <div class="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
+                    <img src="@($"/api/avatar/{item.Id}?size=128")"
+                         alt="@(string.IsNullOrWhiteSpace(item.Nickname) ? item.Username : item.Nickname)"
+                         class="size-16 shrink-0 rounded-lg border bg-muted" />
+                    <p class="text-xs text-muted-foreground">未上传自定义头像，当前为系统 DiceBear 头像。</p>
+                </div>
+            }
+            <NeoFileUpload @bind-Value="item.Avatar"
+                           UploadDirectory="avatar"
+                           Accept="image/*"
+                           MaxFileSize="2097152"
+                           PreviewLabel="自定义头像"
+                           EmptyHint="选择图片后将自动上传；清除后恢复为系统 DiceBear 头像。"
+                           ClearButtonText="清除头像"
+                           HelpText="仅支持图片，最大 2MB。"
+                           PreviewImageContainerClass="size-20 overflow-hidden rounded-lg border bg-background"
+                           PreviewImageClass="size-full object-cover" />
+        </div>
         <div class="grid gap-3 sm:grid-cols-2">
             <div class="space-y-2">
                 <Label>用户名</Label>

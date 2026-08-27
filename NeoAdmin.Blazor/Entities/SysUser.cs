@@ -8,8 +8,6 @@ public partial class SysUser : Entity
     [Navigate(ManyToMany = typeof(SysRoleUser))]
     public List<SysRole> Roles { get; set; } = new();
 
-
-
     [Column(StringLength = 50)]
     public string Username { get; set; } = string.Empty;
 
@@ -27,6 +25,12 @@ public partial class SysUser : Entity
 
     [Column(StringLength = 500)]
     public string Description { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 用户自定义头像地址（上传后的文件 URL）；为空时使用 DiceBear 系统头像。
+    /// </summary>
+    [Column(StringLength = 256)]
+    public string? Avatar { get; set; }
 
     public DateTime CreatedTime { get; set; } = DateTime.Now;
 }

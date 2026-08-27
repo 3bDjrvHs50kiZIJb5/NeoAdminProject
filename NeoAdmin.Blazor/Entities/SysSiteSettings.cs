@@ -65,4 +65,30 @@ public sealed class SysSiteSettings : EntityCreated
     /// 白名单人工审核：开启后拦截页提交的 IP 需管理员审核；关闭则提交后立即生效。
     /// </summary>
     public bool IpWhitelistManualApproval { get; set; } = false;
+
+    private string _avatarStyle = "clay";
+
+    /// <summary>
+    /// DiceBear 头像风格 key（kebab-case，如 clay、shapes、pixel-art-neutral）。
+    /// 旧库该列为 NULL，读写时统一归一为 clay。
+    /// </summary>
+    [Column(StringLength = 32)]
+    public string AvatarStyle
+    {
+        get => _avatarStyle;
+        set => _avatarStyle = string.IsNullOrWhiteSpace(value) ? "clay" : value;
+    }
+
+    private string _avatarPreset = string.Empty;
+
+    /// <summary>
+    /// DiceBear Clay 头像预设名（如 bare、sepia、animated）；空表示默认随机。仅 clay 风格生效。
+    /// 旧库该列为 NULL，读写时统一归一为空字符串。
+    /// </summary>
+    [Column(StringLength = 32)]
+    public string AvatarPreset
+    {
+        get => _avatarPreset;
+        set => _avatarPreset = value ?? string.Empty;
+    }
 }

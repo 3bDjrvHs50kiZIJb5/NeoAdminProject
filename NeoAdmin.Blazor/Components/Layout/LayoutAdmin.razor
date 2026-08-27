@@ -70,9 +70,10 @@
                                             <SidebarMenuButton Size="SidebarMenuButtonSize.Large"
                                                                Tooltip="账户菜单"
                                                                Class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
-                                                <Avatar Class="size-8 rounded-lg">
-                                                    <AvatarFallback Class="rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                                                        <LucideIcon Name="shield-user" Size="32" />
+                                                <Avatar Class="size-8 rounded-lg" @key="@GetUserAvatarUrl(user)">
+                                                    <AvatarImage Source="@GetUserAvatarUrl(user)" Alt="@GetDisplayName(user)" />
+                                                    <AvatarFallback Class="rounded-lg bg-sidebar-primary text-sidebar-primary-foreground text-xs font-medium">
+                                                        @GetAvatarFallbackText(user)
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div class="grid min-w-0 flex-1 text-left text-sm leading-tight">
@@ -90,9 +91,10 @@
                                                              Class="min-w-56 rounded-lg">
                                             <DropdownMenuLabel Class="p-0 font-normal">
                                                 <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                                                    <Avatar Class="size-8 rounded-lg">
-                                                        <AvatarFallback Class="rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                                                            <LucideIcon Name="shield-user" Size="32" />
+                                                    <Avatar Class="size-8 rounded-lg" @key="@GetUserAvatarUrl(user)">
+                                                        <AvatarImage Source="@GetUserAvatarUrl(user)" Alt="@GetDisplayName(user)" />
+                                                        <AvatarFallback Class="rounded-lg bg-sidebar-primary text-sidebar-primary-foreground text-xs font-medium">
+                                                            @GetAvatarFallbackText(user)
                                                         </AvatarFallback>
                                                     </Avatar>
                                                     <div class="grid min-w-0 flex-1 leading-tight">
@@ -274,6 +276,7 @@
         _ = InvokeAsync(async () =>
         {
             siteSettings = await SiteSettingsService.GetAsync();
+            await RefreshCurrentUserAsync();
             StateHasChanged();
         });
     }
@@ -355,9 +358,19 @@
                     continue;
                 }
 
+                string? previousAvatarVersion = currentUser is { } previousUser
+                    ? BuildAvatarVersion(previousUser)
+                    : null;
+
                 if (!await EnsureAuthenticatedAsync())
                 {
                     break;
+                }
+
+                if (currentUser is { } nextUser
+                    && BuildAvatarVersion(nextUser) != previousAvatarVersion)
+                {
+                    await InvokeAsync(StateHasChanged);
                 }
             }
         }
@@ -407,6 +420,21 @@
         finally
         {
             Interlocked.Exchange(ref sessionCheckRunning, 0);
+        }
+    }
+
+    private async Task RefreshCurrentUserAsync()
+    {
+        string? token = await JSRuntime.InvokeAsync<string?>("neoAdminAuth.getToken");
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return;
+        }
+
+        ApiResult<UserSummaryResponse> result = await AuthService.CheckAsync(token);
+        if (result.Succeeded && result.Data is not null)
+        {
+            currentUser = result.Data;
         }
     }
 
@@ -531,6 +559,28 @@
 
     private static string GetDisplayName(UserSummaryResponse user) =>
         string.IsNullOrWhiteSpace(user.Nickname) ? user.Username : user.Nickname;
+
+    private string GetUserAvatarUrl(UserSummaryResponse user)
+    {
+        string version = BuildAvatarVersion(user);
+        return $"/api/avatar/{user.Id}?v={Uri.EscapeDataString(version)}";
+    }
+
+    private string BuildAvatarVersion(UserSummaryResponse user)
+    {
+        if (!string.IsNullOrWhiteSpace(user.Avatar))
+        {
+            return $"c:{user.Avatar.Trim()}";
+        }
+
+        return $"d:{siteSettings?.AvatarStyle ?? AvatarService.DefaultStyleKey}:{siteSettings?.AvatarPreset ?? "default"}";
+    }
+
+    private static string GetAvatarFallbackText(UserSummaryResponse user)
+    {
+        string name = GetDisplayName(user);
+        return string.IsNullOrEmpty(name) ? "?" : name[..1];
+    }
 
     private void OpenPageSearchDialog() => pageSearchDialogOpen = true;
 

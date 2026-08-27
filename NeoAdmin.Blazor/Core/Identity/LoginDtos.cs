@@ -32,5 +32,8 @@ public sealed class UserSummaryResponse
 
     public DateTime LoginTime { get; init; }
 
+    /// <summary>自定义头像相对 URL；为空时使用 DiceBear 系统头像。</summary>
+    public string? Avatar { get; init; }
+
     public List<string> Roles { get; init; } = [];
 }

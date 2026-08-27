@@ -44,6 +44,10 @@ public static class MenuSeedData
             freeSql,
             Menu("API 调试", "unplug", "/admin/api-explorer", 959),
             systemRoot.Id);
+        EnsureMenuUnderParent(
+            freeSql,
+            Menu("头像管理", "circle-user", "/admin/avatar", 921),
+            systemRoot.Id);
     }
 
     /// <summary>库中尚无 /admin/menu 时表示系统菜单未初始化。</summary>
@@ -117,6 +121,7 @@ public static class MenuSeedData
         [
             Menu("菜单管理", "list-tree", "/admin/menu", 910, type: SysMenuType.增删改查),
             Menu("用户管理", "users", "/admin/user", 920, type: SysMenuType.增删改查),
+            Menu("头像管理", "circle-user", "/admin/avatar", 921),
             Menu("角色管理", "shield", "/admin/role", 922, type: SysMenuType.增删改查),
             Menu("组织", "network", "/admin/org", 925, type: SysMenuType.增删改查),
             Menu("字典管理", "book-open", "/admin/dict", 930, type: SysMenuType.增删改查),

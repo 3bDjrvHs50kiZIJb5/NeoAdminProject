@@ -69,8 +69,3 @@ public sealed class ResetPasswordRequest
 
     public string? NewPassword { get; set; }
 }
-
-public sealed class SetAIAlarmLevelRequest
-{
-    public int Level { get; set; }
-}

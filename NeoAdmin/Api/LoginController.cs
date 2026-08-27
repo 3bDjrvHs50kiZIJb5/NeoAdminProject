@@ -6,6 +6,7 @@ using NeoAdmin.Blazor.Api;
 using NeoAdmin.Blazor.Api.Dto;
 using NeoAdmin.Blazor.Core.Identity;
 using NeoAdmin.Blazor.Entities;
+using NeoAdmin.Blazor.Services;
 
 namespace NeoAdmin.Api;
 
@@ -16,12 +17,16 @@ namespace NeoAdmin.Api;
 [Tags("账号接口")]
 public sealed class LoginController : BaseApiController
 {
+    private readonly AvatarService _avatarService;
+
     public LoginController(
         IFreeSql freeSql,
         NeoAdminAuthService auth,
+        AvatarService avatarService,
         ILogger<LoginController> logger)
         : base(freeSql, auth, logger)
     {
+        _avatarService = avatarService;
     }
 
     /// <summary>
@@ -283,10 +288,33 @@ public sealed class LoginController : BaseApiController
         return ApiResult.Success("账户已停用");
     }
 
+    /// <summary>
+    /// 上传个人头像（Base64 图片），保存后 GET api/avatar/{userId} 将优先返回该图。
+    /// </summary>
     [HttpPost($"@{nameof(UploadAvatar)}")]
-    public Task<ApiResult> UploadAvatar([FromBody] UploadAvatarRequest request) =>
-        Task.FromResult(ApiResult.Error("当前项目的 SysUser 未提供头像字段，接口未启用", 501));
+    public async Task<ApiResult> UploadAvatar([FromBody] UploadAvatarRequest request)
+    {
+        SysUser? user = await GetCurrentUserAsync();
+        if (user is null)
+        {
+            return ApiResult.Error("未登录或登录已过期", 401);
+        }
 
+        ApiResult<string> result = await _avatarService.SaveCustomAvatarFromBase64Async(
+            user.Id,
+            request.Base64 ?? string.Empty);
+
+        return result.Succeeded
+            ? ApiResult.Success(result.Message)
+            : ApiResult.Error(result.Message, result.Code);
+    }
+
+    /// <summary>
+    /// 上传胸卡照片（会议/活动胸卡、工牌等证件照，请求体为 Base64 图片）。
+    /// </summary>
+    /// <remarks>
+    /// 当前项目未提供胸卡照片字段，接口未启用，返回 501。
+    /// </remarks>
     [HttpPost($"@{nameof(UploadBadgePhoto)}")]
     public Task<ApiResult> UploadBadgePhoto([FromBody] UploadBadgePhotoRequest request) =>
         Task.FromResult(ApiResult.Error("当前项目未提供胸卡照片字段，接口未启用", 501));
@@ -300,10 +328,6 @@ public sealed class LoginController : BaseApiController
     [AllowAnonymous]
     public Task<ApiResult> ResetPassword([FromBody] ResetPasswordRequest request) =>
         Task.FromResult(ApiResult.Error("当前项目未启用短信找回密码流程", 501));
-
-    [HttpPost($"@{nameof(SetAIAlarmLevel)}")]
-    public Task<ApiResult> SetAIAlarmLevel([FromBody] SetAIAlarmLevelRequest request) =>
-        Task.FromResult(ApiResult.Error("当前项目没有 AI 报警等级业务", 501));
 
     private string BuildToken(SysUser user) => Auth.CreateToken(user);
 

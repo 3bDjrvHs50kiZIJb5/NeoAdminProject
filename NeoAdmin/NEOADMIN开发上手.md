@@ -19,7 +19,7 @@
 11. [NeoUI.Blazor 控件详解](#11-neouiblazor-控件详解)
 12. [表单、表格、弹窗与服务](#12-表单表格弹窗与服务)
 13. [审批流](#13-审批流)
-14. [REST API 与定时任务](#14-rest-api-与定时任务)
+14. [REST API 与定时任务](#14-rest-api-与定时任务)（含 [用户头像](#143-用户头像)）
 15. [典型开发流程（完整示例）](#15-典型开发流程完整示例)
 16. [常见坑与最佳实践](#16-常见坑与最佳实践)
 17. [参考资源](#17-参考资源)
@@ -162,6 +162,7 @@ dotnet watch run
 | `/neo-demo/comp/file-upload` | `NeoFileUpload` 单文件/多文件上传演示 |
 | `/Blog/*` | 博客业务 CRUD 示例 |
 | `/admin/*` | 系统管理（框架提供） |
+| `/admin/avatar` | 头像管理：全站 DiceBear 风格设定与用户头像预览 |
 
 ---
 
@@ -1527,6 +1528,7 @@ var result = await DialogService.ConfirmAsync(new DialogOptions
 | `NeoAdminAuthService` | 当前登录用户 |
 | `AuditWorkflowService` | 审批流操作 |
 | `FileService` | 文件上传管理 |
+| `AvatarService` | 用户头像（DiceBear 生成、自定义上传） |
 | `RoleService` / `OrgService` | 角色/组织业务 |
 
 ---
@@ -1603,6 +1605,73 @@ options.SchedulerAssemblies = [Assembly.GetExecutingAssembly()];
 管理界面：`/admin/task-scheduler`
 
 开发环境默认只登记和展示持久化任务，不自动加载执行；如需本地执行可配置 `NeoAdmin:SchedulerAutoLoad=true`。
+
+### 14.3 用户头像
+
+框架内置基于 **DiceBear** 的服务端头像能力：同一用户 Id 生成的头像固定，**不依赖外网** `api.dicebear.com`。若用户上传了自定义头像（`SysUser.Avatar`），则优先返回该图。
+
+后台管理页：**头像管理** → `/admin/avatar`（菜单在「用户管理」下方）。可点选全站 DiceBear 风格（约 60 种）；Clay 风格另有 13 个预设。设定保存在 `SysSiteSettings.AvatarStyle` / `AvatarPreset`。
+
+#### 14.3.1 前端展示
+
+任意页面直接按用户 Id 引用，**无需判断**是否已上传自定义图（接口内部自动处理）：
+
+```razor
+@* 原生 img *@
+<img src="/api/avatar/@userId" alt="头像" class="size-10 rounded-lg" />
+
+@* NeoUI Avatar *@
+<Avatar>
+    <AvatarImage Source="@($"/api/avatar/{userId}")" Alt="头像" />
+    <AvatarFallback>张</AvatarFallback>
+</Avatar>
+```
+
+Blazor 中获取当前用户 Id 可注入 `NeoAdminAuthService`，例如 `auth.CurrentUser?.Id`。
+
+#### 14.3.2 接口说明
+
+| 接口 | 鉴权 | 说明 |
+|------|------|------|
+| `GET /api/avatar/{userId}` | 匿名 | 获取头像。有自定义图时返回 `302` 跳转至图片 URL；否则返回 `image/svg+xml`（DiceBear） |
+| `POST /api/login/@UploadAvatar` | 需登录 | 上传自定义头像，请求体 `{ "base64": "data:image/png;base64,..." }`，写入 `SysUser.Avatar` |
+
+`GET` 可选查询参数（主要用于预览 DiceBear，不影响已上传的自定义图）：
+
+| 参数 | 说明 |
+|------|------|
+| `size` | 尺寸像素，16–512，默认 64 |
+| `style` | 临时指定风格 key（如 `clay`、`adventurer`） |
+| `preset` | 临时指定预设 key，仅 `clay` 风格生效（如 `warm`、`greyscale`） |
+
+上传示例（需携带登录 Cookie 或 Token）：
+
+```http
+POST /api/login/@UploadAvatar
+Content-Type: application/json
+
+{ "base64": "data:image/png;base64,iVBORw0KGgo..." }
+```
+
+#### 14.3.3 数据字段与服务
+
+| 位置 | 字段 / 服务 | 说明 |
+|------|-------------|------|
+| `SysUser` | `Avatar` | 自定义头像相对 URL（如 `uploads/avatar/xxx.png`），为空则走 DiceBear |
+| `SysSiteSettings` | `AvatarStyle` | 全站默认风格 key，默认 `clay` |
+| `SysSiteSettings` | `AvatarPreset` | Clay 预设 key，默认 `default`（空字符串同义） |
+| `AvatarService` | 注入使用 | `GetSvg` / `GetCustomAvatarUrlAsync` / `SaveCustomAvatarFromBase64Async` |
+
+业务代码中若需直接生成 SVG 或处理上传，可注入 `AvatarService`：
+
+```csharp
+@inject AvatarService AvatarService
+
+// 按 seed 生成 SVG（使用当前站点风格）
+string svg = AvatarService.GetSvg(userId.ToString(), style: null, preset: null, size: 64);
+```
+
+实现参考：`NeoAdmin.Blazor/Api/AvatarController.cs`、`NeoAdmin.Blazor/Services/AvatarService.cs`、`NeoAdmin.Blazor/Pages/AvatarManagement.razor`。
 
 ---
 

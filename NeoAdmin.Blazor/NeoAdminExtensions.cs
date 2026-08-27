@@ -106,6 +106,7 @@ public static class NeoAdminExtensions
         services.AddScoped<RoleService>();
         services.AddScoped<TaskSchedulerService>();
         services.AddScoped<SiteSettingsService>();
+        services.AddScoped<AvatarService>();
         services.AddScoped<AppSettingsFileService>();
         services.AddSingleton<SerilogLogService>();
         services.AddScoped<MenuPermissionService>();

@@ -1,0 +1,250 @@
+@page "/admin/avatar"
+@layout LayoutAdmin
+@using FreeSql
+@using NeoAdmin.Blazor.Core.Identity
+@using NeoAdmin.Blazor.Entities
+@using NeoAdmin.Blazor.Services
+@inject IFreeSql FreeSql
+@inject SiteSettingsService SiteSettingsService
+@inject IToastService ToastService
+@inject ILogger<AvatarManagement> Logger
+
+<PageTitle>头像管理</PageTitle>
+
+<div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div class="mb-4 shrink-0">
+        <h2 class="text-lg font-semibold leading-none">头像管理</h2>
+        <p class="mt-1 text-sm text-muted-foreground">
+            优先返回用户自定义头像；未上传时使用 DiceBear 在服务端生成，同一用户 Id 头像固定，不依赖外网。
+        </p>
+
+        <div class="mt-3 space-y-3 rounded-lg border bg-muted/30 p-4 text-sm">
+            <div>
+                <div class="font-medium text-foreground">前端展示</div>
+                <p class="mt-1 text-muted-foreground">任意页面直接引用用户 Id，无需判断是否有自定义头像：</p>
+                <pre class="mt-2 overflow-x-auto rounded-md border bg-background p-3 text-xs leading-relaxed"><code>&lt;img src="/api/avatar/{userId}" alt="头像" class="size-10 rounded-lg" /&gt;
+
+&lt;!-- NeoUI --&gt;
+&lt;Avatar&gt;
+    &lt;AvatarImage Source="/api/avatar/{userId}" Alt="头像" /&gt;
+    &lt;AvatarFallback&gt;张&lt;/AvatarFallback&gt;
+&lt;/Avatar&gt;</code></pre>
+            </div>
+
+            <div>
+                <div class="font-medium text-foreground">接口说明</div>
+                <dl class="mt-2 space-y-2 text-muted-foreground">
+                    <div>
+                        <dt class="font-mono text-xs text-foreground">GET /api/avatar/{userId}</dt>
+                        <dd class="mt-0.5">
+                            获取头像。已上传自定义图时返回 <code class="rounded bg-muted px-1 py-0.5 text-xs">302</code> 跳转至图片 URL；
+                            否则返回 <code class="rounded bg-muted px-1 py-0.5 text-xs">image/svg+xml</code>（DiceBear）。
+                            可选查询参数：<code class="rounded bg-muted px-1 py-0.5 text-xs">size</code>（16–512，默认 64）、
+                            <code class="rounded bg-muted px-1 py-0.5 text-xs">style</code>、
+                            <code class="rounded bg-muted px-1 py-0.5 text-xs">preset</code>（仅预览 DiceBear 时用）。
+                            匿名可访问。
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="font-mono text-xs text-foreground">POST /api/login/@@UploadAvatar</dt>
+                        <dd class="mt-0.5">
+                            上传自定义头像，需登录。请求体 <code class="rounded bg-muted px-1 py-0.5 text-xs">{ "base64": "data:image/png;base64,..." }</code>，
+                            成功后写入 <code class="rounded bg-muted px-1 py-0.5 text-xs">SysUser.Avatar</code>，
+                            之后 <code class="rounded bg-muted px-1 py-0.5 text-xs">GET /api/avatar/{userId}</code> 优先返回该图。
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="neo-admin-page-scroll flex min-h-0 flex-1 flex-col gap-4">
+    <Card>
+        <CardHeader>
+            <CardTitle>头像风格设定</CardTitle>
+            <CardDescription>点选风格即保存并对全站生效；Clay 风格还可继续点选下方预设。</CardDescription>
+        </CardHeader>
+        <CardContent Class="space-y-5">
+            <div class="space-y-2">
+                <Label>风格</Label>
+                <div class="flex flex-wrap gap-3">
+                    @foreach (AvatarService.StyleInfo style in AvatarService.AvailableStyles)
+                    {
+                        <button type="button"
+                                class="@GetTileClass(style.Key == selectedStyle)"
+                                disabled="@isSaving"
+                                title="@style.Label"
+                                @onclick="() => HandleSelectStyleAsync(style.Key)">
+                            <img class="size-16 rounded-lg border bg-muted"
+                                 src="@GetAvatarUrl(StyleSampleSeed, 128, style.Key, "default")"
+                                 alt="@style.Label"
+                                 loading="lazy" />
+                            <span class="w-full truncate text-center text-xs text-muted-foreground">@style.Label</span>
+                        </button>
+                    }
+                </div>
+            </div>
+
+            @if (IsClay)
+            {
+                <div class="space-y-2">
+                    <Label>Clay 预设</Label>
+                    <div class="flex flex-wrap gap-3">
+                        @foreach (AvatarService.PresetInfo preset in AvatarService.Presets)
+                        {
+                            <button type="button"
+                                    class="@GetTileClass(preset.Key == selectedPreset)"
+                                    disabled="@isSaving"
+                                    title="@preset.Label"
+                                    @onclick="() => HandleSelectPresetAsync(preset.Key)">
+                                <img class="size-16 rounded-lg border bg-muted"
+                                     src="@GetAvatarUrl(StyleSampleSeed, 128, AvatarService.DefaultStyleKey, preset.Key)"
+                                     alt="@preset.Label"
+                                     loading="lazy" />
+                                <span class="w-full truncate text-center text-xs text-muted-foreground">@preset.Label</span>
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+        </CardContent>
+    </Card>
+
+    <Card>
+        <CardHeader>
+            <CardTitle>用户头像矩阵</CardTitle>
+            <CardDescription>按 Id 升序展示前 100 名用户（当前 @users.Count 名），头像以用户 Id 为种子生成。</CardDescription>
+        </CardHeader>
+        <CardContent>
+            @if (users.Count == 0)
+            {
+                <div class="py-10 text-center text-sm text-muted-foreground">暂无用户数据</div>
+            }
+            else
+            {
+                <div class="flex flex-wrap gap-3">
+                    @foreach (SysUser user in users)
+                    {
+                        <div class="flex w-16 flex-col items-center gap-1" title="@($"{user.Nickname}（{user.Username}）")">
+                            <img class="size-16 rounded-lg border bg-muted"
+                                 src="@GetAvatarUrl(user.Id, 128, savedStyle, savedPreset)"
+                                 alt="@user.Nickname" />
+                            <span class="w-full truncate text-center text-xs text-muted-foreground">@user.Nickname</span>
+                        </div>
+                    }
+                </div>
+            }
+        </CardContent>
+    </Card>
+    </div>
+</div>
+
+@code {
+    /// <summary>风格/预设示例图使用的固定 seed。</summary>
+    private const long StyleSampleSeed = 1;
+
+    private List<SysUser> users = [];
+    private string selectedStyle = AvatarService.DefaultStyleKey;
+    private string selectedPreset = "default";
+    private string savedStyle = AvatarService.DefaultStyleKey;
+    private string savedPreset = "default";
+    private bool isSaving;
+
+    private bool IsClay => selectedStyle == AvatarService.DefaultStyleKey;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Logger.LogInformation("头像管理页面加载开始");
+
+        SysSiteSettings settings = await SiteSettingsService.GetAsync();
+        selectedStyle = settings.AvatarStyle;
+        selectedPreset = string.IsNullOrEmpty(settings.AvatarPreset) ? "default" : settings.AvatarPreset;
+        savedStyle = selectedStyle;
+        savedPreset = selectedPreset;
+
+        users = await FreeSql.Select<SysUser>()
+            .OrderBy(u => u.Id)
+            .Limit(100)
+            .ToListAsync();
+
+        Logger.LogInformation(
+            "头像管理页面加载完成，Style={Style}，Preset={Preset}，UserCount={Count}",
+            savedStyle,
+            savedPreset,
+            users.Count);
+    }
+
+    private async Task HandleSelectStyleAsync(string styleKey)
+    {
+        if (styleKey == selectedStyle)
+        {
+            return;
+        }
+
+        selectedStyle = styleKey;
+        if (!IsClay)
+        {
+            selectedPreset = "default";
+        }
+
+        await SaveSelectionAsync();
+    }
+
+    private async Task HandleSelectPresetAsync(string presetKey)
+    {
+        if (presetKey == selectedPreset)
+        {
+            return;
+        }
+
+        selectedPreset = presetKey;
+        await SaveSelectionAsync();
+    }
+
+    private async Task SaveSelectionAsync()
+    {
+        if (isSaving)
+        {
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            SysSiteSettings settings = await SiteSettingsService.GetAsync();
+            settings.AvatarStyle = selectedStyle;
+            settings.AvatarPreset = selectedPreset;
+
+            ApiResult<SysSiteSettings> result = await SiteSettingsService.SaveAsync(settings);
+            if (!result.Succeeded)
+            {
+                Logger.LogWarning("保存头像风格失败：{Message}", result.Message);
+                ToastService.Error("保存失败", result.Message);
+                return;
+            }
+
+            savedStyle = selectedStyle;
+            savedPreset = selectedPreset;
+            Logger.LogInformation("保存头像风格成功，Style={Style}，Preset={Preset}", savedStyle, savedPreset);
+            ToastService.Success("头像风格", "已切换并对全部用户生效");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "保存头像风格异常，Style={Style}，Preset={Preset}", selectedStyle, selectedPreset);
+            ToastService.Error("保存失败", ex.Message);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private static string GetTileClass(bool selected) =>
+        "flex w-16 flex-col items-center gap-1 rounded-lg transition-colors "
+        + (selected
+            ? "ring-2 ring-primary ring-offset-2"
+            : "hover:opacity-80 disabled:opacity-50");
+
+    private static string GetAvatarUrl(long seed, int size, string? style, string? preset) =>
+        $"/api/avatar/{seed}?size={size}&style={Uri.EscapeDataString(style ?? AvatarService.DefaultStyleKey)}&preset={Uri.EscapeDataString(preset ?? string.Empty)}";
+}

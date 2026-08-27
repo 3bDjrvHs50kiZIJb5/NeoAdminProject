@@ -82,6 +82,8 @@ public sealed class SiteSettingsService
                 .Set(a => a.ForgotPasswordUrl, settings.ForgotPasswordUrl)
                 .Set(a => a.IsEnabled, settings.IsEnabled)
                 .Set(a => a.IpWhitelistManualApproval, settings.IpWhitelistManualApproval)
+                .Set(a => a.AvatarStyle, settings.AvatarStyle)
+                .Set(a => a.AvatarPreset, settings.AvatarPreset)
                 .ExecuteAffrowsAsync(cancellationToken);
         }
 

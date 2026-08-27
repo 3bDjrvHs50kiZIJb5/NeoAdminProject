@@ -173,13 +173,7 @@ public sealed class ApiExplorerCatalogService
             }
         }
 
-        List<ApiExplorerEndpoint> ordered = endpoints
-            .GroupBy(e => e.Id, StringComparer.OrdinalIgnoreCase)
-            .Select(g => g.First())
-            .OrderBy(e => e.Group, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(e => e.RelativePath, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(e => e.HttpMethod, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        List<ApiExplorerEndpoint> ordered = ApplyCatalogAndOrder(endpoints);
 
         _cachedEndpoints = ordered;
         _logger.LogInformation(
@@ -187,6 +181,142 @@ public sealed class ApiExplorerCatalogService
             ordered.Count,
             LoadConfiguredDefaults().Count);
         return ordered;
+    }
+
+    private sealed record CatalogOverride(string? Group, string? Title, string? SortAfter);
+
+    private Dictionary<string, CatalogOverride>? _catalogOverrides;
+
+    private Dictionary<string, CatalogOverride> LoadCatalogOverrides()
+    {
+        if (_catalogOverrides is not null)
+        {
+            return _catalogOverrides;
+        }
+
+        var map = new Dictionary<string, CatalogOverride>(StringComparer.OrdinalIgnoreCase);
+        string path = Path.Combine(_environment.ContentRootPath, DefaultsFileName);
+        if (File.Exists(path))
+        {
+            try
+            {
+                JsonNode? root = JsonNode.Parse(File.ReadAllText(path));
+                if (root?["ApiExplorer"]?["Catalog"] is JsonObject catalog)
+                {
+                    foreach (KeyValuePair<string, JsonNode?> pair in catalog)
+                    {
+                        if (pair.Value is not JsonObject entry)
+                        {
+                            continue;
+                        }
+
+                        map[pair.Key] = new CatalogOverride(
+                            entry["group"]?.GetValue<string>(),
+                            entry["title"]?.GetValue<string>(),
+                            entry["sortAfter"]?.GetValue<string>());
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "读取 ApiExplorer Catalog 配置失败，Path={Path}", path);
+            }
+        }
+
+        _catalogOverrides = map;
+        return map;
+    }
+
+    private List<ApiExplorerEndpoint> ApplyCatalogAndOrder(List<ApiExplorerEndpoint> endpoints)
+    {
+        Dictionary<string, CatalogOverride> catalog = LoadCatalogOverrides();
+
+        List<ApiExplorerEndpoint> deduped = endpoints
+            .GroupBy(e => e.Id, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.First())
+            .Select(e => ApplyCatalogOverride(e, catalog))
+            .ToList();
+
+        var ordered = new List<ApiExplorerEndpoint>();
+        foreach (IGrouping<string, ApiExplorerEndpoint> group in deduped
+                     .GroupBy(e => e.Group, StringComparer.OrdinalIgnoreCase)
+                     .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            List<ApiExplorerEndpoint> items = group
+                .OrderBy(e => e.RelativePath, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(e => e.HttpMethod, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            ApplySortAfter(items, catalog);
+            ordered.AddRange(items);
+        }
+
+        return ordered;
+    }
+
+    private static ApiExplorerEndpoint ApplyCatalogOverride(
+        ApiExplorerEndpoint endpoint,
+        IReadOnlyDictionary<string, CatalogOverride> catalog)
+    {
+        if (!catalog.TryGetValue(endpoint.Id, out CatalogOverride? entry))
+        {
+            return endpoint;
+        }
+
+        return new ApiExplorerEndpoint
+        {
+            Id = endpoint.Id,
+            Group = entry.Group ?? endpoint.Group,
+            Title = entry.Title ?? endpoint.Title,
+            Summary = endpoint.Summary,
+            Remarks = endpoint.Remarks,
+            AllowAnonymous = endpoint.AllowAnonymous,
+            HttpMethod = endpoint.HttpMethod,
+            RelativePath = endpoint.RelativePath,
+            ControllerName = endpoint.ControllerName,
+            ActionName = endpoint.ActionName,
+            Parameters = endpoint.Parameters,
+            RequestBodyTypeName = endpoint.RequestBodyTypeName,
+            RequestBodySampleJson = endpoint.RequestBodySampleJson,
+            ResponseTypeName = endpoint.ResponseTypeName,
+            ResponseBodySampleJson = endpoint.ResponseBodySampleJson,
+            HasFormFile = endpoint.HasFormFile
+        };
+    }
+
+    private static void ApplySortAfter(
+        List<ApiExplorerEndpoint> items,
+        IReadOnlyDictionary<string, CatalogOverride> catalog)
+    {
+        foreach (KeyValuePair<string, CatalogOverride> pair in catalog)
+        {
+            if (string.IsNullOrWhiteSpace(pair.Value.SortAfter))
+            {
+                continue;
+            }
+
+            int index = items.FindIndex(e => e.Id.Equals(pair.Key, StringComparison.OrdinalIgnoreCase));
+            if (index < 0)
+            {
+                continue;
+            }
+
+            int anchorIndex = items.FindIndex(e =>
+                e.Id.Equals(pair.Value.SortAfter, StringComparison.OrdinalIgnoreCase));
+            if (anchorIndex < 0)
+            {
+                continue;
+            }
+
+            ApiExplorerEndpoint moving = items[index];
+            items.RemoveAt(index);
+            if (index < anchorIndex)
+            {
+                anchorIndex--;
+            }
+
+            items.Insert(anchorIndex + 1, moving);
+        }
     }
 
     private Dictionary<string, JsonNode> LoadConfiguredDefaults()
