@@ -1,5 +1,17 @@
 [
   {
+    "shortHash": "2669275",
+    "committedAt": "2026-08-27T12:05:34+08:00",
+    "subject": "发布 v1.0.54：DiceBear 服务端头像与上传管理，Api Explorer Catalog 排序，登录 API 返回头像。",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "d503a1f",
+    "committedAt": "2026-08-27T10:42:16+08:00",
+    "subject": "同步更新日志",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
     "shortHash": "5c23623",
     "committedAt": "2026-08-27T10:42:05+08:00",
     "subject": "发布 v1.0.53：修复 API 调试页 HTTP method badge 样式，补全 Tailwind 动态类名扫描。",
@@ -285,18 +297,6 @@
     "shortHash": "e7f890a",
     "committedAt": "2026-06-14T08:16:39+08:00",
     "subject": "修复中文 IME 输入时拼音残留，运行时替换 NeoUI input.js",
-    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "7bbe0b9",
-    "committedAt": "2026-06-13T23:57:01+08:00",
-    "subject": "增强系统日志管理并优化 SQL 监控与开发静态资源加载",
-    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "391c32f",
-    "committedAt": "2026-06-13T23:33:20+08:00",
-    "subject": "增强 CrudTable 操作反馈、文件管理与用户登录日志，过滤 Blazor 断开日志噪声",
     "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
   }
 ]
