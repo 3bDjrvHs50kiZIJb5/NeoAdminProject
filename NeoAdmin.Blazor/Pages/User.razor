@@ -84,7 +84,7 @@
             @if (item.Id > 0 && string.IsNullOrWhiteSpace(item.Avatar))
             {
                 <div class="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
-                    <img src="@($"/api/avatar/{item.Id}?size=128")"
+                    <img src="@($"/api/avatar/@GetAvatar/{item.Id}?size=128")"
                          alt="@(string.IsNullOrWhiteSpace(item.Nickname) ? item.Username : item.Nickname)"
                          class="size-16 shrink-0 rounded-lg border bg-muted" />
                     <p class="text-xs text-muted-foreground">未上传自定义头像，当前为系统 DiceBear 头像。</p>

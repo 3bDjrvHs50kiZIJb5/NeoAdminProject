@@ -25,6 +25,9 @@ public sealed class ApiExplorerEndpoint
 
     public string? ActionName { get; init; }
 
+    /// <summary>Controller 所在程序集文件名（如 NeoAdmin.dll）。</summary>
+    public string? SourceAssembly { get; init; }
+
     public IReadOnlyList<ApiExplorerParameter> Parameters { get; init; } = [];
 
     public string? RequestBodyTypeName { get; init; }

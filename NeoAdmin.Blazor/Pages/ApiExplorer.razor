@@ -28,16 +28,35 @@
                 <div class="mt-1 text-xs text-muted-foreground">扫描已注册 Controller（含宿主）</div>
             </div>
 
-            <div class="border-b px-3 py-2">
+            <div class="space-y-2 border-b px-3 py-2">
                 <Input @bind-Value="searchKeyword"
                        Placeholder="搜索接口…"
                        Class="h-8 text-xs" />
+                @if (assemblyOptions.Count > 0)
+                {
+                    <NativeSelect TValue="string"
+                                  Class="h-8 w-full text-xs"
+                                  Value="@selectedAssembly"
+                                  ValueChanged="OnAssemblyChanged">
+                        <NativeSelectOption Value="@AllAssembliesValue">全部程序集 (@endpoints.Count)</NativeSelectOption>
+                        @foreach (string assembly in assemblyOptions)
+                        {
+                            int count = endpoints.Count(e =>
+                                string.Equals(e.SourceAssembly, assembly, StringComparison.OrdinalIgnoreCase));
+                            <NativeSelectOption Value="@assembly">@assembly (@count)</NativeSelectOption>
+                        }
+                    </NativeSelect>
+                }
             </div>
 
             <div class="min-h-0 flex-1 overflow-y-auto py-2">
                 @if (endpoints.Count == 0)
                 {
                     <div class="px-3 py-4 text-xs text-muted-foreground">未发现 api/* 接口</div>
+                }
+                else if (!FilteredGroups.Any())
+                {
+                    <div class="px-3 py-4 text-xs text-muted-foreground">当前筛选条件下无匹配接口</div>
                 }
                 else
                 {
@@ -156,11 +175,13 @@
 
 @code {
     private const string CollapsedGroupsStorageKey = "neoadmin:api-explorer:collapsed-groups";
+    private const string AllAssembliesValue = "*";
 
     private readonly HashSet<string> collapsedGroups = new(StringComparer.OrdinalIgnoreCase);
 
     private IReadOnlyList<ApiExplorerEndpoint> endpoints = [];
     private string searchKeyword = string.Empty;
+    private string selectedAssembly = AllAssembliesValue;
     private string selectedEndpointId = string.Empty;
     private string detailTab = "tryit";
     private bool collapsedStateLoaded;
@@ -168,14 +189,37 @@
     private ApiExplorerEndpoint? selectedEndpoint =>
         endpoints.FirstOrDefault(e => string.Equals(e.Id, selectedEndpointId, StringComparison.OrdinalIgnoreCase));
 
+    private IReadOnlyList<string> assemblyOptions =>
+        endpoints
+            .Select(e => e.SourceAssembly)
+            .Where(a => !string.IsNullOrWhiteSpace(a))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(a => a, StringComparer.OrdinalIgnoreCase)
+            .Cast<string>()
+            .ToList();
+
+    private IEnumerable<ApiExplorerEndpoint> VisibleEndpoints
+    {
+        get
+        {
+            if (string.Equals(selectedAssembly, AllAssembliesValue, StringComparison.Ordinal))
+            {
+                return endpoints;
+            }
+
+            return endpoints.Where(e =>
+                string.Equals(e.SourceAssembly, selectedAssembly, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
     private IEnumerable<IGrouping<string, ApiExplorerEndpoint>> FilteredGroups
     {
         get
         {
-            IEnumerable<ApiExplorerEndpoint> filtered = endpoints;
+            IEnumerable<ApiExplorerEndpoint> filtered = VisibleEndpoints;
             if (!string.IsNullOrWhiteSpace(searchKeyword))
             {
-                filtered = endpoints.Where(e =>
+                filtered = filtered.Where(e =>
                     e.Title.Contains(searchKeyword, StringComparison.OrdinalIgnoreCase)
                     || e.RelativePath.Contains(searchKeyword, StringComparison.OrdinalIgnoreCase)
                     || e.HttpMethod.Contains(searchKeyword, StringComparison.OrdinalIgnoreCase)
@@ -277,6 +321,28 @@
     {
         selectedEndpointId = id;
         detailTab = "tryit";
+    }
+
+    private void OnAssemblyChanged(string value)
+    {
+        selectedAssembly = value;
+        EnsureSelectedEndpointVisible();
+        Logger.LogInformation("API 调试切换程序集，Assembly={Assembly}", value);
+    }
+
+    private void EnsureSelectedEndpointVisible()
+    {
+        List<ApiExplorerEndpoint> visible = VisibleEndpoints.ToList();
+        if (visible.Count == 0)
+        {
+            selectedEndpointId = string.Empty;
+            return;
+        }
+
+        if (!visible.Any(e => string.Equals(e.Id, selectedEndpointId, StringComparison.OrdinalIgnoreCase)))
+        {
+            selectedEndpointId = visible[0].Id;
+        }
     }
 
     private Task OnDetailTabChanged(string value)

@@ -132,7 +132,7 @@ dotnet watch run
 ./dotnet10.sh
 ```
 
-默认地址：<http://localhost:5038>
+默认地址：<http://localhost:5280>
 
 ### 2.3 环境要求
 
@@ -1618,11 +1618,11 @@ options.SchedulerAssemblies = [Assembly.GetExecutingAssembly()];
 
 ```razor
 @* 原生 img *@
-<img src="/api/avatar/@userId" alt="头像" class="size-10 rounded-lg" />
+<img src="/api/avatar/@GetAvatar/@userId" alt="头像" class="size-10 rounded-lg" />
 
 @* NeoUI Avatar *@
 <Avatar>
-    <AvatarImage Source="@($"/api/avatar/{userId}")" Alt="头像" />
+    <AvatarImage Source="@($"/api/avatar/@GetAvatar/{userId}")" Alt="头像" />
     <AvatarFallback>张</AvatarFallback>
 </Avatar>
 ```
@@ -1633,8 +1633,8 @@ Blazor 中获取当前用户 Id 可注入 `NeoAdminAuthService`，例如 `auth.C
 
 | 接口 | 鉴权 | 说明 |
 |------|------|------|
-| `GET /api/avatar/{userId}` | 匿名 | 获取头像。有自定义图时返回 `302` 跳转至图片 URL；否则返回 `image/svg+xml`（DiceBear） |
-| `POST /api/login/@UploadAvatar` | 需登录 | 上传自定义头像，请求体 `{ "base64": "data:image/png;base64,..." }`，写入 `SysUser.Avatar` |
+| `GET /api/avatar/@GetAvatar/{userId}` | 匿名 | 获取头像。有自定义图时返回 `302` 跳转至图片 URL；否则返回 `image/svg+xml`（DiceBear） |
+| `POST /api/avatar/@UploadAvatar` | 需登录 | 上传自定义头像，请求体 `{ "base64": "data:image/png;base64,..." }`，写入 `SysUser.Avatar` |
 
 `GET` 可选查询参数（主要用于预览 DiceBear，不影响已上传的自定义图）：
 
@@ -1647,7 +1647,7 @@ Blazor 中获取当前用户 Id 可注入 `NeoAdminAuthService`，例如 `auth.C
 上传示例（需携带登录 Cookie 或 Token）：
 
 ```http
-POST /api/login/@UploadAvatar
+POST /api/avatar/@UploadAvatar
 Content-Type: application/json
 
 { "base64": "data:image/png;base64,iVBORw0KGgo..." }

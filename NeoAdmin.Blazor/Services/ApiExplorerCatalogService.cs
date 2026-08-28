@@ -161,6 +161,7 @@ public sealed class ApiExplorerCatalogService
                     RelativePath = relativePath.TrimStart('/'),
                     ControllerName = controllerName,
                     ActionName = actionName,
+                    SourceAssembly = ResolveSourceAssembly(actionDescriptor),
                     Parameters = parameters,
                     RequestBodyTypeName = bodyType is null ? null : FormatTypeName(bodyType),
                     RequestBodySampleJson = sampleJson,
@@ -275,6 +276,7 @@ public sealed class ApiExplorerCatalogService
             RelativePath = endpoint.RelativePath,
             ControllerName = endpoint.ControllerName,
             ActionName = endpoint.ActionName,
+            SourceAssembly = endpoint.SourceAssembly,
             Parameters = endpoint.Parameters,
             RequestBodyTypeName = endpoint.RequestBodyTypeName,
             RequestBodySampleJson = endpoint.RequestBodySampleJson,
@@ -929,6 +931,23 @@ public sealed class ApiExplorerCatalogService
     private static bool ShouldSkip(string groupName, string relativePath) =>
         groupName.Contains("e2e", StringComparison.OrdinalIgnoreCase)
         || relativePath.Contains("e2e", StringComparison.OrdinalIgnoreCase);
+
+    private static string? ResolveSourceAssembly(ControllerActionDescriptor? actionDescriptor)
+    {
+        Assembly? assembly = actionDescriptor?.ControllerTypeInfo.Assembly;
+        if (assembly is null)
+        {
+            return null;
+        }
+
+        string? location = assembly.Location;
+        if (!string.IsNullOrWhiteSpace(location))
+        {
+            return Path.GetFileName(location);
+        }
+
+        return assembly.GetName().Name;
+    }
 
     private static string ResolveGroupName(ApiDescription description, string? apiGroupName)
     {

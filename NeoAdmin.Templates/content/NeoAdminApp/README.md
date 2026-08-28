@@ -47,7 +47,7 @@ NeoAdmin/
 │   └── BlogJobs.cs            # 博客相关定时任务
 │
 ├── Properties/
-│   └── launchSettings.json    # 本地开发端口（默认 5038）
+│   └── launchSettings.json    # 本地开发端口（默认 5280）
 │
 ├── wwwroot/
 │   ├── css/                   # Tailwind 输入/编译产物（app-input.css → tailwind.css）
@@ -193,7 +193,7 @@ dotnet watch run
 ./dotnet10.sh
 ```
 
-默认：<http://localhost:5038>。首次启动创建 `neoadmin.db`，默认账号 `admin` / `admin`。
+默认：<http://localhost:5280>。首次启动创建 `neoadmin.db`，默认账号 `admin` / `admin`。
 
 样式开发（可选）：
 

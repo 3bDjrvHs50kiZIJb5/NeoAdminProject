@@ -563,7 +563,7 @@
     private string GetUserAvatarUrl(UserSummaryResponse user)
     {
         string version = BuildAvatarVersion(user);
-        return $"/api/avatar/{user.Id}?v={Uri.EscapeDataString(version)}";
+        return $"/api/avatar/@GetAvatar/{user.Id}?v={Uri.EscapeDataString(version)}";
     }
 
     private string BuildAvatarVersion(UserSummaryResponse user)

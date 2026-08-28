@@ -22,11 +22,11 @@
             <div>
                 <div class="font-medium text-foreground">前端展示</div>
                 <p class="mt-1 text-muted-foreground">任意页面直接引用用户 Id，无需判断是否有自定义头像：</p>
-                <pre class="mt-2 overflow-x-auto rounded-md border bg-background p-3 text-xs leading-relaxed"><code>&lt;img src="/api/avatar/{userId}" alt="头像" class="size-10 rounded-lg" /&gt;
+                <pre class="mt-2 overflow-x-auto rounded-md border bg-background p-3 text-xs leading-relaxed"><code>&lt;img src="/api/avatar/@@GetAvatar/{userId}" alt="头像" class="size-10 rounded-lg" /&gt;
 
 &lt;!-- NeoUI --&gt;
 &lt;Avatar&gt;
-    &lt;AvatarImage Source="/api/avatar/{userId}" Alt="头像" /&gt;
+    &lt;AvatarImage Source="/api/avatar/@@GetAvatar/{userId}" Alt="头像" /&gt;
     &lt;AvatarFallback&gt;张&lt;/AvatarFallback&gt;
 &lt;/Avatar&gt;</code></pre>
             </div>
@@ -35,7 +35,7 @@
                 <div class="font-medium text-foreground">接口说明</div>
                 <dl class="mt-2 space-y-2 text-muted-foreground">
                     <div>
-                        <dt class="font-mono text-xs text-foreground">GET /api/avatar/{userId}</dt>
+                        <dt class="font-mono text-xs text-foreground">GET /api/avatar/@@GetAvatar/{userId}</dt>
                         <dd class="mt-0.5">
                             获取头像。已上传自定义图时返回 <code class="rounded bg-muted px-1 py-0.5 text-xs">302</code> 跳转至图片 URL；
                             否则返回 <code class="rounded bg-muted px-1 py-0.5 text-xs">image/svg+xml</code>（DiceBear）。
@@ -46,11 +46,11 @@
                         </dd>
                     </div>
                     <div>
-                        <dt class="font-mono text-xs text-foreground">POST /api/login/@@UploadAvatar</dt>
+                        <dt class="font-mono text-xs text-foreground">POST /api/avatar/@@UploadAvatar</dt>
                         <dd class="mt-0.5">
                             上传自定义头像，需登录。请求体 <code class="rounded bg-muted px-1 py-0.5 text-xs">{ "base64": "data:image/png;base64,..." }</code>，
                             成功后写入 <code class="rounded bg-muted px-1 py-0.5 text-xs">SysUser.Avatar</code>，
-                            之后 <code class="rounded bg-muted px-1 py-0.5 text-xs">GET /api/avatar/{userId}</code> 优先返回该图。
+                            之后 <code class="rounded bg-muted px-1 py-0.5 text-xs">GET /api/avatar/@@GetAvatar/{userId}</code> 优先返回该图。
                         </dd>
                     </div>
                 </dl>
@@ -246,5 +246,5 @@
             : "hover:opacity-80 disabled:opacity-50");
 
     private static string GetAvatarUrl(long seed, int size, string? style, string? preset) =>
-        $"/api/avatar/{seed}?size={size}&style={Uri.EscapeDataString(style ?? AvatarService.DefaultStyleKey)}&preset={Uri.EscapeDataString(preset ?? string.Empty)}";
+        $"/api/avatar/@GetAvatar/{seed}?size={size}&style={Uri.EscapeDataString(style ?? AvatarService.DefaultStyleKey)}&preset={Uri.EscapeDataString(preset ?? string.Empty)}";
 }

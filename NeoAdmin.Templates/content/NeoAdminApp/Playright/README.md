@@ -46,7 +46,7 @@ npm run report        # 查看 HTML 报告
 
 | 变量 | 默认 | 说明 |
 |------|------|------|
-| `PLAYWRIGHT_BASE_URL` | `http://localhost:5040` | 被测站点地址（E2E 默认端口，避免与开发 5038 冲突） |
+| `PLAYWRIGHT_BASE_URL` | `http://localhost:5040` | 被测站点地址（E2E 默认端口，避免与开发 5280 冲突） |
 | `E2E_ADMIN_USER` | `admin` | 登录账号 |
 | `E2E_ADMIN_PASSWORD` | `admin` | 登录密码 |
 

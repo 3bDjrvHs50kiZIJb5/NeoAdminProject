@@ -86,7 +86,7 @@ dotnet watch run
 ./dotnet10.sh
 ```
 
-默认地址：<http://localhost:5038>（见 `Properties/launchSettings.json`）。
+默认地址：<http://localhost:5280>（见 `Properties/launchSettings.json`）。
 
 ### 环境要求
 
@@ -109,7 +109,7 @@ dotnet watch run
 
 ### Swagger
 
-开发环境默认开启；生产可在配置中显式设置 `"IsSwagger": true`。文档 UI 路径：<http://localhost:5038/api>（Docker 部署时将端口改为 5050）。
+开发环境默认开启；生产可在配置中显式设置 `"IsSwagger": true`。文档 UI 路径：<http://localhost:5280/api>（Docker 部署时将端口改为 5050）。
 
 ### Docker 部署
 

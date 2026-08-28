@@ -132,7 +132,7 @@ dotnet watch run
 ./dotnet10.sh
 ```
 
-默认地址：<http://localhost:5038>
+默认地址：<http://localhost:5280>
 
 ### 2.3 环境要求
 

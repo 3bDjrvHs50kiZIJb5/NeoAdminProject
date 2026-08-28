@@ -6,7 +6,6 @@ using NeoAdmin.Blazor.Api;
 using NeoAdmin.Blazor.Api.Dto;
 using NeoAdmin.Blazor.Core.Identity;
 using NeoAdmin.Blazor.Entities;
-using NeoAdmin.Blazor.Services;
 
 namespace NeoAdmin.Api;
 
@@ -17,16 +16,12 @@ namespace NeoAdmin.Api;
 [Tags("账号接口")]
 public sealed class LoginController : BaseApiController
 {
-    private readonly AvatarService _avatarService;
-
     public LoginController(
         IFreeSql freeSql,
         NeoAdminAuthService auth,
-        AvatarService avatarService,
         ILogger<LoginController> logger)
         : base(freeSql, auth, logger)
     {
-        _avatarService = avatarService;
     }
 
     /// <summary>
@@ -286,27 +281,6 @@ public sealed class LoginController : BaseApiController
 
         await WriteLoginLogAsync(user.Username, SysUserLoginLog.LogType.登陆失败, "account-disabled");
         return ApiResult.Success("账户已停用");
-    }
-
-    /// <summary>
-    /// 上传个人头像（Base64 图片），保存后 GET api/avatar/{userId} 将优先返回该图。
-    /// </summary>
-    [HttpPost($"@{nameof(UploadAvatar)}")]
-    public async Task<ApiResult> UploadAvatar([FromBody] UploadAvatarRequest request)
-    {
-        SysUser? user = await GetCurrentUserAsync();
-        if (user is null)
-        {
-            return ApiResult.Error("未登录或登录已过期", 401);
-        }
-
-        ApiResult<string> result = await _avatarService.SaveCustomAvatarFromBase64Async(
-            user.Id,
-            request.Base64 ?? string.Empty);
-
-        return result.Succeeded
-            ? ApiResult.Success(result.Message)
-            : ApiResult.Error(result.Message, result.Code);
     }
 
     /// <summary>
