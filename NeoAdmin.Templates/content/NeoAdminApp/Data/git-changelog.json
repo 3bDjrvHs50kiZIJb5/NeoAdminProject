@@ -1,5 +1,17 @@
 [
   {
+    "shortHash": "5a864aa",
+    "committedAt": "2026-08-28T09:39:14+08:00",
+    "subject": "发布 v1.0.55：修复更新日志 E2E 在同日多条同步记录时的 strict mode 断言失败。",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "3a92db4",
+    "committedAt": "2026-08-27T12:05:41+08:00",
+    "subject": "同步更新日志",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
     "shortHash": "2669275",
     "committedAt": "2026-08-27T12:05:34+08:00",
     "subject": "发布 v1.0.54：DiceBear 服务端头像与上传管理，Api Explorer Catalog 排序，登录 API 返回头像。",
@@ -286,17 +298,5 @@
     "committedAt": "2026-06-14T08:54:09+08:00",
     "subject": "chore: 发布 v1.0.28",
     "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "5e9173f",
-    "committedAt": "2026-06-14T08:45:55+08:00",
-    "subject": "修复 MapStaticAssets 指纹文件名绕过 IME input.js 补丁",
-    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "e7f890a",
-    "committedAt": "2026-06-14T08:16:39+08:00",
-    "subject": "修复中文 IME 输入时拼音残留，运行时替换 NeoUI input.js",
-    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
   }
 ]
