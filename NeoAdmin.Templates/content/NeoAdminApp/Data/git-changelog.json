@@ -1,5 +1,17 @@
 [
   {
+    "shortHash": "f6060ff",
+    "committedAt": "2026-08-28T12:05:09+08:00",
+    "subject": "头像风格版本号：切换 DiceBear 风格时刷新缓存与前端预览",
+    "body": "新增 AvatarStyleRevision，站点设置变更时递增版本号；API 返回 ETag 并缩短 Cache-Control；布局与用户/头像管理页 URL 带 v 参数。"
+  },
+  {
+    "shortHash": "4bcd6d5",
+    "committedAt": "2026-08-28T10:13:33+08:00",
+    "subject": "同步更新日志",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
     "shortHash": "540a375",
     "committedAt": "2026-08-28T10:13:13+08:00",
     "subject": "发布 v1.0.56：头像 API 迁入框架 AvatarController，API 调试增加程序集筛选器，开发端口改为 5280。",
@@ -286,17 +298,5 @@
     "committedAt": "2026-06-15T21:35:34+08:00",
     "subject": "优化分配表可选项分页加载",
     "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "692595c",
-    "committedAt": "2026-06-14T15:41:06+08:00",
-    "subject": "用无工具栏 RichTextEditor 替换 Textarea，并移除 IME 输入补丁",
-    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "e836e54",
-    "committedAt": "2026-06-14T10:58:15+08:00",
-    "subject": "chore: 发布 v1.0.29",
-    "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
   }
 ]
