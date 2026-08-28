@@ -1,5 +1,17 @@
 [
   {
+    "shortHash": "540a375",
+    "committedAt": "2026-08-28T10:13:13+08:00",
+    "subject": "发布 v1.0.56：头像 API 迁入框架 AvatarController，API 调试增加程序集筛选器，开发端口改为 5280。",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
+    "shortHash": "64345df",
+    "committedAt": "2026-08-28T09:39:28+08:00",
+    "subject": "同步更新日志",
+    "body": "Co-authored-by: Cursor <cursoragent@cursor.com>"
+  },
+  {
     "shortHash": "5a864aa",
     "committedAt": "2026-08-28T09:39:14+08:00",
     "subject": "发布 v1.0.55：修复更新日志 E2E 在同日多条同步记录时的 strict mode 断言失败。",
@@ -285,18 +297,6 @@
     "shortHash": "e836e54",
     "committedAt": "2026-06-14T10:58:15+08:00",
     "subject": "chore: 发布 v1.0.29",
-    "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "77cf960",
-    "committedAt": "2026-06-14T10:42:33+08:00",
-    "subject": "新增 NeoFileUpload 组件并重构文件上传相关页面",
-    "body": "封装单文件/多文件上传、预览与清除逻辑，统一 File 管理、站点设置与演示页用法，并同步模板。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
-  },
-  {
-    "shortHash": "1001c9c",
-    "committedAt": "2026-06-14T08:54:09+08:00",
-    "subject": "chore: 发布 v1.0.28",
     "body": "同步 NeoAdmin.Blazor 与 NeoAdmin.Templates 版本号。\n\nCo-authored-by: Cursor <cursoragent@cursor.com>"
   }
 ]
