@@ -19,7 +19,7 @@ test.describe('NeoUpdateLog 更新日志', () => {
     await expect(page.getByText('NeoUpdateLog 更新日志', { exact: true })).toBeVisible({ timeout: stepTimeout });
     await expect(page.getByText('读取 JSON 文件', { exact: true })).toBeVisible({ timeout: stepTimeout });
     await expect(page.getByText('最近提交（最多 15 条）')).toBeVisible({ timeout: stepTimeout });
-    await expect(page.getByRole('button', { name: `${first!.subject} ${firstDate}` })).toBeVisible({
+    await expect(page.getByRole('button', { name: `${first!.subject} ${firstDate}` }).first()).toBeVisible({
       timeout: stepTimeout,
     });
   });
