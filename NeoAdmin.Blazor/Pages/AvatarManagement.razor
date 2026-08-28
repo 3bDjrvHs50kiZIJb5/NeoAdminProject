@@ -6,6 +6,7 @@
 @using NeoAdmin.Blazor.Services
 @inject IFreeSql FreeSql
 @inject SiteSettingsService SiteSettingsService
+@inject AvatarStyleRevision AvatarStyleRevision
 @inject IToastService ToastService
 @inject ILogger<AvatarManagement> Logger
 
@@ -127,7 +128,7 @@
                     {
                         <div class="flex w-16 flex-col items-center gap-1" title="@($"{user.Nickname}（{user.Username}）")">
                             <img class="size-16 rounded-lg border bg-muted"
-                                 src="@GetAvatarUrl(user.Id, 128, savedStyle, savedPreset)"
+                                 src="@GetUserAvatarUrl(user.Id, 128)"
                                  alt="@user.Nickname" />
                             <span class="w-full truncate text-center text-xs text-muted-foreground">@user.Nickname</span>
                         </div>
@@ -247,4 +248,7 @@
 
     private static string GetAvatarUrl(long seed, int size, string? style, string? preset) =>
         $"/api/avatar/@GetAvatar/{seed}?size={size}&style={Uri.EscapeDataString(style ?? AvatarService.DefaultStyleKey)}&preset={Uri.EscapeDataString(preset ?? string.Empty)}";
+
+    private string GetUserAvatarUrl(long userId, int size) =>
+        $"/api/avatar/@GetAvatar/{userId}?size={size}&v={AvatarStyleRevision.Current}";
 }

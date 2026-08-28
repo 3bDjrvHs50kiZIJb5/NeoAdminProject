@@ -2,7 +2,9 @@
 @layout LayoutAdmin
 @using NeoAdmin.Blazor.Components
 @using NeoAdmin.Blazor.Entities
+@using NeoAdmin.Blazor.Services
 @inject IFreeSql FreeSql
+@inject AvatarStyleRevision AvatarStyleRevision
 @inject ILogger<User> Logger
 
 <PageTitle>用户管理</PageTitle>
@@ -84,7 +86,7 @@
             @if (item.Id > 0 && string.IsNullOrWhiteSpace(item.Avatar))
             {
                 <div class="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
-                    <img src="@($"/api/avatar/@GetAvatar/{item.Id}?size=128")"
+                    <img src="@GetUserAvatarPreviewUrl(item.Id)"
                          alt="@(string.IsNullOrWhiteSpace(item.Nickname) ? item.Username : item.Nickname)"
                          class="size-16 shrink-0 rounded-lg border bg-muted" />
                     <p class="text-xs text-muted-foreground">未上传自定义头像，当前为系统 DiceBear 头像。</p>
@@ -378,4 +380,7 @@ new CrudFilterInfo("用户名", "Username", CrudFilterType.Text, 2),
 
     private static string TruncateText(string text, int maxLength) =>
         text.Length <= maxLength ? text : text[..maxLength] + "…";
+
+    private string GetUserAvatarPreviewUrl(long userId) =>
+        $"/api/avatar/@GetAvatar/{userId}?size=128&v={AvatarStyleRevision.Current}";
 }

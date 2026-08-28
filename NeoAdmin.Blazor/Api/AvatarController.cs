@@ -18,15 +18,18 @@ namespace NeoAdmin.Blazor.Api;
 public sealed class AvatarController : BaseApiController
 {
     private readonly AvatarService _avatarService;
+    private readonly AvatarStyleRevision _avatarStyleRevision;
 
     public AvatarController(
         IFreeSql freeSql,
         NeoAdminAuthService auth,
         AvatarService avatarService,
+        AvatarStyleRevision avatarStyleRevision,
         ILogger<AvatarController> logger)
         : base(freeSql, auth, logger)
     {
         _avatarService = avatarService;
+        _avatarStyleRevision = avatarStyleRevision;
     }
 
     /// <summary>
@@ -83,12 +86,14 @@ public sealed class AvatarController : BaseApiController
 
         string svg = _avatarService.GetSvg(userId.ToString(), style, preset, size);
         Logger.LogInformation(
-            "返回 DiceBear 头像，UserId={UserId}，Style={Style}，Preset={Preset}",
+            "返回 DiceBear 头像，UserId={UserId}，Style={Style}，Preset={Preset}，Revision={Revision}",
             userId,
             style,
-            preset);
+            preset,
+            _avatarStyleRevision.Current);
 
-        Response.Headers.CacheControl = "public, max-age=3600";
+        Response.Headers.CacheControl = "public, max-age=300";
+        Response.Headers.ETag = $"\"avatar-{_avatarStyleRevision.Current}-{userId}-{style}-{preset}-{size}\"";
         return Content(svg, "image/svg+xml");
     }
 }

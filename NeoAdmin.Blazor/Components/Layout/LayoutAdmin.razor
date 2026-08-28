@@ -7,6 +7,7 @@
 @using NeoAdmin.Blazor.Extensions
 @inject NeoAdminAuthService AuthService
 @inject SiteSettingsService SiteSettingsService
+@inject AvatarStyleRevision AvatarStyleRevision
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @using NeoAdmin.Blazor.Data
@@ -573,7 +574,7 @@
             return $"c:{user.Avatar.Trim()}";
         }
 
-        return $"d:{siteSettings?.AvatarStyle ?? AvatarService.DefaultStyleKey}:{siteSettings?.AvatarPreset ?? "default"}";
+        return $"d:{siteSettings?.AvatarStyle ?? AvatarService.DefaultStyleKey}:{siteSettings?.AvatarPreset ?? "default"}:{AvatarStyleRevision.Current}";
     }
 
     private static string GetAvatarFallbackText(UserSummaryResponse user)

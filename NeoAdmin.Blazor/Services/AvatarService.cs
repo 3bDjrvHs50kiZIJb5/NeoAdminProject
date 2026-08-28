@@ -64,6 +64,7 @@ public sealed class AvatarService
     private readonly SiteSettingsService _siteSettingsService;
     private readonly FileService _fileService;
     private readonly IMemoryCache _cache;
+    private readonly AvatarStyleRevision _avatarStyleRevision;
     private readonly ILogger<AvatarService> _logger;
 
     public AvatarService(
@@ -71,12 +72,14 @@ public sealed class AvatarService
         SiteSettingsService siteSettingsService,
         FileService fileService,
         IMemoryCache cache,
+        AvatarStyleRevision avatarStyleRevision,
         ILogger<AvatarService> logger)
     {
         _freeSql = freeSql;
         _siteSettingsService = siteSettingsService;
         _fileService = fileService;
         _cache = cache;
+        _avatarStyleRevision = avatarStyleRevision;
         _logger = logger;
     }
 
@@ -201,7 +204,7 @@ public sealed class AvatarService
         }
 
         size = Math.Clamp(size, 16, 512);
-        string cacheKey = $"avatar:{styleKey}:{preset}:{seed}:{size}";
+        string cacheKey = $"avatar:{_avatarStyleRevision.Current}:{styleKey}:{preset}:{seed}:{size}";
 
         return _cache.GetOrCreate(cacheKey, entry =>
         {

@@ -11,14 +11,19 @@ public sealed class SiteSettingsService
 {
     private readonly IFreeSql _freeSql;
     private readonly ILogger<SiteSettingsService> _logger;
+    private readonly AvatarStyleRevision _avatarStyleRevision;
     private SysSiteSettings? _cached;
 
     public event Action? SettingsChanged;
 
-    public SiteSettingsService(IFreeSql freeSql, ILogger<SiteSettingsService> logger)
+    public SiteSettingsService(
+        IFreeSql freeSql,
+        ILogger<SiteSettingsService> logger,
+        AvatarStyleRevision avatarStyleRevision)
     {
         _freeSql = freeSql;
         _logger = logger;
+        _avatarStyleRevision = avatarStyleRevision;
     }
 
     public async Task<SysSiteSettings> GetAsync(CancellationToken cancellationToken = default)
@@ -69,6 +74,9 @@ public sealed class SiteSettingsService
         }
         else
         {
+            bool avatarStyleChanged = existing.AvatarStyle != settings.AvatarStyle
+                || existing.AvatarPreset != settings.AvatarPreset;
+
             await _freeSql.Update<SysSiteSettings>()
                 .Where(a => a.Id == settings.Id)
                 .Set(a => a.Title, settings.Title)
@@ -85,6 +93,16 @@ public sealed class SiteSettingsService
                 .Set(a => a.AvatarStyle, settings.AvatarStyle)
                 .Set(a => a.AvatarPreset, settings.AvatarPreset)
                 .ExecuteAffrowsAsync(cancellationToken);
+
+            if (avatarStyleChanged)
+            {
+                long revision = _avatarStyleRevision.Bump();
+                _logger.LogInformation(
+                    "头像风格已变更，AvatarStyle={Style}，AvatarPreset={Preset}，Revision={Revision}",
+                    settings.AvatarStyle,
+                    settings.AvatarPreset,
+                    revision);
+            }
         }
 
         _cached = settings;
